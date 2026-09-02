@@ -1,14 +1,22 @@
 import { createStore } from 'vuex'
+import artists from './artists'
+import auth from './auth'
+import player from './player'
 
 const store = createStore({
   state: {
-    // Global state (e.g., active player track, user auth)
+    // Global app state if needed
   },
   mutations: {
-    // Synchronous state updates
+    // Global mutations if needed
   },
   actions: {
-    // Asynchronous calls
+    // Global actions if needed
+  },
+  modules: {
+    artists,
+    auth,
+    player
   }
 })
 
