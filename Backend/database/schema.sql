@@ -1,0 +1,22 @@
+CREATE DATABASE IF NOT EXISTS jam_n
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_0900_ai_ci;
+
+USE jam_n;
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  username VARCHAR(30) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  display_name VARCHAR(80) NOT NULL,
+  bio VARCHAR(500) NULL,
+  avatar_url VARCHAR(2048) NULL,
+  role ENUM('listener', 'artist', 'admin') NOT NULL DEFAULT 'listener',
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_users_username (username),
+  UNIQUE KEY uq_users_email (email)
+) ENGINE=InnoDB;
