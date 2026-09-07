@@ -1,23 +1,31 @@
 <template>
   <header class="navbar">
     <div class="navbar-container">
-      <!-- Bold JAM'N Logo -->
       <RouterLink to="/" class="brand-logo">
         JAM'N
       </RouterLink>
 
-      <!-- Nav Links -->
       <nav class="nav-links">
         <RouterLink to="/discover" class="nav-item">Discover</RouterLink>
         <RouterLink to="/feed" class="nav-item">Feed</RouterLink>
         <RouterLink to="/library" class="nav-item">Library</RouterLink>
         <RouterLink to="/beat-store" class="nav-item">Beat Store</RouterLink>
         <RouterLink to="/events" class="nav-item">Events</RouterLink>
+
+        <!-- Only visible to admins -->
+        <RouterLink v-if="isAdmin" to="/admin/seed" class="nav-item">
+          Admin Seed
+        </RouterLink>
       </nav>
 
-      <!-- Right User Icon -->
       <div class="user-action">
-        <RouterLink to="/account" class="profile-icon-btn" aria-label="Account">
+        <!-- Not logged in: show Login -->
+        <RouterLink v-if="!isLoggedIn" to="/login" class="nav-item">
+          Login
+        </RouterLink>
+
+        <!-- Logged in: show profile icon -->
+        <RouterLink v-else to="/account" class="profile-icon-btn" aria-label="Account">
           <svg class="user-avatar-icon" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-3.8-1.04-4.83-2.61.03-1.6 3.23-2.49 4.83-2.49s4.8 1.89 4.83 2.49C15.8 18.96 14.03 20 12 20z"/>
           </svg>
@@ -28,7 +36,14 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useStore } from 'vuex'
+
+const store = useStore()
+
+const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
+const isAdmin = computed(() => store.getters['auth/isAdmin'])
 </script>
 
 <style scoped>
