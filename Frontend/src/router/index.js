@@ -7,12 +7,12 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView // Landing Page (Maiesha)
+      component: HomeView
     },
     {
       path: '/discover',
       name: 'discover',
-      component: () => import('../views/DiscoverView.vue') // Discover Music Page (James)
+      component: () => import('../views/DiscoverView.vue')
     },
     {
       path: '/feed',
@@ -27,12 +27,17 @@ const router = createRouter({
     {
       path: '/beat-store',
       name: 'beat-store',
-      component: () => import('../views/BeatStoreView.vue')
+      component: () => import('../views/BeatstoreView.vue')
     },
     {
       path: '/events',
       name: 'events',
       component: () => import('../views/EventsView.vue')
+    },
+    {
+      path: '/account',
+      name: 'account',
+      component: () => import('../views/AccountView.vue')
     }
   ]
 })
