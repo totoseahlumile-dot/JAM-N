@@ -2,7 +2,12 @@
   <div class="beatstore-view">
     <header class="beatstore-header">
       <h1>Beat Store</h1>
-      <button class="upload-btn">+ Upload beat</button>
+      <div class="header-actions">
+        <button class="cart-trigger-btn" @click="showCartDrawer = true">
+          🛒 Cart <span v-if="cartItems.length > 0" class="cart-badge">{{ cartItems.length }}</span>
+        </button>
+        <button class="upload-btn" @click="showUploadModal = true">+ Upload beat</button>
+      </div>
     </header>
 
     <!-- Genre filter pills -->
@@ -28,7 +33,7 @@
         <p class="beat-producer">{{ beat.producer }}</p>
         <div class="beat-footer">
           <span class="beat-price">R{{ beat.price }}</span>
-          <button class="beat-buy-btn">Buy</button>
+          <button class="beat-buy-btn" @click="openPurchaseModal(beat)">Buy</button>
         </div>
       </div>
     </div>
@@ -36,17 +41,44 @@
     <p v-if="filteredBeats.length === 0" class="empty-state">
       No beats in this genre yet.
     </p>
+
+    <!-- Modals & Drawers -->
+    <BeatUploadModal
+      v-model:is-open="showUploadModal"
+      @beat-uploaded="handleBeatUploaded"
+    />
+
+    <PurchaseBeatModal
+      v-model:is-open="showLicenseModal"
+      :selected-beat="selectedBeat"
+      @add-to-cart="handleAddToCart"
+    />
+
+    <CartDrawer
+      v-model:is-open="showCartDrawer"
+      :items="cartItems"
+      @remove-item="removeCartItem"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import BeatUploadModal from '@/components/beats/BeatUploadModal.vue'
+import PurchaseBeatModal from '@/components/beats/PurchaseBeatModal.vue'
+import CartDrawer from '@/components/cart/CartDrawer.vue'
 
 const activeGenre = ref('All')
 
-// TEMPORARY: dummy beat data from earlier research, sourced from
-// Pixabay/Uppbeat/Free Music Archive/Chosic/Free Stock Music (royalty-free).
-// Replace with real data via a beats store module once backend is ready.
+// Modal and drawer state
+const showUploadModal = ref(false)
+const showLicenseModal = ref(false)
+const showCartDrawer = ref(false)
+const selectedBeat = ref(null)
+
+// Cart State
+const cartItems = ref([])
+
 const beats = ref([
   { id: 'b1', title: 'Driving Soul', producer: 'Ketsa', genre: 'Hip-Hop', price: 120 },
   { id: 'b2', title: 'Crumbling', producer: 'Ketsa', genre: 'Hip-Hop', price: 100 },
@@ -71,6 +103,24 @@ const filteredBeats = computed(() => {
   if (activeGenre.value === 'All') return beats.value
   return beats.value.filter((b) => b.genre === activeGenre.value)
 })
+
+function openPurchaseModal(beat) {
+  selectedBeat.value = beat
+  showLicenseModal.value = true
+}
+
+function handleAddToCart(cartItem) {
+  cartItems.value.push(cartItem)
+  showCartDrawer.value = true
+}
+
+function removeCartItem(index) {
+  cartItems.value.splice(index, 1)
+}
+
+function handleBeatUploaded(newBeat) {
+  beats.value.unshift(newBeat)
+}
 </script>
 
 <style scoped>
@@ -85,6 +135,34 @@ const filteredBeats = computed(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.cart-trigger-btn {
+  position: relative;
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cart-badge {
+  background: #111;
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
 }
 
 .upload-btn {
