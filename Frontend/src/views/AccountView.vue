@@ -12,12 +12,16 @@
             <span class="stat-count">{{ uploads.length }}</span>
             <span class="stat-label">Uploads</span>
           </div>
-          <div class="stat">
-            <span class="stat-count">{{ followers }}</span>
+
+          <!-- Clickable Followers Stat -->
+          <div class="stat clickable" @click="openUserList('followers')">
+            <span class="stat-count">{{ followers.length }}</span>
             <span class="stat-label">followers</span>
           </div>
-          <div class="stat">
-            <span class="stat-count">{{ following }}</span>
+
+          <!-- Clickable Following Stat -->
+          <div class="stat clickable" @click="openUserList('following')">
+            <span class="stat-count">{{ following.length }}</span>
             <span class="stat-label">following</span>
           </div>
         </div>
@@ -69,6 +73,27 @@
       +
     </button>
 
+    <!-- Track / Item Detail Modal -->
+    <ItemDetailModal
+      v-model:is-open="showDetailModal"
+      :item="selectedItem"
+    />
+
+    <!-- User List Modal (Followers / Following) -->
+    <BaseModal v-model="showUserListModal" :title="userListTitle">
+      <div v-if="activeUserList.length > 0" class="user-list">
+        <div v-for="person in activeUserList" :key="person.id" class="user-row">
+          <div class="user-avatar"></div>
+          <div class="user-info">
+            <p class="user-name">{{ person.name }}</p>
+
+            <p v-if="person.handle" class="user-handle">@{{ person.handle }}</p>
+          </div>
+        </div>
+      </div>
+      <p v-else class="empty-state">No {{ userListType }} yet.</p>
+    </BaseModal>
+
     <!-- Edit profile modal -->
     <BaseModal v-model="showEditModal" title="Edit profile">
       <form class="edit-form" @submit.prevent="saveProfile">
@@ -109,14 +134,15 @@
 import { ref, reactive, computed } from 'vue'
 import { useStore } from 'vuex'
 import BaseModal from '@/components/common/BaseModal.vue'
+import ItemDetailModal from '@/components/common/ItemDetailModal.vue'
 
 const store = useStore()
 
 const user = computed(() => store.state.auth?.user)
 const isArtistOrProducer = computed(() => store.getters['auth/isArtistOrProducer'])
 
-const followers = computed(() => user.value?.followers ?? 0)
-const following = computed(() => user.value?.following ?? 0)
+const followers = computed(() => user.value?.followersList ?? [])
+const following = computed(() => user.value?.followingList ?? [])
 
 const roleLabel = computed(() => {
   const roles = user.value?.roles ?? []
@@ -134,16 +160,18 @@ const activeTab = ref('uploads')
 const uploads = ref([])
 const reposts = ref([])
 
-// Dynamic reactive computed property reading directly from store state
+// Reads directly from store state for Liked items
 const liked = computed(() => {
   const likedIds = store.state.auth?.likedTrackIds ?? []
   const allArtists = store.getters['artists/allArtists'] ?? []
-  
+
   return allArtists
     .filter((artist) => likedIds.includes(artist.id))
     .map((artist) => ({
       id: artist.id,
-      title: artist.name, // Adapts name to tile title display
+      title: artist.name,
+      artist: artist.genre ? `${artist.genre} Artist` : 'Artist',
+      image: artist.image ?? null,
     }))
 })
 
@@ -162,8 +190,30 @@ const emptyMessage = computed(() => {
   return messages[activeTab.value]
 })
 
+// --- Followers / Following Modal ---
+const showUserListModal = ref(false)
+const userListType = ref('followers') // 'followers' or 'following'
+
+const userListTitle = computed(() => {
+  return userListType.value === 'followers' ? 'Followers' : 'Following'
+})
+
+const activeUserList = computed(() => {
+  return userListType.value === 'followers' ? followers.value : following.value
+})
+
+function openUserList(type) {
+  userListType.value = type
+  showUserListModal.value = true
+}
+
+// --- Detail Modal State ---
+const showDetailModal = ref(false)
+const selectedItem = ref(null)
+
 function openItem(item) {
-  console.log('Open detail for:', item)
+  selectedItem.value = item
+  showDetailModal.value = true
 }
 
 // --- Edit Profile modal ---
@@ -258,6 +308,17 @@ function submitUpload() {
   font-size: 0.85rem;
 }
 
+.stat.clickable {
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.stat.clickable:hover {
+  background-color: #f5f5f5;
+}
+
 .stat-count {
   font-weight: 700;
 }
@@ -341,6 +402,48 @@ function submitUpload() {
   font-size: 0.85rem;
   text-align: center;
   padding: 2rem 0;
+}
+
+/* User list styles inside modal */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.5rem 0;
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e0e0e0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.user-handle {
+  font-size: 0.75rem;
+  color: #777;
+  margin: 0;
 }
 
 .upload-fab {

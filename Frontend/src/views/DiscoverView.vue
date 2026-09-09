@@ -53,7 +53,13 @@
           <p class="artist-genre">{{ artist.genre }}</p>
           <div class="card-actions">
             <RouterLink :to="`/artists/${artist.id}`" class="btn-outline">View Profile</RouterLink>
-            <button class="btn-primary">Follow Artist</button>
+            <button
+              class="btn-primary"
+              :class="{ following: isFollowing(artist.id) }"
+              @click="toggleFollow(artist)"
+            >
+              {{ isFollowing(artist.id) ? 'Following' : 'Follow Artist' }}
+            </button>
           </div>
         </div>
       </div>
@@ -136,6 +142,20 @@ function isLiked(id) {
 
 function toggleLike(id) {
   store.commit('auth/TOGGLE_LIKE', id)
+}
+
+// --- Follow Functionality ---
+function isFollowing(artistId) {
+  return store.getters['auth/isFollowing']?.(artistId) ?? false
+}
+
+function toggleFollow(artist) {
+  store.commit('auth/TOGGLE_FOLLOW', {
+    id: artist.id,
+    name: artist.name,
+    handle: artist.name.toLowerCase().replace(/\s+/g, '_'),
+    image: artist.image ?? null,
+  })
 }
 </script>
 
@@ -298,6 +318,7 @@ function toggleLike(id) {
   font-weight: 600;
   text-align: center;
   text-decoration: none;
+  transition: all 0.15s ease;
 }
 .btn-outline {
   border: 1px solid #ccc;
@@ -308,6 +329,10 @@ function toggleLike(id) {
   border: none;
   background: #6a5acd;
   color: white;
+}
+.btn-primary.following {
+  background: #e8e8f0;
+  color: #333;
 }
 .artist-card.compact {
   display: flex;

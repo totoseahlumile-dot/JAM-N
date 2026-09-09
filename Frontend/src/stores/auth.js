@@ -6,6 +6,7 @@ const state = () => ({
     name: 'Maiesha Team',
     email: 'maiesha@jamn.co.za',
     roles: ['listener', 'artist'], // dev default
+    followingList: [], // Stores followed artist/user objects
   },
   isAuthenticated: true,
   likedTrackIds: [], // Stores IDs of tracks liked by the user
@@ -22,6 +23,10 @@ const getters = {
 
   isLiked: (state) => (trackId) => {
     return state.likedTrackIds.includes(trackId)
+  },
+
+  isFollowing: (state) => (artistId) => {
+    return state.user?.followingList?.some((artist) => artist.id === artistId) ?? false
   },
 }
 
@@ -44,6 +49,20 @@ const mutations = {
       state.likedTrackIds.splice(index, 1)
     }
   },
+
+  TOGGLE_FOLLOW(state, artist) {
+    if (!state.user) return
+    if (!state.user.followingList) {
+      state.user.followingList = []
+    }
+
+    const index = state.user.followingList.findIndex((a) => a.id === artist.id)
+    if (index > -1) {
+      state.user.followingList.splice(index, 1) // Unfollow
+    } else {
+      state.user.followingList.push(artist) // Follow
+    }
+  },
 }
 
 const actions = {
@@ -53,6 +72,7 @@ const actions = {
       name: credentials.email.split('@')[0],
       email: credentials.email,
       roles: ['listener'],
+      followingList: [],
     })
   },
 
