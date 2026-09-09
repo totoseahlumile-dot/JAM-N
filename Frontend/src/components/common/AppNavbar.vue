@@ -11,14 +11,16 @@
         <RouterLink to="/library" class="nav-item">Library</RouterLink>
         <RouterLink to="/beat-store" class="nav-item">Beat Store</RouterLink>
         <RouterLink to="/events" class="nav-item">Events</RouterLink>
-
-        <!-- Only visible to admins -->
-        <RouterLink v-if="isAdmin" to="/admin/seed" class="nav-item">
-          Admin Seed
-        </RouterLink>
       </nav>
 
       <div class="user-action">
+        <!-- Settings gear - updated link to /settings -->
+        <RouterLink to="/settings" class="settings-icon-btn" aria-label="Settings">
+          <svg class="settings-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.32-.02-.63-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.44.17-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.31-.09.63-.09.94s.02.63.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+          </svg>
+        </RouterLink>
+
         <!-- Not logged in: show Login -->
         <RouterLink v-if="!isLoggedIn" to="/login" class="nav-item">
           Login
@@ -43,7 +45,6 @@ import { useStore } from 'vuex'
 const store = useStore()
 
 const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
-const isAdmin = computed(() => store.getters['auth/isAdmin'])
 </script>
 
 <style scoped>
@@ -94,6 +95,24 @@ const isAdmin = computed(() => store.getters['auth/isAdmin'])
 .user-action {
   display: flex;
   align-items: center;
+  gap: 1.25rem;
+}
+
+.settings-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #333333;
+  transition: color 0.15s ease;
+}
+
+.settings-icon-btn:hover {
+  color: #000000;
+}
+
+.settings-icon {
+  width: 22px;
+  height: 22px;
 }
 
 .profile-icon-btn {

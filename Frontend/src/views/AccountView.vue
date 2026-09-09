@@ -1,182 +1,382 @@
 <template>
-  <div class="account-page">
+  <div class="profile-page">
     <!-- Profile header -->
-    <header class="account-header">
-      <div class="account-avatar"></div>
-      <div class="account-info">
-        <p class="account-name">{{ user?.name ?? 'Guest' }}</p>
-        <p class="account-meta">{{ roleLabel }}</p>
-        <div class="account-stats">
-          <span>{{ followers }} followers</span>
-          <span>{{ following }} following</span>
+    <header class="profile-header">
+      <div class="profile-avatar-large"></div>
+
+      <div class="profile-details">
+        <p class="profile-name">{{ user?.name ?? 'Guest' }}</p>
+
+        <div class="profile-stats">
+          <div class="stat">
+            <span class="stat-count">{{ uploads.length }}</span>
+            <span class="stat-label">Uploads</span>
+          </div>
+          <div class="stat">
+            <span class="stat-count">{{ followers }}</span>
+            <span class="stat-label">followers</span>
+          </div>
+          <div class="stat">
+            <span class="stat-count">{{ following }}</span>
+            <span class="stat-label">following</span>
+          </div>
         </div>
+
+        <p class="profile-bio">{{ roleLabel }}</p>
+
+        <button class="edit-profile-btn" @click="openEditModal">Edit profile</button>
       </div>
-      <button class="edit-profile-btn">Edit profile</button>
     </header>
 
-    <!-- General account settings - visible to everyone -->
-    <section class="account-section">
-      <p class="section-label">Account</p>
-      <RouterLink to="/account/settings" class="account-row">
-        <span>Settings</span>
-        <span class="chevron">›</span>
-      </RouterLink>
-      <RouterLink to="/account/privacy" class="account-row">
-        <span>Privacy &amp; security</span>
-        <span class="chevron">›</span>
-      </RouterLink>
+    <!-- Tabs: Uploads, Reposts, Liked Songs -->
+    <section class="profile-content">
+      <div class="content-tabs">
+        <button
+          v-for="tab in tabs"
+          :key="tab.key"
+          class="content-tab"
+          :class="{ active: activeTab === tab.key }"
+          @click="activeTab = tab.key"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+
+      <div v-if="activeItems.length > 0" class="content-grid">
+        <div
+          v-for="item in activeItems"
+          :key="item.id"
+          class="content-tile"
+          @click="openItem(item)"
+        >
+          <div class="tile-placeholder">
+            <span class="play-icon">▶</span>
+          </div>
+          <p class="tile-title">{{ item.title }}</p>
+        </div>
+      </div>
+
+      <p v-else class="empty-state">{{ emptyMessage }}</p>
     </section>
 
-    <!-- Only shown for users with an artist or producer role -->
-    <section v-if="isArtistOrProducer" class="account-section">
-      <p class="section-label">For producers &amp; artists</p>
-      <RouterLink to="/account/subscriptions" class="account-row">
-        <span>Subscriptions</span>
-        <span class="chevron">›</span>
-      </RouterLink>
-      <RouterLink to="/account/services" class="account-row">
-        <span>Services</span>
-        <span class="chevron">›</span>
-      </RouterLink>
-      <RouterLink to="/beat-store/my-beats" class="account-row">
-        <span>My beats &amp; earnings</span>
-        <span class="chevron">›</span>
-      </RouterLink>
-    </section>
+    <!-- Floating upload button -->
+    <button
+      v-if="isArtistOrProducer && activeTab === 'uploads'"
+      class="upload-fab"
+      @click="showUploadModal = true"
+      aria-label="Upload"
+    >
+      +
+    </button>
 
-    <section class="account-section">
-      <button class="logout-btn" @click="handleLogout">Log out</button>
-    </section>
+    <!-- Edit profile modal -->
+    <BaseModal v-model="showEditModal" title="Edit profile">
+      <form class="edit-form" @submit.prevent="saveProfile">
+        <label class="form-field">
+          <span>Name</span>
+          <input v-model="editForm.name" type="text" />
+        </label>
+        <label class="form-field">
+          <span>Bio</span>
+          <textarea v-model="editForm.bio" rows="3" />
+        </label>
+        <button type="submit" class="form-submit-btn">Save changes</button>
+      </form>
+    </BaseModal>
+
+    <!-- Upload modal -->
+    <BaseModal v-model="showUploadModal" title="Upload">
+      <form class="upload-form" @submit.prevent="submitUpload">
+        <label class="form-field">
+          <span>Title</span>
+          <input v-model="uploadForm.title" type="text" required />
+        </label>
+
+        <label class="form-field">
+          <span>File</span>
+          <input type="file" accept="audio/*,image/*" @change="handleFileSelect" required />
+        </label>
+
+        <p v-if="uploadForm.file" class="file-selected">Selected: {{ uploadForm.file.name }}</p>
+
+        <button type="submit" class="form-submit-btn">Upload</button>
+      </form>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { ref, reactive, computed } from 'vue'
 import { useStore } from 'vuex'
+import BaseModal from '@/components/common/BaseModal.vue'
 
 const store = useStore()
-const router = useRouter()
 
-const user = computed(() => store.state.auth.user)
+const user = computed(() => store.state.auth?.user)
+const isArtistOrProducer = computed(() => store.getters['auth/isArtistOrProducer'])
 
-// TEMPORARY: followers/following aren't in the current user data shape yet.
-// Hardcoded placeholders until the backend provides real counts.
 const followers = computed(() => user.value?.followers ?? 0)
 const following = computed(() => user.value?.following ?? 0)
 
-// Roles is now an array (e.g. ["listener", "artist"]) - join for display
 const roleLabel = computed(() => {
   const roles = user.value?.roles ?? []
   if (roles.length === 0) return ''
-  return roles.map((r) => r.charAt(0).toUpperCase() + r.slice(1)).join(', ')
+  return roles.map((r) => r.charAt(0).toUpperCase() + r.slice(1)).join(' · ')
 })
 
-// Controls whether the "For producers & artists" section shows at all.
-// Now reads directly from the auth store's isArtistOrProducer getter.
-const isArtistOrProducer = computed(() => store.getters['auth/isArtistOrProducer'])
+const tabs = [
+  { key: 'uploads', label: 'Uploads' },
+  { key: 'reposts', label: 'Reposts' },
+  { key: 'liked', label: 'Liked' },
+]
+const activeTab = ref('uploads')
 
-function handleLogout() {
-  store.dispatch('auth/logout')
-  router.push('/')
+const uploads = ref([])
+const reposts = ref([])
+const liked = ref([])
+
+const activeItems = computed(() => {
+  if (activeTab.value === 'uploads') return uploads.value
+  if (activeTab.value === 'reposts') return reposts.value
+  return liked.value
+})
+
+const emptyMessage = computed(() => {
+  const messages = {
+    uploads: 'No uploads yet.',
+    reposts: 'No reposts yet.',
+    liked: 'No liked songs yet.',
+  }
+  return messages[activeTab.value]
+})
+
+function openItem(item) {
+  console.log('Open detail for:', item)
+}
+
+// --- Edit Profile modal ---
+const showEditModal = ref(false)
+const editForm = reactive({
+  name: '',
+  bio: '',
+})
+
+function openEditModal() {
+  editForm.name = user.value?.name ?? ''
+  showEditModal.value = true
+}
+
+function saveProfile() {
+  store.commit('auth/SET_USER', {
+    ...user.value,
+    name: editForm.name,
+  })
+  showEditModal.value = false
+}
+
+// --- Upload modal ---
+const showUploadModal = ref(false)
+const uploadForm = reactive({
+  title: '',
+  file: null,
+})
+
+function handleFileSelect(event) {
+  uploadForm.file = event.target.files[0] ?? null
+}
+
+function submitUpload() {
+  uploads.value.push({
+    id: `local-${Date.now()}`,
+    title: uploadForm.title,
+    file: uploadForm.file,
+  })
+
+  uploadForm.title = ''
+  uploadForm.file = null
+  showUploadModal.value = false
 }
 </script>
 
 <style scoped>
-.account-page {
-  max-width: 640px;
+.profile-page {
+  max-width: 720px;
   margin: 0 auto;
   padding: 2rem;
+  position: relative;
 }
 
-.account-header {
+.profile-header {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  gap: 2rem;
+  align-items: flex-start;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #eee;
   margin-bottom: 1.5rem;
 }
 
-.account-avatar {
-  width: 64px;
-  height: 64px;
+.profile-avatar-large {
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   background: #ddd;
   flex-shrink: 0;
 }
 
-.account-info {
+.profile-details {
   flex: 1;
 }
 
-.account-name {
-  font-size: 1.1rem;
+.profile-name {
+  font-size: 1.15rem;
   font-weight: 700;
-  margin: 0;
+  margin: 0 0 0.75rem;
 }
 
-.account-meta {
-  font-size: 0.85rem;
-  opacity: 0.7;
-  margin: 0.15rem 0;
-}
-
-.account-stats {
+.profile-stats {
   display: flex;
-  gap: 0.75rem;
-  font-size: 0.75rem;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.stat-count {
+  font-weight: 700;
+}
+
+.stat-label {
   opacity: 0.6;
+  font-size: 0.75rem;
+}
+
+.profile-bio {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin: 0 0 0.75rem;
 }
 
 .edit-profile-btn {
   border: 1px solid #ccc;
   background: transparent;
-  padding: 0.4rem 0.9rem;
+  padding: 0.4rem 1rem;
   border-radius: 8px;
   font-size: 0.8rem;
   cursor: pointer;
-  white-space: nowrap;
 }
 
-.account-section {
-  margin-bottom: 1.5rem;
-}
-
-.section-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  opacity: 0.6;
-  margin-bottom: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.account-row {
+.content-tabs {
   display: flex;
-  justify-content: space-between;
+  gap: 1.5rem;
+  border-top: 1px solid #eee;
+  padding-top: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.content-tab {
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 0.3rem 0;
+}
+
+.content-tab.active {
+  opacity: 1;
+  border-bottom: 2px solid #333;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.content-tile {
+  cursor: pointer;
+}
+
+.tile-placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+  background: #eee;
+  border-radius: 6px;
+  margin-bottom: 0.4rem;
+  display: flex;
   align-items: center;
-  padding: 0.7rem 0;
-  text-decoration: none;
-  color: inherit;
-  font-size: 0.9rem;
-  border-bottom: 1px solid #f5f5f5;
+  justify-content: center;
 }
 
-.account-row:last-child {
-  border-bottom: none;
-}
-
-.chevron {
+.play-icon {
+  font-size: 1.25rem;
   opacity: 0.4;
 }
 
-.logout-btn {
+.tile-title {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.empty-state {
+  opacity: 0.6;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.upload-fab {
+  position: fixed;
+  bottom: 100px;
+  right: 2rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   border: none;
-  background: transparent;
-  color: #c0392b;
-  font-size: 0.9rem;
+  background: #333;
+  color: #fff;
+  font-size: 1.5rem;
   cursor: pointer;
-  padding: 0.5rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.form-field input,
+.form-field textarea {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.file-selected {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-bottom: 1rem;
+}
+
+.form-submit-btn {
+  width: 100%;
+  border: none;
+  background: #333;
+  color: #fff;
+  padding: 0.6rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 </style>
