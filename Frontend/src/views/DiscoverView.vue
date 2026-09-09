@@ -9,11 +9,11 @@
           v-model="searchQuery"
         />
         <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 11.99 14 9.5 14z"/>
         </svg>
       </div>
 
-      <!-- Filter Tags - now built dynamically from real artist genres -->
+      <!-- Filter Tags -->
       <div class="filter-tags">
         <button
           v-for="genre in genreOptions"
@@ -27,7 +27,7 @@
       </div>
     </header>
 
-    <!-- Trending Artists Section - real data, first 5 artists -->
+    <!-- Trending Artists Section -->
     <section class="section">
       <div class="section-header">
         <h2>Trending Artists</h2>
@@ -35,7 +35,20 @@
       </div>
       <div class="card-grid">
         <div v-for="artist in trendingArtists" :key="artist.id" class="artist-card">
-          <img :src="artist.image" :alt="artist.name" class="placeholder-img" />
+          <div class="image-wrapper">
+            <img :src="artist.image" :alt="artist.name" class="placeholder-img" />
+            <!-- Like / Heart Button -->
+            <button
+              class="like-btn"
+              :class="{ liked: isLiked(artist.id) }"
+              @click="toggleLike(artist.id)"
+              aria-label="Like artist"
+            >
+              <svg class="heart-icon" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </button>
+          </div>
           <p class="artist-name">{{ artist.name }}</p>
           <p class="artist-genre">{{ artist.genre }}</p>
           <div class="card-actions">
@@ -47,7 +60,7 @@
       <p v-if="trendingArtists.length === 0" class="empty-state">No artists match this filter yet.</p>
     </section>
 
-    <!-- Recommended Artists Section - real data, remaining artists -->
+    <!-- Recommended Artists Section -->
     <section class="section">
       <div class="section-header">
         <h2>Recommended Artists</h2>
@@ -60,6 +73,16 @@
             <p class="artist-name">{{ artist.name }}</p>
             <p class="artist-genre">{{ artist.genre }}</p>
           </div>
+          <button
+            class="like-btn compact-like"
+            :class="{ liked: isLiked(artist.id) }"
+            @click="toggleLike(artist.id)"
+            aria-label="Like artist"
+          >
+            <svg class="heart-icon" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </button>
         </div>
       </div>
       <p v-if="recommendedArtists.length === 0" class="empty-state">No more artists to show.</p>
@@ -77,16 +100,13 @@ const store = useStore()
 const searchQuery = ref('')
 const activeGenre = ref('All Genres')
 
-// Pull real artists from the shared artists store
-const allArtists = computed(() => store.getters['artists/allArtists'])
+const allArtists = computed(() => store.getters['artists/allArtists'] ?? [])
 
-// Genre pills built dynamically from actual artist data, same pattern as Beat Store
 const genreOptions = computed(() => {
   const genres = allArtists.value.map((a) => a.genre)
   return ['All Genres', ...new Set(genres)]
 })
 
-// Applies both the genre filter and the search query together
 const filteredArtists = computed(() => {
   let result = allArtists.value
 
@@ -106,11 +126,17 @@ const filteredArtists = computed(() => {
   return result
 })
 
-// Simple split: first 5 filtered artists as "Trending", rest as "Recommended"
-// TEMPORARY approach - once there's a real "trending" metric (plays, follows, etc.)
-// this should be based on actual popularity data rather than array order.
 const trendingArtists = computed(() => filteredArtists.value.slice(0, 5))
 const recommendedArtists = computed(() => filteredArtists.value.slice(5))
+
+// --- Like Functionality ---
+function isLiked(id) {
+  return store.getters['auth/isLiked'](id)
+}
+
+function toggleLike(id) {
+  store.commit('auth/TOGGLE_LIKE', id)
+}
 </script>
 
 <style scoped>
@@ -199,13 +225,53 @@ const recommendedArtists = computed(() => filteredArtists.value.slice(5))
   display: flex;
   flex-direction: column;
 }
+.image-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.85rem;
+}
 .placeholder-img {
   width: 100%;
   height: 160px;
   background-color: #e5e5e5;
   border-radius: 6px;
-  margin-bottom: 0.85rem;
   object-fit: cover;
+  display: block;
+}
+.like-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #888888;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+.like-btn:hover {
+  background: #ffffff;
+  transform: scale(1.08);
+}
+.like-btn.liked {
+  color: #e63946;
+}
+.like-btn.liked .heart-icon {
+  fill: #e63946;
+}
+.heart-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  transition: fill 0.2s ease;
 }
 .artist-name {
   font-weight: 700;
@@ -249,6 +315,16 @@ const recommendedArtists = computed(() => filteredArtists.value.slice(5))
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
+  position: relative;
+}
+.artist-info {
+  flex: 1;
+}
+.compact-like {
+  position: static;
+  background: transparent;
+  width: auto;
+  height: auto;
 }
 .placeholder-img-sm {
   width: 48px;

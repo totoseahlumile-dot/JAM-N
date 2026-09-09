@@ -133,7 +133,19 @@ const activeTab = ref('uploads')
 
 const uploads = ref([])
 const reposts = ref([])
-const liked = ref([])
+
+// Dynamic reactive computed property reading directly from store state
+const liked = computed(() => {
+  const likedIds = store.state.auth?.likedTrackIds ?? []
+  const allArtists = store.getters['artists/allArtists'] ?? []
+  
+  return allArtists
+    .filter((artist) => likedIds.includes(artist.id))
+    .map((artist) => ({
+      id: artist.id,
+      title: artist.name, // Adapts name to tile title display
+    }))
+})
 
 const activeItems = computed(() => {
   if (activeTab.value === 'uploads') return uploads.value
@@ -145,7 +157,7 @@ const emptyMessage = computed(() => {
   const messages = {
     uploads: 'No uploads yet.',
     reposts: 'No reposts yet.',
-    liked: 'No liked songs yet.',
+    liked: 'No liked items yet.',
   }
   return messages[activeTab.value]
 })
