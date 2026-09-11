@@ -4,6 +4,7 @@ import env from "./config/env.js";
 import healthRoutes from "./routes/health.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import catalogRoutes from "./routes/catalog.routes.js";
+import socialRoutes from "./routes/social.routes.js";
 import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorHandler.js";
 
@@ -17,6 +18,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api", catalogRoutes);
+app.use("/api", socialRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -117,3 +117,25 @@ test("logout is idempotent when no refresh token is present", async () => {
     assert.equal(response.status, 204);
   });
 });
+
+test("social write endpoints require authentication", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/posts`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ caption: "Not authenticated" })
+    });
+    assert.equal(response.status, 401);
+    const body = await response.json();
+    assert.equal(body.error.code, "AUTHENTICATION_REQUIRED");
+  });
+});
+
+test("social endpoints reject invalid identifiers before querying MySQL", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/posts/not-a-number`);
+    assert.equal(response.status, 400);
+    const body = await response.json();
+    assert.equal(body.error.code, "INVALID_QUERY");
+  });
+});

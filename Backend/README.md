@@ -39,3 +39,15 @@ artists, albums, and tracks. Only admins can manage genres and events.
 Artist ownership is derived from the JWT subject and `artist_profiles.user_id`.
 An artist cannot assign a profile to another user or change another artist's
 profile, albums, or tracks. Admin accounts may manage all catalog records.
+
+## Social endpoints
+
+- `GET /api/posts` and `GET /api/posts/:id`
+- `POST /api/posts`, `PUT /api/posts/:id`, and `DELETE /api/posts/:id`
+- `PUT /api/posts/:postId/like` and `DELETE /api/posts/:postId/like`
+- `GET /api/posts/:postId/comments` and `POST /api/posts/:postId/comments`
+- `PUT /api/comments/:id` and `DELETE /api/comments/:id`
+
+Reads are public. Creating posts, likes, and comments requires authentication.
+Users may update or delete only their own posts and comments; admins may moderate
+all records. Likes are idempotent, so repeated like requests do not duplicate data.
