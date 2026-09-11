@@ -3,10 +3,11 @@
 const state = () => ({
   user: {
     id: 'usr_101',
-    name: 'Maiesha Team',
-    email: 'maiesha@jamn.co.za',
+    name: 'JAMN Team',
+    email: 'music@jamn.co.za',
     roles: ['listener', 'artist'], // dev default
     followingList: [], // Stores followed artist/user objects
+    uploads: JSON.parse(localStorage.getItem('user_uploads')) || [], // Saved uploads with persistence
   },
   isAuthenticated: true,
   likedTrackIds: [], // Stores IDs of tracks liked by the user
@@ -28,6 +29,8 @@ const getters = {
   isFollowing: (state) => (artistId) => {
     return state.user?.followingList?.some((artist) => artist.id === artistId) ?? false
   },
+
+  userUploads: (state) => state.user?.uploads ?? [],
 }
 
 const mutations = {
@@ -63,6 +66,42 @@ const mutations = {
       state.user.followingList.push(artist) // Follow
     }
   },
+
+  ADD_UPLOAD(state, newPost) {
+    if (!state.user.uploads) {
+      state.user.uploads = []
+    }
+    state.user.uploads.unshift(newPost)
+    localStorage.setItem('user_uploads', JSON.stringify(state.user.uploads))
+  },
+
+  DELETE_UPLOAD(state, postId) {
+    if (!state.user.uploads) return
+    state.user.uploads = state.user.uploads.filter(p => p.id !== postId)
+    localStorage.setItem('user_uploads', JSON.stringify(state.user.uploads))
+  },
+
+  TOGGLE_POST_LIKE(state, postId) {
+    const post = state.user?.uploads?.find(p => p.id === postId)
+    if (post) {
+      post.isLiked = !post.isLiked
+      post.likesCount = (post.likesCount || 0) + (post.isLiked ? 1 : -1)
+      localStorage.setItem('user_uploads', JSON.stringify(state.user.uploads))
+    }
+  },
+
+  ADD_POST_COMMENT(state, { postId, text }) {
+    const post = state.user?.uploads?.find(p => p.id === postId)
+    if (post) {
+      if (!post.comments) post.comments = []
+      post.comments.push({
+        id: `comment-${Date.now()}`,
+        text,
+        createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      })
+      localStorage.setItem('user_uploads', JSON.stringify(state.user.uploads))
+    }
+  },
 }
 
 const actions = {
@@ -73,11 +112,43 @@ const actions = {
       email: credentials.email,
       roles: ['listener'],
       followingList: [],
+      uploads: JSON.parse(localStorage.getItem('user_uploads')) || [],
     })
   },
 
   logout({ commit }) {
     commit('LOGOUT')
+  },
+
+  createPost({ commit }, postData) {
+    const isText = postData.type === 'text'
+    const newPost = {
+      id: `post-${Date.now()}`,
+      title: isText 
+        ? (postData.content?.caption || 'Text Update') 
+        : (postData.content?.title || 'Untitled Post'),
+      artist: isText ? null : (postData.content?.genre ? `${postData.content.genre} Track` : 'Original Upload'),
+      image: isText ? null : (postData.content?.coverImage || postData.content?.mediaUrl || null),
+      audioUrl: isText ? null : (postData.content?.audioUrl || null),
+      caption: postData.content?.caption || '',
+      type: postData.type || 'track',
+      likesCount: 0,
+      isLiked: false,
+      comments: []
+    }
+    commit('ADD_UPLOAD', newPost)
+  },
+
+  deleteUpload({ commit }, postId) {
+    commit('DELETE_UPLOAD', postId)
+  },
+
+  togglePostLike({ commit }, postId) {
+    commit('TOGGLE_POST_LIKE', postId)
+  },
+
+  addPostComment({ commit }, payload) {
+    commit('ADD_POST_COMMENT', payload)
   },
 }
 

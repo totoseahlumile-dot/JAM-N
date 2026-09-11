@@ -32,7 +32,7 @@
       </div>
     </header>
 
-    <!-- Tabs: Uploads, Reposts, Liked Songs -->
+    <!-- Tabs: Uploads, Posts, Reposts, Liked -->
     <section class="profile-content">
       <div class="content-tabs">
         <button
@@ -46,7 +46,8 @@
         </button>
       </div>
 
-      <div v-if="activeItems.length > 0" class="content-grid">
+      <!-- VIEW FOR UPLOADS & LIKED (Grid Format) -->
+      <div v-if="(activeTab === 'uploads' || activeTab === 'liked') && activeItems.length > 0" class="content-grid">
         <div
           v-for="item in activeItems"
           :key="item.id"
@@ -62,12 +63,33 @@
         </div>
       </div>
 
+      <!-- VIEW FOR POSTS (Vertical Feed Format) -->
+      <div v-else-if="activeTab === 'posts' && textPosts.length > 0" class="posts-feed">
+        <div
+          v-for="post in textPosts"
+          :key="post.id"
+          class="post-card"
+          @click="openItem(post)"
+        >
+          <div class="post-header">
+            <div class="user-avatar-small"></div>
+            <span class="post-author">{{ user?.name }}</span>
+          </div>
+          <p class="post-text">{{ post.caption || post.title }}</p>
+          <div class="post-footer">
+            <span class="post-stat">❤️ {{ post.likesCount || 0 }}</span>
+            <span class="post-stat">💬 {{ (post.comments || []).length }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMPTY STATE -->
       <p v-else class="empty-state">{{ emptyMessage }}</p>
     </section>
 
     <!-- Floating upload button -->
     <button
-      v-if="isArtistOrProducer && activeTab === 'uploads'"
+      v-if="isArtistOrProducer && (activeTab === 'uploads' || activeTab === 'posts')"
       class="upload-fab"
       @click="showUploadModal = true"
       aria-label="Upload"
@@ -75,27 +97,55 @@
       +
     </button>
 
-    <!-- Track/Liked Item Card Modal (With Audio Player) -->
+    <!-- Detail Modal (With Audio Player/Interactions) -->
     <div v-if="showDetailModal" class="modal-overlay" @click.self="showDetailModal = false">
       <div class="modal-card detail-card">
-        <div class="modal-cover">
+        <div v-if="selectedItem?.type !== 'text'" class="modal-cover">
           <img v-if="selectedItem?.image" :src="selectedItem.image" class="modal-cover-img" />
           <div v-else class="modal-cover-placeholder">▶</div>
         </div>
 
-        <h3>{{ selectedItem?.title }}</h3>
-        <p v-if="selectedItem?.artist" class="modal-subtitle">{{ selectedItem.artist }}</p>
+        <h3 v-if="selectedItem?.type !== 'text'">{{ selectedItem?.title }}</h3>
+        <p v-if="selectedItem?.artist && selectedItem?.type !== 'text'" class="modal-subtitle">{{ selectedItem.artist }}</p>
+        <p v-if="selectedItem?.caption && selectedItem?.type === 'text'" class="post-modal-text">"{{ selectedItem.caption }}"</p>
 
-        <!-- Player Controls -->
-        <div class="player-controls">
-          <button class="play-btn" @click="togglePlay">
+        <!-- Player Controls & Likes (Hidden for text posts) -->
+        <div class="interaction-bar">
+          <button v-if="selectedItem?.type !== 'text' && selectedItem?.audioUrl" class="play-btn" @click="togglePlay">
             {{ isPlaying ? '⏸ Pause' : '▶ Play Track' }}
+          </button>
+          <span v-else class="text-post-badge">💬 Text Update</span>
+          
+          <button class="like-btn" @click="toggleLike(selectedItem.id)">
+            ❤️ {{ selectedItem?.likesCount || 0 }}
           </button>
         </div>
 
+        <!-- Comments Section -->
+        <div class="comments-section">
+          <h4>Comments</h4>
+          <div class="comments-list">
+            <div v-for="comment in selectedItem?.comments || []" :key="comment.id" class="comment-item">
+              <span class="comment-text">{{ comment.text }}</span>
+              <span class="comment-time">{{ comment.createdAt }}</span>
+            </div>
+            <p v-if="!selectedItem?.comments || selectedItem.comments.length === 0" class="no-comments">No comments yet.</p>
+          </div>
+          
+          <div class="comment-input-row">
+            <input 
+              v-model="newCommentText" 
+              type="text" 
+              placeholder="Add a comment..." 
+              @keyup.enter="submitComment(selectedItem.id)"
+            />
+            <button @click="submitComment(selectedItem.id)">Send</button>
+          </div>
+        </div>
+
         <div class="modal-actions">
-          <button class="form-submit-btn" @click="navigateToArtist">
-            View Artist Profile
+          <button class="btn-delete" @click="deletePost(selectedItem.id)">
+            Delete
           </button>
           <button type="button" class="close-btn-secondary" @click="showDetailModal = false">
             Close
@@ -127,46 +177,23 @@
       </div>
     </div>
 
-    <!-- Upload Track Modal -->
-    <div v-if="showUploadModal" class="modal-overlay" @click.self="showUploadModal = false">
-      <div class="modal-card">
-        <h3>Upload Track</h3>
-        <form class="upload-form" @submit.prevent="submitUpload">
-          <label class="form-field">
-            <span>Title</span>
-            <input v-model="uploadForm.title" type="text" required />
-          </label>
-          <label class="form-field">
-            <span>File</span>
-            <input type="file" accept="audio/*,image/*" @change="handleFileSelect" required />
-          </label>
-          <p v-if="uploadForm.file" class="file-selected">Selected: {{ uploadForm.file.name }}</p>
-          <div class="modal-actions">
-            <button type="button" class="close-btn-secondary" @click="showUploadModal = false">Cancel</button>
-            <button type="submit" class="form-submit-btn">Upload</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Edit Profile Modal Shared Component -->
+    <!-- Shared Modals -->
     <EditProfileModal v-model="showEditModal" />
+    <CreatePostModal v-model="showUploadModal" @post-created="handlePostCreated" />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import EditProfileModal from '@/components/common/EditProfileModal.vue'
+import CreatePostModal from '@/components/common/CreatePostModal.vue'
 
 const store = useStore()
 const router = useRouter()
 
-// Modal states
 const showEditModal = ref(false)
-
-// Safe access to store state & getters
 const user = computed(() => store?.state?.auth?.user ?? null)
 
 const isArtistOrProducer = computed(() => {
@@ -187,12 +214,17 @@ const roleLabel = computed(() => {
 
 const tabs = [
   { key: 'uploads', label: 'Uploads' },
+  { key: 'posts', label: 'Posts' },
   { key: 'reposts', label: 'Reposts' },
   { key: 'liked', label: 'Liked' },
 ]
 const activeTab = ref('uploads')
 
-const uploads = ref([])
+// Split all user submissions into Audio/Media Uploads vs. Text Posts
+const allUserUploads = computed(() => store.getters['auth/userUploads'] ?? [])
+
+const uploads = computed(() => allUserUploads.value.filter(item => item.type !== 'text'))
+const textPosts = computed(() => allUserUploads.value.filter(item => item.type === 'text'))
 const reposts = ref([])
 
 const liked = computed(() => {
@@ -213,13 +245,14 @@ const liked = computed(() => {
 
 const activeItems = computed(() => {
   if (activeTab.value === 'uploads') return uploads.value
-  if (activeTab.value === 'reposts') return reposts.value
-  return liked.value
+  if (activeTab.value === 'liked') return liked.value
+  return []
 })
 
 const emptyMessage = computed(() => {
   const messages = {
-    uploads: 'No uploads yet.',
+    uploads: 'No music uploads yet.',
+    posts: 'No text posts yet.',
     reposts: 'No reposts yet.',
     liked: 'No liked items yet.',
   }
@@ -252,48 +285,47 @@ function goToArtist(personId) {
 const showDetailModal = ref(false)
 const selectedItem = ref(null)
 const isPlaying = ref(false)
+const newCommentText = ref('')
 
 function openItem(item) {
   selectedItem.value = item
   isPlaying.value = false
+  newCommentText.value = ''
   showDetailModal.value = true
 }
 
 function togglePlay() {
   isPlaying.value = !isPlaying.value
-  if (store) {
+  if (store && selectedItem.value) {
     store.dispatch('player/playTrack', selectedItem.value)
   }
 }
 
-function navigateToArtist() {
-  if (!selectedItem.value) return
-  showDetailModal.value = false
-  router.push(`/artists/${selectedItem.value.id}`)
+function toggleLike(postId) {
+  store.dispatch('auth/togglePostLike', postId)
 }
 
-// --- Upload Modal ---
-const showUploadModal = ref(false)
-const uploadForm = reactive({
-  title: '',
-  file: null,
-})
-
-function handleFileSelect(event) {
-  uploadForm.file = event.target.files[0] ?? null
-}
-
-function submitUpload() {
-  uploads.value.push({
-    id: `local-${Date.now()}`,
-    title: uploadForm.title,
-    file: uploadForm.file,
-    type: 'upload',
+function submitComment(postId) {
+  if (!newCommentText.value.trim()) return
+  store.dispatch('auth/addPostComment', {
+    postId,
+    text: newCommentText.value.trim()
   })
+  newCommentText.value = ''
+}
 
-  uploadForm.title = ''
-  uploadForm.file = null
-  showUploadModal.value = false
+function deletePost(postId) {
+  if (confirm('Are you sure you want to delete this item?')) {
+    store.dispatch('auth/deleteUpload', postId)
+    showDetailModal.value = false
+  }
+}
+
+// --- Create Post Handler ---
+const showUploadModal = ref(false)
+
+function handlePostCreated(postData) {
+  store.dispatch('auth/createPost', postData)
 }
 </script>
 
@@ -452,6 +484,67 @@ function submitUpload() {
   margin: 0.2rem 0 0;
 }
 
+/* Posts Feed Styles */
+.posts-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.post-card {
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.post-card:hover {
+  background: #f5f5f5;
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.user-avatar-small {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ccc;
+}
+
+.post-author {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.post-text {
+  font-size: 0.9rem;
+  color: #333;
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+}
+
+.post-footer {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.post-modal-text {
+  font-size: 0.95rem;
+  font-style: italic;
+  color: #333;
+  margin: 0 0 1rem;
+  line-height: 1.4;
+}
+
 .empty-state {
   opacity: 0.6;
   font-size: 0.85rem;
@@ -492,7 +585,7 @@ function submitUpload() {
   padding: 1.5rem;
   border-radius: 8px;
   width: 90%;
-  max-width: 360px;
+  max-width: 380px;
   text-align: center;
 }
 
@@ -527,11 +620,15 @@ function submitUpload() {
 .modal-subtitle {
   font-size: 0.85rem;
   color: #666;
-  margin: 0 0 1rem;
+  margin: 0 0 0.5rem;
 }
 
-.player-controls {
+.interaction-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1.25rem;
+  gap: 0.5rem;
 }
 
 .play-btn {
@@ -542,21 +639,92 @@ function submitUpload() {
   border-radius: 20px;
   font-weight: 600;
   cursor: pointer;
+  flex: 1;
 }
 
-.form-field {
+.text-post-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  background: #f0f2f5;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+}
+
+.like-btn {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 0.5rem 0.75rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.comments-section {
+  text-align: left;
+  border-top: 1px solid #eee;
+  padding-top: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.comments-section h4 {
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+  color: #444;
+}
+
+.comments-list {
+  max-height: 100px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  margin-bottom: 1rem;
-  font-size: 0.85rem;
-  text-align: left;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
 }
 
-.form-field input {
+.comment-item {
+  font-size: 0.75rem;
+  background: #f9f9f9;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comment-time {
+  opacity: 0.5;
+  font-size: 0.65rem;
+  margin-left: 0.5rem;
+}
+
+.no-comments {
+  font-size: 0.75rem;
+  opacity: 0.5;
+  margin: 0;
+}
+
+.comment-input-row {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.comment-input-row input {
+  flex: 1;
+  padding: 0.4rem;
+  font-size: 0.75rem;
   border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.comment-input-row button {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .modal-actions {
@@ -566,13 +734,14 @@ function submitUpload() {
   margin-top: 1rem;
 }
 
-.form-submit-btn {
-  background: #333;
+.btn-delete {
+  background: #ff4d4d;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 0.85rem;
 }
 
 .close-btn-secondary {
