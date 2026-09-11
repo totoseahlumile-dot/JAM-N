@@ -15,10 +15,6 @@
 </template>
 
 <script setup>
-// Reusable modal shell - used for Upload, Edit Profile, and card detail popups.
-// Controlled from the parent via v-model, e.g:
-//   <BaseModal v-model="showUploadModal" title="Upload beat">...</BaseModal>
-
 defineProps({
   modelValue: { type: Boolean, required: true },
   title: { type: String, default: '' },

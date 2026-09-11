@@ -40,6 +40,12 @@ const router = createRouter({
       component: () => import('../views/AccountView.vue')
     },
     {
+      path: '/artists/:id',
+      name: 'public-profile',
+      component: () => import('../views/PublicProfileView.vue'),
+      props: true
+    },
+    {
       path: '/settings',
       name: 'settings',
       component: () => import('../views/SettingsView.vue')

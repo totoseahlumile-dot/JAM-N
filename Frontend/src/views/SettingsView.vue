@@ -5,37 +5,19 @@
       <p class="subtitle">Manage your account preferences and music profile settings.</p>
     </header>
 
-    <!-- Account & Profile Section -->
+    <!-- Account & Profile Section - now just a summary + trigger for the
+         shared EditProfileModal, instead of its own separate form, so
+         there's only one place that actually edits profile data. -->
     <section class="settings-card">
       <h2 class="card-title">Account &amp; Profile</h2>
 
       <div class="settings-group">
-        <div class="field-row">
+        <div class="field-row summary-row">
           <div class="field-info">
-            <label>Display Name</label>
-            <span class="field-desc">Visible on your public profile and track uploads.</span>
+            <label>{{ user?.name ?? 'Guest' }}</label>
+            <span class="field-desc">{{ user?.email ?? '' }}</span>
           </div>
-          <input v-model="profileForm.name" type="text" class="text-input" />
-        </div>
-
-        <div class="field-row">
-          <div class="field-info">
-            <label>Email Address</label>
-            <span class="field-desc">Used for notifications and security alerts.</span>
-          </div>
-          <input v-model="profileForm.email" type="email" class="text-input" />
-        </div>
-
-        <div class="field-row">
-          <div class="field-info">
-            <label>Bio</label>
-            <span class="field-desc">Brief description for your creator bio.</span>
-          </div>
-          <textarea v-model="profileForm.bio" rows="2" class="text-input textarea"></textarea>
-        </div>
-
-        <div class="action-row">
-          <button class="save-btn" @click="saveProfile">Save Changes</button>
+          <button class="edit-btn" @click="showEditModal = true">Edit</button>
         </div>
       </div>
     </section>
@@ -124,13 +106,17 @@
         <button class="logout-btn" @click="handleLogout">Log Out</button>
       </div>
     </section>
+
+    <!-- Edit profile modal - shared component, also used from AccountView -->
+    <EditProfileModal v-model="showEditModal" />
   </div>
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
+import EditProfileModal from '@/components/common/EditProfileModal.vue'
 
 const store = useStore()
 const router = useRouter()
@@ -138,11 +124,9 @@ const router = useRouter()
 const user = computed(() => store.state.auth?.user)
 const isArtistOrProducer = computed(() => store.getters['auth/isArtistOrProducer'])
 
-const profileForm = reactive({
-  name: user.value?.name ?? '',
-  email: user.value?.email ?? '',
-  bio: user.value?.bio ?? '',
-})
+// Profile editing now happens entirely inside EditProfileModal - just
+// need to toggle it open from here.
+const showEditModal = ref(false)
 
 const creatorSettings = reactive({
   customRequests: true,
@@ -158,16 +142,6 @@ const notificationSettings = reactive({
   emailAlerts: true,
   activityAlerts: true,
 })
-
-function saveProfile() {
-  store.commit('auth/SET_USER', {
-    ...user.value,
-    name: profileForm.name,
-    email: profileForm.email,
-    bio: profileForm.bio,
-  })
-  alert('Settings saved successfully!')
-}
 
 function handleLogout() {
   store.dispatch('auth/logout')
@@ -232,8 +206,9 @@ function handleLogout() {
   gap: 1rem;
 }
 
-.field-row {
-  flex-direction: column;
+.summary-row {
+  flex-direction: row;
+  align-items: center;
 }
 
 .field-info {
@@ -253,25 +228,19 @@ function handleLogout() {
   color: #777;
 }
 
-.text-input {
-  width: 100%;
-  border: 1px solid #ddd;
+.edit-btn {
+  border: 1px solid #ccc;
+  background: transparent;
+  padding: 0.45rem 1rem;
   border-radius: 8px;
-  padding: 0.6rem 0.75rem;
-  font-size: 0.85rem;
-  outline: none;
-  background: #fafafa;
-  box-sizing: border-box;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.text-input:focus {
-  border-color: #5b5370;
-  background: #fff;
-}
-
-.textarea {
-  resize: vertical;
-  font-family: inherit;
+.edit-btn:hover {
+  border-color: #999;
 }
 
 .toggle-checkbox {
@@ -295,27 +264,6 @@ function handleLogout() {
 .chevron {
   opacity: 0.4;
   font-size: 1.1rem;
-}
-
-.action-row {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 0.5rem;
-}
-
-.save-btn {
-  background: #333;
-  color: #fff;
-  border: none;
-  padding: 0.55rem 1.25rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.save-btn:hover {
-  background: #111;
 }
 
 .danger-card {
