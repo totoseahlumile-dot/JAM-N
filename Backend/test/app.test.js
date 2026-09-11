@@ -101,3 +101,19 @@ test("listener tokens cannot access artist write operations", { skip: !env.jwtSe
     assert.equal(body.error.code, "FORBIDDEN");
   });
 });
+
+test("refresh requires a refresh-token cookie or body token", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/auth/refresh`, { method: "POST" });
+    assert.equal(response.status, 401);
+    const body = await response.json();
+    assert.equal(body.error.code, "REFRESH_TOKEN_REQUIRED");
+  });
+});
+
+test("logout is idempotent when no refresh token is present", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/auth/logout`, { method: "POST" });
+    assert.equal(response.status, 204);
+  });
+});

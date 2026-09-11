@@ -19,7 +19,8 @@ const env = Object.freeze({
   port: readNumber("PORT", 3000),
   frontendOrigin: process.env.FRONTEND_ORIGIN || "http://localhost:5500",
   jwtSecret: process.env.JWT_SECRET,
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || "1h",
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || "15m",
+  refreshTokenDays: readNumber("REFRESH_TOKEN_DAYS", 30),
   database: {
     host: process.env.DB_HOST || "localhost",
     port: readNumber("DB_PORT", 3306),

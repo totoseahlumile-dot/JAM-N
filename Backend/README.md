@@ -16,7 +16,14 @@ Use `GET /api/health/database` to verify the configured MySQL connection.
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/refresh` rotates the HttpOnly refresh-token cookie
+- `POST /api/auth/logout` revokes the current refresh token
+- `POST /api/auth/logout-all` revokes every session for the authenticated user
 - `GET /api/auth/me` with an `Authorization: Bearer <token>` header
+
+Access tokens expire after 15 minutes by default. Refresh tokens expire after
+30 days, are stored as SHA-256 hashes, and rotate on every refresh. Reusing an
+old rotated token revokes all refresh sessions for that account.
 
 ## Catalog endpoints
 
