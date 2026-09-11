@@ -9,6 +9,17 @@ Node.js, Express, and MySQL REST API.
 3. Run the root `database.sql` file in MySQL to create the schema and seed data.
 4. Start the API with `npm run dev`.
 
+## Testing
+
+- `npm test` runs fast API tests without requiring database records.
+- `npm run test:integration` recreates an isolated `jam_n_test` database, runs
+  authentication, ownership, catalog, and social flows, then deletes it.
+- `npm run test:all` runs both suites.
+
+The integration command intentionally refuses to use a database name without
+the `_test` suffix. It uses the MySQL server credentials from `.env` but never
+reads from or writes to the configured development database.
+
 The basic health endpoint is `GET http://localhost:3000/api/health`.
 Use `GET /api/health/database` to verify the configured MySQL connection.
 
