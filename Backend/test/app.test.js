@@ -51,3 +51,21 @@ test("protected endpoints require a Bearer token", async () => {
     assert.equal(body.error.code, "AUTHENTICATION_REQUIRED");
   });
 });
+
+test("catalog endpoints reject invalid artist identifiers", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/artists/not-a-number`);
+    assert.equal(response.status, 400);
+    const body = await response.json();
+    assert.equal(body.error.code, "INVALID_QUERY");
+  });
+});
+
+test("catalog endpoints enforce the maximum page size", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/artists?limit=101`);
+    assert.equal(response.status, 400);
+    const body = await response.json();
+    assert.equal(body.error.code, "INVALID_QUERY");
+  });
+});
