@@ -12,6 +12,13 @@ const state = () => ({
         return []
       }
     })(), // Saved uploads with safe JSON fallback parsing
+    playlists: (() => {
+      try {
+        return JSON.parse(localStorage.getItem('user_playlists')) || []
+      } catch (e) {
+        return []
+      }
+    })(), // Saved playlists with safe JSON fallback parsing
   },
   isAuthenticated: true,
   likedTrackIds: [], // Stores IDs of tracks liked by the user
@@ -35,6 +42,7 @@ const getters = {
   },
 
   userUploads: (state) => state.user?.uploads ?? [],
+  userPlaylists: (state) => state.user?.playlists ?? [],
 }
 
 const mutations = {
@@ -85,6 +93,21 @@ const mutations = {
     localStorage.setItem('user_uploads', JSON.stringify(state.user.uploads))
   },
 
+  CREATE_PLAYLIST(state, playlistName) {
+    if (!state.user.playlists) {
+      state.user.playlists = []
+    }
+    const newPlaylist = {
+      id: `playlist-${Date.now()}`,
+      title: playlistName,
+      trackCount: 0,
+      cover: null,
+      tracks: []
+    }
+    state.user.playlists.unshift(newPlaylist)
+    localStorage.setItem('user_playlists', JSON.stringify(state.user.playlists))
+  },
+
   TOGGLE_POST_LIKE(state, postId) {
     const post = state.user?.uploads?.find(p => p.id === postId)
     if (post) {
@@ -111,10 +134,13 @@ const mutations = {
 const actions = {
   login({ commit }, credentials) {
     let savedUploads = []
+    let savedPlaylists = []
     try {
       savedUploads = JSON.parse(localStorage.getItem('user_uploads')) || []
+      savedPlaylists = JSON.parse(localStorage.getItem('user_playlists')) || []
     } catch (e) {
       savedUploads = []
+      savedPlaylists = []
     }
 
     commit('SET_USER', {
@@ -124,6 +150,7 @@ const actions = {
       roles: ['listener'],
       followingList: [],
       uploads: savedUploads,
+      playlists: savedPlaylists,
     })
   },
 
@@ -152,6 +179,10 @@ const actions = {
 
   deleteUpload({ commit }, postId) {
     commit('DELETE_UPLOAD', postId)
+  },
+
+  createPlaylist({ commit }, playlistName) {
+    commit('CREATE_PLAYLIST', playlistName)
   },
 
   togglePostLike({ commit }, postId) {
