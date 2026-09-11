@@ -124,4 +124,71 @@ const listTracks = async ({ artistId, albumId, limit, offset }) => {
   return rows;
 };
 
-export { findArtistById, listAlbums, listArtists, listEvents, listGenres, listTracks };
+const insert = async (table, fields) => {
+  const columns = Object.keys(fields);
+  const [result] = await pool.execute(
+    `INSERT INTO ${table} (${columns.join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`,
+    Object.values(fields)
+  );
+  return result.insertId;
+};
+
+const update = async (table, id, fields) => {
+  const columns = Object.keys(fields);
+  if (columns.length === 0) return false;
+  const [result] = await pool.execute(
+    `UPDATE ${table} SET ${columns.map((column) => `${column} = ?`).join(", ")} WHERE id = ?`,
+    [...Object.values(fields), id]
+  );
+  return result.affectedRows > 0;
+};
+
+const remove = async (table, id) => {
+  const [result] = await pool.execute(`DELETE FROM ${table} WHERE id = ?`, [id]);
+  return result.affectedRows > 0;
+};
+
+const findOne = async (table, columns, id) => {
+  const [rows] = await pool.execute(`SELECT ${columns} FROM ${table} WHERE id = ? LIMIT 1`, [id]);
+  return rows[0] || null;
+};
+
+const createArtist = (fields) => insert("artist_profiles", fields);
+const updateArtist = (id, fields) => update("artist_profiles", id, fields);
+const deleteArtist = (id) => remove("artist_profiles", id);
+const createGenre = (fields) => insert("genres", fields);
+const updateGenre = (id, fields) => update("genres", id, fields);
+const deleteGenre = (id) => remove("genres", id);
+const createEvent = (fields) => insert("events", fields);
+const updateEvent = (id, fields) => update("events", id, fields);
+const deleteEvent = (id) => remove("events", id);
+const createAlbum = (fields) => insert("albums", fields);
+const updateAlbum = (id, fields) => update("albums", id, fields);
+const deleteAlbum = (id) => remove("albums", id);
+const createTrack = (fields) => insert("tracks", fields);
+const updateTrack = (id, fields) => update("tracks", id, fields);
+const deleteTrack = (id) => remove("tracks", id);
+const findGenreById = (id) => findOne("genres", "id, name", id);
+const findEventById = (id) => findOne(
+  "events",
+  "id, name, location, starts_at AS startsAt, ends_at AS endsAt, price_description AS priceDescription, ticket_url AS ticketUrl",
+  id
+);
+const findAlbumById = (id) => findOne(
+  "albums",
+  "id, artist_id AS artistId, title, release_date AS releaseDate, cover_url AS coverUrl",
+  id
+);
+const findTrackById = (id) => findOne(
+  "tracks",
+  "id, artist_id AS artistId, album_id AS albumId, title, audio_url AS audioUrl, release_date AS releaseDate, stream_count AS streamCount",
+  id
+);
+
+export {
+  createAlbum, createArtist, createEvent, createGenre, createTrack,
+  deleteAlbum, deleteArtist, deleteEvent, deleteGenre, deleteTrack,
+  findAlbumById, findArtistById, findEventById, findGenreById, findTrackById,
+  listAlbums, listArtists, listEvents, listGenres, listTracks,
+  updateAlbum, updateArtist, updateEvent, updateGenre, updateTrack
+};

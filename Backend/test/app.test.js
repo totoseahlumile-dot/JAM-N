@@ -69,3 +69,16 @@ test("catalog endpoints enforce the maximum page size", async () => {
     assert.equal(body.error.code, "INVALID_QUERY");
   });
 });
+
+test("catalog write endpoints require authentication", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/artists`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ stageName: "Test Artist" })
+    });
+    assert.equal(response.status, 401);
+    const body = await response.json();
+    assert.equal(body.error.code, "AUTHENTICATION_REQUIRED");
+  });
+});
