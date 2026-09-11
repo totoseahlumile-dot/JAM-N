@@ -11,6 +11,7 @@ const parsePositiveInteger = (value, name, { optional = false, max } = {}) => {
 };
 
 const pagination = (query) => ({
+  // Cap result sets to protect the database and API from unbounded list queries.
   limit: query.limit === undefined ? 50 : parsePositiveInteger(query.limit, "limit", { max: 100 }),
   offset: query.offset === undefined ? 0 : Math.max(0, Number.parseInt(query.offset, 10) || 0)
 });
@@ -44,6 +45,8 @@ const optionalId = (body, name) => body[name] === null
     : parsePositiveInteger(body[name], name);
 
 const runMutation = async (next, operation) => {
+  // Translate MySQL constraint errors into stable API errors instead of leaking
+  // database implementation details through the global 500 response.
   try {
     return await operation();
   } catch (error) {
@@ -57,8 +60,12 @@ const runMutation = async (next, operation) => {
   }
 };
 
+// `undefined` means the client omitted a field; `null` is retained because it
+// intentionally clears a nullable database column.
 const compact = (object) => Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined));
 
+// These mappers are the single allowlists for writable columns. They also
+// translate the camelCase API contract into the database's snake_case names.
 const artistFields = (body, creating = false) => compact({
   user_id: optionalId(body, "userId"),
   stage_name: stringField(body, "stageName", { required: creating, max: 100 }),

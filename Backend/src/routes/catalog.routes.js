@@ -16,6 +16,8 @@ router.get("/albums/:id", catalogController.getAlbum);
 router.get("/tracks", catalogController.getTracks);
 router.get("/tracks/:id", catalogController.getTrack);
 
+// Reads above are public. Every write below first verifies the JWT and then
+// enforces the roles allowed to change that category of catalog data.
 const musicEditors = [authenticate, authorizeRoles("artist", "admin")];
 const admins = [authenticate, authorizeRoles("admin")];
 

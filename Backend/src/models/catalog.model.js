@@ -4,6 +4,8 @@ const listArtists = async ({ search, genre, limit, offset }) => {
   const filters = [];
   const values = [];
 
+  // Only predefined SQL fragments are composed here. User input is always
+  // placed in `values`, so search/filter values cannot become executable SQL.
   if (search) {
     filters.push("ap.stage_name LIKE ?");
     values.push(`%${search}%`);
@@ -24,6 +26,8 @@ const listArtists = async ({ search, genre, limit, offset }) => {
             ap.spotify_url AS spotifyUrl, ap.youtube_url AS youtubeUrl,
             ap.apple_music_url AS appleMusicUrl, ap.is_verified AS isVerified,
             u.bio, u.avatar_url AS avatarUrl,
+            -- Flatten the many-to-many genres into one value per artist. The
+            -- controller converts this delimiter-separated value into an array.
             GROUP_CONCAT(DISTINCT g.name ORDER BY ag.is_primary DESC, g.name SEPARATOR '|') AS genreNames
      FROM artist_profiles ap
      LEFT JOIN users u ON u.id = ap.user_id
@@ -39,6 +43,8 @@ const listArtists = async ({ search, genre, limit, offset }) => {
 };
 
 const findArtistById = async (id) => {
+  // Fetching the child collections separately avoids a genres × albums × tracks
+  // Cartesian product, which would duplicate records in a single large join.
   const [artists] = await pool.execute(
     `SELECT ap.id, ap.stage_name AS stageName, ap.member_count AS memberCount,
             ap.location, ap.booking_email AS bookingEmail,
@@ -125,6 +131,8 @@ const listTracks = async ({ artistId, albumId, limit, offset }) => {
 };
 
 const insert = async (table, fields) => {
+  // Callers provide table names and field maps from fixed code paths, never from
+  // request input. Only field values are passed through prepared placeholders.
   const columns = Object.keys(fields);
   const [result] = await pool.execute(
     `INSERT INTO ${table} (${columns.join(", ")}) VALUES (${columns.map(() => "?").join(", ")})`,
@@ -136,6 +144,8 @@ const insert = async (table, fields) => {
 const update = async (table, id, fields) => {
   const columns = Object.keys(fields);
   if (columns.length === 0) return false;
+  // Build only the SET clauses that were supplied, enabling PUT requests to
+  // update selected fields without overwriting omitted nullable columns.
   const [result] = await pool.execute(
     `UPDATE ${table} SET ${columns.map((column) => `${column} = ?`).join(", ")} WHERE id = ?`,
     [...Object.values(fields), id]
