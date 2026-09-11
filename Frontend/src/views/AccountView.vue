@@ -32,7 +32,7 @@
       </div>
     </header>
 
-    <!-- Tabs: Uploads, Posts, Reposts, Liked -->
+    <!-- Tabs: Uploads, Posts, Reposts, Liked, Following -->
     <section class="profile-content">
       <div class="content-tabs">
         <button
@@ -83,8 +83,31 @@
         </div>
       </div>
 
-      <!-- EMPTY STATE -->
-      <p v-else class="empty-state">{{ emptyMessage }}</p>
+      <!-- VIEW FOR FOLLOWING TAB -->
+      <div v-else-if="activeTab === 'following'" class="following-section">
+        <div v-if="following.length > 0" class="following-grid">
+          <div 
+            v-for="artist in following" 
+            :key="artist.id" 
+            class="followed-artist-card"
+            @click="goToArtist(artist.id)"
+          >
+            <div class="artist-avatar-sm">
+              <img v-if="artist.image" :src="artist.image" :alt="artist.name" />
+              <span v-else>🎵</span>
+            </div>
+            <div class="followed-info">
+              <h4>{{ artist.name }}</h4>
+              <p>@{{ artist.handle || artist.name.toLowerCase().replace(/\s+/g, '') }}</p>
+            </div>
+            <button class="unfollow-action-btn" @click.stop="unfollowArtist(artist)">Following</button>
+          </div>
+        </div>
+        <p v-else class="empty-state">You aren't following any artists yet. Discover independent talent in the Artists tab!</p>
+      </div>
+
+      <!-- EMPTY STATE (For general tabs) -->
+      <p v-else-if="activeTab !== 'following'" class="empty-state">{{ emptyMessage }}</p>
     </section>
 
     <!-- Floating upload button -->
@@ -217,6 +240,7 @@ const tabs = [
   { key: 'posts', label: 'Posts' },
   { key: 'reposts', label: 'Reposts' },
   { key: 'liked', label: 'Liked' },
+  { key: 'following', label: 'Following' },
 ]
 const activeTab = ref('uploads')
 
@@ -255,6 +279,7 @@ const emptyMessage = computed(() => {
     posts: 'No text posts yet.',
     reposts: 'No reposts yet.',
     liked: 'No liked items yet.',
+    following: 'No followed artists yet.',
   }
   return messages[activeTab.value]
 })
@@ -279,6 +304,10 @@ function openUserList(type) {
 function goToArtist(personId) {
   showUserListModal.value = false
   router.push(`/artists/${personId}`)
+}
+
+function unfollowArtist(artist) {
+  store.commit('auth/TOGGLE_FOLLOW', artist)
 }
 
 // --- Detail Card & Playback Handler ---
@@ -484,6 +513,88 @@ function handlePostCreated(postData) {
   margin: 0.2rem 0 0;
 }
 
+/* Following Tab Styles */
+.following-section {
+  margin-top: 1.5rem;
+}
+
+.following-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.followed-artist-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.followed-artist-card:hover {
+  background: #f0f2f5;
+}
+
+.artist-avatar-sm {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #e4e6eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin-right: 1rem;
+}
+
+.artist-avatar-sm img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.followed-info {
+  flex: 1;
+  text-align: left;
+}
+
+.followed-info h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.1rem;
+  color: #222;
+}
+
+.followed-info p {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 0;
+}
+
+.unfollow-action-btn {
+  background: #f0f2f5;
+  color: #333;
+  border: 1px solid #ccc;
+  padding: 0.35rem 0.9rem;
+  border-radius: 15px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.unfollow-action-btn:hover {
+  background: #ffebee;
+  color: #c62828;
+  border-color: #ef9a9a;
+}
+
 /* Posts Feed Styles */
 .posts-feed {
   display: flex;
@@ -528,6 +639,7 @@ function handlePostCreated(postData) {
   color: #333;
   margin: 0 0 0.75rem;
   line-height: 1.4;
+  text-align: left;
 }
 
 .post-footer {

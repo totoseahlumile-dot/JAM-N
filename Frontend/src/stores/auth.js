@@ -1,5 +1,3 @@
-// Vuex module for auth state.
-
 const state = () => ({
   user: {
     id: 'usr_101',
@@ -7,7 +5,13 @@ const state = () => ({
     email: 'music@jamn.co.za',
     roles: ['listener', 'artist'], // dev default
     followingList: [], // Stores followed artist/user objects
-    uploads: JSON.parse(localStorage.getItem('user_uploads')) || [], // Saved uploads with persistence
+    uploads: (() => {
+      try {
+        return JSON.parse(localStorage.getItem('user_uploads')) || []
+      } catch (e) {
+        return []
+      }
+    })(), // Saved uploads with safe JSON fallback parsing
   },
   isAuthenticated: true,
   likedTrackIds: [], // Stores IDs of tracks liked by the user
@@ -106,13 +110,20 @@ const mutations = {
 
 const actions = {
   login({ commit }, credentials) {
+    let savedUploads = []
+    try {
+      savedUploads = JSON.parse(localStorage.getItem('user_uploads')) || []
+    } catch (e) {
+      savedUploads = []
+    }
+
     commit('SET_USER', {
       id: 'usr_102',
       name: credentials.email.split('@')[0],
       email: credentials.email,
       roles: ['listener'],
       followingList: [],
-      uploads: JSON.parse(localStorage.getItem('user_uploads')) || [],
+      uploads: savedUploads,
     })
   },
 
