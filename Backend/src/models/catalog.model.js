@@ -195,10 +195,35 @@ const findTrackById = (id) => findOne(
   id
 );
 
+const artistBelongsToUser = async (artistId, userId) => {
+  const [rows] = await pool.execute(
+    "SELECT 1 FROM artist_profiles WHERE id = ? AND user_id = ? LIMIT 1",
+    [artistId, userId]
+  );
+  return rows.length > 0;
+};
+
+const resourceBelongsToUser = async (resource, resourceId, userId) => {
+  // The table expression is selected from this fixed map, never from request
+  // input. Both albums and tracks inherit ownership through artist_profiles.
+  const tables = { album: "albums", track: "tracks" };
+  const table = tables[resource];
+  if (!table) return false;
+  const [rows] = await pool.execute(
+    `SELECT 1 FROM ${table} resource
+     JOIN artist_profiles artist ON artist.id = resource.artist_id
+     WHERE resource.id = ? AND artist.user_id = ? LIMIT 1`,
+    [resourceId, userId]
+  );
+  return rows.length > 0;
+};
+
 export {
+  artistBelongsToUser,
   createAlbum, createArtist, createEvent, createGenre, createTrack,
   deleteAlbum, deleteArtist, deleteEvent, deleteGenre, deleteTrack,
   findAlbumById, findArtistById, findEventById, findGenreById, findTrackById,
   listAlbums, listArtists, listEvents, listGenres, listTracks,
+  resourceBelongsToUser,
   updateAlbum, updateArtist, updateEvent, updateGenre, updateTrack
 };

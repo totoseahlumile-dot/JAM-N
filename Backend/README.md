@@ -28,3 +28,7 @@ List endpoints accept `limit` and `offset`; artists also accept `search` and
 Each catalog resource supports `POST /`, `PUT /:id`, and `DELETE /:id` with an
 `Authorization: Bearer <token>` header. Artist accounts and admins can manage
 artists, albums, and tracks. Only admins can manage genres and events.
+
+Artist ownership is derived from the JWT subject and `artist_profiles.user_id`.
+An artist cannot assign a profile to another user or change another artist's
+profile, albums, or tracks. Admin accounts may manage all catalog records.

@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import jwt from "jsonwebtoken";
 import app from "../src/app.js";
+import env from "../src/config/env.js";
 
 const withServer = async (run) => {
   const server = app.listen(0);
@@ -80,5 +82,22 @@ test("catalog write endpoints require authentication", async () => {
     assert.equal(response.status, 401);
     const body = await response.json();
     assert.equal(body.error.code, "AUTHENTICATION_REQUIRED");
+  });
+});
+
+test("listener tokens cannot access artist write operations", { skip: !env.jwtSecret }, async () => {
+  await withServer(async (baseUrl) => {
+    const token = jwt.sign({ role: "listener" }, env.jwtSecret, { subject: "1", expiresIn: "1m" });
+    const response = await fetch(`${baseUrl}/api/artists`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ stageName: "Forbidden Artist" })
+    });
+    assert.equal(response.status, 403);
+    const body = await response.json();
+    assert.equal(body.error.code, "FORBIDDEN");
   });
 });

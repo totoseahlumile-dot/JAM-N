@@ -2,6 +2,11 @@ import express from "express";
 import * as catalogController from "../controllers/catalog.controller.js";
 import authenticate from "../middleware/authenticate.js";
 import authorizeRoles from "../middleware/authorizeRoles.js";
+import {
+  authorizeArtistOwnership,
+  authorizeResourceOwnership,
+  bindNewArtistToUser
+} from "../middleware/authorizeCatalogOwnership.js";
 
 const router = express.Router();
 
@@ -21,9 +26,9 @@ router.get("/tracks/:id", catalogController.getTrack);
 const musicEditors = [authenticate, authorizeRoles("artist", "admin")];
 const admins = [authenticate, authorizeRoles("admin")];
 
-router.post("/artists", ...musicEditors, catalogController.createArtist);
-router.put("/artists/:id", ...musicEditors, catalogController.updateArtist);
-router.delete("/artists/:id", ...musicEditors, catalogController.deleteArtist);
+router.post("/artists", ...musicEditors, bindNewArtistToUser, catalogController.createArtist);
+router.put("/artists/:id", ...musicEditors, authorizeArtistOwnership(), catalogController.updateArtist);
+router.delete("/artists/:id", ...musicEditors, authorizeArtistOwnership(), catalogController.deleteArtist);
 
 router.post("/genres", ...admins, catalogController.createGenre);
 router.put("/genres/:id", ...admins, catalogController.updateGenre);
@@ -33,12 +38,22 @@ router.post("/events", ...admins, catalogController.createEvent);
 router.put("/events/:id", ...admins, catalogController.updateEvent);
 router.delete("/events/:id", ...admins, catalogController.deleteEvent);
 
-router.post("/albums", ...musicEditors, catalogController.createAlbum);
-router.put("/albums/:id", ...musicEditors, catalogController.updateAlbum);
-router.delete("/albums/:id", ...musicEditors, catalogController.deleteAlbum);
+router.post(
+  "/albums",
+  ...musicEditors,
+  authorizeArtistOwnership({ source: "body", key: "artistId" }),
+  catalogController.createAlbum
+);
+router.put("/albums/:id", ...musicEditors, authorizeResourceOwnership("album"), catalogController.updateAlbum);
+router.delete("/albums/:id", ...musicEditors, authorizeResourceOwnership("album"), catalogController.deleteAlbum);
 
-router.post("/tracks", ...musicEditors, catalogController.createTrack);
-router.put("/tracks/:id", ...musicEditors, catalogController.updateTrack);
-router.delete("/tracks/:id", ...musicEditors, catalogController.deleteTrack);
+router.post(
+  "/tracks",
+  ...musicEditors,
+  authorizeArtistOwnership({ source: "body", key: "artistId" }),
+  catalogController.createTrack
+);
+router.put("/tracks/:id", ...musicEditors, authorizeResourceOwnership("track"), catalogController.updateTrack);
+router.delete("/tracks/:id", ...musicEditors, authorizeResourceOwnership("track"), catalogController.deleteTrack);
 
 export default router;
