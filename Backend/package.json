@@ -21,6 +21,7 @@
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.14.5"
+    "mysql2": "^3.14.5",
+    "swagger-ui-express": "^5.0.1"
   }
 }

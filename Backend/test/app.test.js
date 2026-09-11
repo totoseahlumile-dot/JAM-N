@@ -139,3 +139,24 @@ test("social endpoints reject invalid identifiers before querying MySQL", async 
     assert.equal(body.error.code, "INVALID_QUERY");
   });
 });
+
+test("OpenAPI documentation exposes the implemented API routes", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/docs/openapi.json`);
+    assert.equal(response.status, 200);
+    const document = await response.json();
+    assert.equal(document.openapi, "3.1.0");
+    assert.ok(document.paths["/api/auth/refresh"].post);
+    assert.ok(document.paths["/api/artists/{id}"].put);
+    assert.ok(document.paths["/api/posts/{postId}/comments"].post);
+  });
+});
+
+test("Swagger UI is served from the documentation route", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/docs/`);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /text\/html/);
+    assert.match(await response.text(), /swagger-ui/);
+  });
+});

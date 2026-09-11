@@ -23,6 +23,9 @@ reads from or writes to the configured development database.
 The basic health endpoint is `GET http://localhost:3000/api/health`.
 Use `GET /api/health/database` to verify the configured MySQL connection.
 
+Interactive OpenAPI documentation is available at `GET /api/docs`. The raw
+OpenAPI 3.1 document is available at `GET /api/docs/openapi.json`.
+
 ## Authentication endpoints
 
 - `POST /api/auth/register`
