@@ -5,7 +5,9 @@
       <header class="library-header">
         <div class="header-top">
           <h1>Your Library</h1>
-          <button class="create-playlist-btn" @click="openCreateModal">+ New Playlist</button>
+          <button class="create-playlist-btn" @click="openCreateModal">
+            + New Playlist
+          </button>
         </div>
 
         <div class="library-tabs">
@@ -23,63 +25,123 @@
 
       <!-- Liked Songs -->
       <section v-if="activeTab === 'Songs'" class="library-section">
-        <h2>Liked Songs</h2>
+        <div class="section-header-row">
+          <h2>Liked Songs</h2>
+        </div>
+
         <div class="track-grid">
-          <div 
-            v-for="track in likedSongs" 
-            :key="track.id" 
-            class="track-card clickable"
-            @click="openSongModal(track)"
+          <div
+            v-for="track in likedSongs"
+            :key="track.id"
+            class="playlist-card-wrapper"
           >
-            <div class="track-cover-placeholder">
-              <img v-if="track.image" :src="track.image" :alt="track.title" class="track-cover-img" />
-              <span v-else class="play-indicator">▶</span>
+            <!-- Clicking the card directly plays the song -->
+            <div class="track-card clickable" @click="playSongDirectly(track)">
+              <div class="track-cover-placeholder">
+                <img
+                  v-if="track.image"
+                  :src="track.image"
+                  :alt="track.title"
+                  class="track-cover-img"
+                />
+                <span v-else class="play-indicator">▶</span>
+              </div>
+              <p class="track-title" @click.stop="goToTrackDetail(track)">
+                {{ track.title }}
+              </p>
+              <p class="track-artist" @click.stop="goToArtistByTrack(track)">
+                {{ track.artist }}
+              </p>
             </div>
-            <p class="track-title">{{ track.title }}</p>
-            <p class="track-artist">{{ track.artist }}</p>
+
+            <!-- 3-Dots More Options Button for Liked Songs -->
+            <button
+              class="options-dots-btn"
+              @click.stop="toggleLikedSongMenu(track.id, $event)"
+              title="Song Options"
+            >
+              ⋮
+            </button>
+
+            <!-- Liked Song Dropdown Menu -->
+            <div
+              v-if="activeLikedSongMenuId === track.id"
+              class="dropdown-menu"
+            >
+              <button @click="toggleLikeFromLibrary(track)">
+                {{
+                  isLiked(track.id)
+                    ? "Remove from Liked Songs"
+                    : "Save to Liked Songs"
+                }}
+              </button>
+              <button @click="openAddToPlaylistModal(track)">
+                Add to playlist
+              </button>
+            </div>
           </div>
         </div>
-        <p v-if="likedSongs.length === 0" class="empty-state">No liked songs yet.</p>
+        <p v-if="likedSongs.length === 0" class="empty-state">
+          No liked songs yet.
+        </p>
       </section>
 
       <!-- Playlists Section -->
       <section v-if="activeTab === 'Playlists'" class="library-section">
         <h2>Your Playlists</h2>
         <div v-if="playlists.length > 0" class="track-grid">
-          <div 
-            v-for="playlist in playlists" 
-            :key="playlist.id" 
+          <div
+            v-for="playlist in playlists"
+            :key="playlist.id"
             class="playlist-card-wrapper"
           >
             <!-- Clicking the main card opens the Playlist Detail Page View -->
-            <div class="track-card clickable" @click="openPlaylistDetail(playlist)">
+            <div
+              class="track-card clickable"
+              @click="openPlaylistDetail(playlist)"
+            >
               <div class="track-cover-placeholder playlist-placeholder">
                 <span>🎵</span>
               </div>
               <p class="track-title">{{ playlist.title }}</p>
-              <p class="track-artist">{{ (playlist.tracks || []).length }} songs</p>
+              <p class="track-artist">
+                {{ (playlist.tracks || []).length }} songs
+              </p>
             </div>
 
             <!-- 3-Dots More Options Button -->
-            <button class="options-dots-btn" @click.stop="toggleMenu(playlist.id, $event)" title="Playlist Options">⋮</button>
+            <button
+              class="options-dots-btn"
+              @click.stop="toggleMenu(playlist.id, $event)"
+              title="Playlist Options"
+            >
+              ⋮
+            </button>
 
             <!-- Dropdown Menu -->
             <div v-if="activeMenuId === playlist.id" class="dropdown-menu">
-              <button @click="startEditing(playlist)">✏️ Rename</button>
-              <button class="text-danger" @click="deletePlaylist(playlist)">🗑️ Delete</button>
+              <button @click="startEditing(playlist)">Rename</button>
+              <button @click="openAddSongsToPlaylistModal(playlist)">
+                Add songs
+              </button>
+              <button class="text-danger" @click="deletePlaylist(playlist)">
+                Delete
+              </button>
             </div>
           </div>
         </div>
-        <p v-else class="empty-state">No playlists yet. Click "+ New Playlist" above to create one!</p>
+        <p v-else class="empty-state">
+          No playlists yet. Click "+ New Playlist" above to create one!
+        </p>
       </section>
 
       <!-- Followed Artists -->
       <section v-if="activeTab === 'Artists'" class="library-section">
         <h2>Followed Artists</h2>
         <div class="artist-grid">
-          <div 
-            v-for="artist in followedArtists" 
-            :key="artist.id" 
+          <div
+            v-for="artist in followedArtists"
+            :key="artist.id"
             class="artist-card clickable"
             @click="goToArtist(artist.id)"
           >
@@ -87,31 +149,51 @@
             <p class="artist-name">{{ artist.name }}</p>
           </div>
         </div>
-        <p v-if="followedArtists.length === 0" class="empty-state">You aren't following any artists yet.</p>
+        <p v-if="followedArtists.length === 0" class="empty-state">
+          You aren't following any artists yet.
+        </p>
       </section>
     </div>
 
     <!-- ==================== VIEW 2: PLAYLIST DETAIL PAGE ==================== -->
     <div v-else class="playlist-detail-page">
-      <button class="back-btn" @click="selectedPlaylist = null">← Back to Library</button>
-      
+      <button class="back-btn" @click="selectedPlaylist = null">
+        ← Back to Library
+      </button>
+
       <div class="playlist-hero">
         <div class="playlist-hero-cover"><span>🎵</span></div>
         <div class="playlist-hero-info">
           <span class="playlist-tag">Playlist</span>
-          
+
           <!-- Inline Name / Edit Header -->
           <div v-if="!isEditingName" class="title-row">
             <h2>{{ selectedPlaylist.title }}</h2>
-            <button class="icon-btn" @click="isEditingName = true; editedPlaylistName = selectedPlaylist.title">✏️</button>
+            <button
+              class="text-action-btn"
+              @click="
+                isEditingName = true;
+                editedPlaylistName = selectedPlaylist.title;
+              "
+            >
+              Edit
+            </button>
           </div>
           <div v-else class="edit-title-row">
-            <input v-model="editedPlaylistName" class="inline-input" @keyup.enter="savePlaylistName" />
+            <input
+              v-model="editedPlaylistName"
+              class="inline-input"
+              @keyup.enter="savePlaylistName"
+            />
             <button class="btn-sm" @click="savePlaylistName">Save</button>
-            <button class="btn-sm-cancel" @click="isEditingName = false">Cancel</button>
+            <button class="btn-sm-cancel" @click="isEditingName = false">
+              Cancel
+            </button>
           </div>
 
-          <p class="playlist-meta">{{ (selectedPlaylist.tracks || []).length }} songs</p>
+          <p class="playlist-meta">
+            {{ (selectedPlaylist.tracks || []).length }} songs
+          </p>
         </div>
       </div>
 
@@ -123,44 +205,100 @@
           <span>Artist</span>
           <span></span>
         </div>
-        <div 
-          v-for="(song, index) in (selectedPlaylist.tracks || [])" 
-          :key="song.id" 
-          class="table-row"
+        <div
+          v-for="(song, index) in selectedPlaylist.tracks || []"
+          :key="song.id"
+          class="table-row playlist-track-row"
         >
           <span class="track-index">{{ index + 1 }}</span>
-          <span class="track-col-title" @click="playTrackFromPlaylist(song)">{{ song.title }}</span>
-          <span class="track-col-artist">{{ song.artist }}</span>
-          <button class="remove-btn" @click="removeTrackFromPlaylist(song.id)" title="Remove song">✕</button>
+          <span class="track-col-title" @click="playTrackFromPlaylist(song)">{{
+            song.title
+          }}</span>
+          <span class="track-col-artist" @click="goToArtistByTrack(song)">{{
+            song.artist
+          }}</span>
+
+          <!-- Song-level 3-Dots Menu Wrapper -->
+          <div class="song-menu-wrapper">
+            <button
+              class="options-dots-btn-inline"
+              @click.stop="toggleSongMenu(song.id, $event)"
+              title="Song Options"
+            >
+              ⋮
+            </button>
+
+            <!-- Song Dropdown Menu -->
+            <div
+              v-if="activeSongMenuId === song.id"
+              class="dropdown-menu song-dropdown"
+            >
+              <button @click="toggleLikeFromMenu(song)">
+                {{
+                  isLiked(song.id)
+                    ? "Remove from Liked Songs"
+                    : "Save to Liked Songs"
+                }}
+              </button>
+              <button @click="openAddToPlaylistModal(song)">
+                Add to playlist
+              </button>
+              <button
+                class="text-danger"
+                @click="removeTrackFromPlaylist(song.id)"
+              >
+                Remove from playlist
+              </button>
+            </div>
+          </div>
         </div>
-        <p v-if="!selectedPlaylist.tracks || selectedPlaylist.tracks.length === 0" class="empty-state">
-          This playlist is empty. Go to your Liked Songs, click a track, and add it here!
+
+        <p
+          v-if="
+            !selectedPlaylist.tracks || selectedPlaylist.tracks.length === 0
+          "
+          class="empty-state"
+        >
+          This playlist is empty. Go to your Liked Songs, click a track, and add
+          it here!
         </p>
       </div>
     </div>
 
     <!-- ==================== MODALS ==================== -->
     <!-- 1. Song Action / Add Modal -->
-    <div v-if="showSongModal" class="modal-overlay" @click.self="showSongModal = false">
+    <div
+      v-if="showSongModal"
+      class="modal-overlay"
+      @click.self="showSongModal = false"
+    >
       <div class="modal-card">
         <div class="modal-cover">
-          <img v-if="selectedSong?.image" :src="selectedSong.image" class="modal-cover-img" />
+          <img
+            v-if="selectedSong?.image"
+            :src="selectedSong.image"
+            class="modal-cover-img"
+          />
           <span v-else class="modal-cover-icon">🎵</span>
         </div>
         <h3>{{ selectedSong?.title }}</h3>
         <p class="modal-subtitle">{{ selectedSong?.artist }}</p>
 
-        <div class="modal-buttons-row">
-          <button class="btn-primary" @click="playSelectedTrack">▶ Play Song</button>
-        </div>
-
         <div class="playlist-add-section">
           <h4>Add to Playlist</h4>
           <select v-model="targetPlaylistId" class="modal-select">
             <option disabled value="">Select a playlist...</option>
-            <option v-for="pl in playlists" :key="pl.id" :value="pl.id">{{ pl.title }}</option>
+            <option v-for="pl in playlists" :key="pl.id" :value="pl.id">
+              {{ pl.title }}
+            </option>
           </select>
-          <button class="btn-secondary" @click="addSongToPlaylist" :disabled="!targetPlaylistId">Add to Playlist</button>
+          <button
+            class="btn-secondary"
+            @click="addSongToPlaylist"
+            :disabled="!targetPlaylistId"
+          >
+            Add to Playlist
+          </button>
         </div>
 
         <button class="close-btn" @click="showSongModal = false">Close</button>
@@ -168,35 +306,39 @@
     </div>
 
     <!-- 2. Enhanced Create Playlist Modal with Song Search & Picker -->
-    <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
+    <div
+      v-if="showCreateModal"
+      class="modal-overlay"
+      @click.self="showCreateModal = false"
+    >
       <div class="modal-card create-playlist-modal">
         <h3>Create Playlist</h3>
-        
-        <input 
-          v-model="newPlaylistName" 
-          type="text" 
-          placeholder="Playlist name..." 
+
+        <input
+          v-model="newPlaylistName"
+          type="text"
+          placeholder="Playlist name..."
           class="modal-input"
         />
 
         <div class="song-picker-section">
           <h4>Add Songs (Optional)</h4>
-          <input 
-            v-model="songSearchQuery" 
-            type="text" 
-            placeholder="Search songs or artists..." 
+          <input
+            v-model="songSearchQuery"
+            type="text"
+            placeholder="Search songs or artists..."
             class="modal-input search-input"
           />
 
           <div class="song-picker-list">
-            <label 
-              v-for="song in filteredPickerSongs" 
-              :key="song.id" 
+            <label
+              v-for="song in filteredPickerSongs"
+              :key="song.id"
               class="song-picker-row"
             >
-              <input 
-                type="checkbox" 
-                :value="song.id" 
+              <input
+                type="checkbox"
+                :value="song.id"
                 v-model="selectedSongIds"
               />
               <div class="song-picker-info">
@@ -204,13 +346,23 @@
                 <span class="picker-artist">{{ song.artist }}</span>
               </div>
             </label>
-            <p v-if="filteredPickerSongs.length === 0" class="empty-state-sm">No matching songs found.</p>
+            <p v-if="filteredPickerSongs.length === 0" class="empty-state-sm">
+              No matching songs found.
+            </p>
           </div>
         </div>
 
         <div class="modal-actions">
-          <button class="modal-btn-cancel" @click="showCreateModal = false">Cancel</button>
-          <button class="modal-btn-submit" @click="submitCreatePlaylist" :disabled="!newPlaylistName.trim()">Create</button>
+          <button class="modal-btn-cancel" @click="showCreateModal = false">
+            Cancel
+          </button>
+          <button
+            class="modal-btn-submit"
+            @click="submitCreatePlaylist"
+            :disabled="!newPlaylistName.trim()"
+          >
+            Create
+          </button>
         </div>
       </div>
     </div>
@@ -218,183 +370,263 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useStore } from 'vuex'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useStore } from "vuex";
+import { useRouter } from "vue-router";
 
-const store = useStore()
-const router = useRouter()
+const store = useStore();
+const router = useRouter();
 
-const tabs = ['Songs', 'Playlists', 'Artists']
-const activeTab = ref('Songs')
+const tabs = ["Songs", "Playlists", "Artists"];
+const activeTab = ref("Songs");
 
 // View states
-const selectedPlaylist = ref(null)
-const activeMenuId = ref(null)
-const isEditingName = ref(false)
-const editedPlaylistName = ref('')
+const selectedPlaylist = ref(null);
+const activeMenuId = ref(null);
+const activeLikedSongMenuId = ref(null);
+const isEditingName = ref(false);
+const editedPlaylistName = ref("");
 
 // Modals state
-const showCreateModal = ref(false)
-const newPlaylistName = ref('')
-const songSearchQuery = ref('')
-const selectedSongIds = ref([])
+const showCreateModal = ref(false);
+const newPlaylistName = ref("");
+const songSearchQuery = ref("");
+const selectedSongIds = ref([]);
 
-const showSongModal = ref(false)
-const selectedSong = ref(null)
-const targetPlaylistId = ref('')
+const showSongModal = ref(false);
+const selectedSong = ref(null);
+const targetPlaylistId = ref("");
+
+// Song-level dropdown state (for playlist tracks view)
+const activeSongMenuId = ref(null);
 
 // Data mappings
-const allArtists = computed(() => store.getters['artists/allArtists'])
-const followedArtists = computed(() => store.getters['auth/currentUser']?.followingList || [])
-const playlists = computed(() => store.getters['auth/userPlaylists'] || [])
+const allArtists = computed(() => store.getters["artists/allArtists"] || []);
+const followedArtists = computed(
+  () => store.getters["auth/currentUser"]?.followingList || [],
+);
+const playlists = computed(() => store.getters["auth/userPlaylists"] || []);
+
+const likedSongIds = computed(() => store.getters["auth/likedSongIds"] || []);
 
 const likedSongs = computed(() => {
-  return allArtists.value
+  const allTracks = allArtists.value
     .filter((artist) => artist.tracks && artist.tracks.length > 0)
-    .flatMap((artist) => 
-      artist.tracks.map(t => ({
-        id: t.id,
+    .flatMap((artist) =>
+      artist.tracks.map((t) => ({
+        id: `${artist.id}-${t.id}`,
+        artistId: artist.id,
         title: t.title,
         artist: artist.name,
         audioUrl: t.audioUrl || artist.audioUrl || null,
         image: artist.image || null,
-      }))
-    )
-})
+      })),
+    );
 
-// Filter songs for the playlist creator modal
+  return allTracks.filter((track) => likedSongIds.value.includes(track.id));
+});
+
+function isLiked(songId) {
+  return likedSongIds.value.includes(songId);
+}
+
 const filteredPickerSongs = computed(() => {
-  if (!songSearchQuery.value.trim()) return likedSongs.value
-  const query = songSearchQuery.value.toLowerCase()
-  return likedSongs.value.filter(song => 
-    song.title.toLowerCase().includes(query) || 
-    song.artist.toLowerCase().includes(query)
-  )
-})
+  const allTracks = allArtists.value
+    .filter((artist) => artist.tracks && artist.tracks.length > 0)
+    .flatMap((artist) =>
+      artist.tracks.map((t) => ({
+        id: `${artist.id}-${t.id}`,
+        artistId: artist.id,
+        title: t.title,
+        artist: artist.name,
+        audioUrl: t.audioUrl || artist.audioUrl || null,
+        image: artist.image || null,
+      })),
+    );
+
+  if (!songSearchQuery.value.trim()) return allTracks;
+  const query = songSearchQuery.value.toLowerCase();
+  return allTracks.filter(
+    (song) =>
+      song.title.toLowerCase().includes(query) ||
+      song.artist.toLowerCase().includes(query),
+  );
+});
 
 function openCreateModal() {
-  newPlaylistName.value = ''
-  songSearchQuery.value = ''
-  selectedSongIds.value = []
-  showCreateModal.value = true
+  newPlaylistName.value = "";
+  songSearchQuery.value = "";
+  selectedSongIds.value = [];
+  showCreateModal.value = true;
 }
 
 async function submitCreatePlaylist() {
-  if (!newPlaylistName.value.trim()) return
-  
-  // 1. Create the playlist
-  const createdPlaylist = await store.dispatch('auth/createPlaylist', newPlaylistName.value.trim())
-  
-  const targetId = createdPlaylist?.id || playlists.value[playlists.value.length - 1]?.id
+  if (!newPlaylistName.value.trim()) return;
+
+  const createdPlaylist = await store.dispatch(
+    "auth/createPlaylist",
+    newPlaylistName.value.trim(),
+  );
+
+  const targetId =
+    createdPlaylist?.id || playlists.value[playlists.value.length - 1]?.id;
 
   if (targetId && selectedSongIds.value.length > 0) {
     for (const songId of selectedSongIds.value) {
-      const trackObj = likedSongs.value.find(s => s.id === songId)
+      const trackObj = filteredPickerSongs.value.find((s) => s.id === songId);
       if (trackObj) {
-        store.dispatch('auth/addTrackToPlaylist', {
+        store.dispatch("auth/addTrackToPlaylist", {
           playlistId: targetId,
-          track: trackObj
-        })
+          track: trackObj,
+        });
       }
     }
   }
 
-  showCreateModal.value = false
+  showCreateModal.value = false;
 }
 
-// Close dropdowns on outside click
 function handleClickOutside(e) {
-  if (!e.target.closest('.playlist-card-wrapper')) {
-    activeMenuId.value = null
+  if (
+    !e.target.closest(".playlist-card-wrapper") &&
+    !e.target.closest(".song-menu-wrapper")
+  ) {
+    activeMenuId.value = null;
+    activeLikedSongMenuId.value = null;
+    activeSongMenuId.value = null;
   }
 }
-onMounted(() => window.addEventListener('click', handleClickOutside))
-onUnmounted(() => window.removeEventListener('click', handleClickOutside))
 
-// Song Interactions
-function openSongModal(song) {
-  selectedSong.value = song
-  targetPlaylistId.value = ''
-  showSongModal.value = true
-}
+onMounted(() => window.addEventListener("click", handleClickOutside));
+onUnmounted(() => window.removeEventListener("click", handleClickOutside));
 
-function playSelectedTrack() {
-  if (selectedSong.value?.audioUrl) {
-    store.dispatch('player/playTrack', selectedSong.value)
-    showSongModal.value = false
+// Direct playback function for Liked Songs cards
+function playSongDirectly(track) {
+  if (track.audioUrl) {
+    store.dispatch("player/playTrack", track);
   } else {
-    alert('Audio stream not available for this track.')
+    alert("Audio stream not available for this track.");
   }
+}
+
+function toggleLikedSongMenu(trackId, event) {
+  event.stopPropagation();
+  activeLikedSongMenuId.value =
+    activeLikedSongMenuId.value === trackId ? null : trackId;
+}
+
+function toggleLikeFromLibrary(song) {
+  store.dispatch("auth/toggleLike", song.id);
+  activeLikedSongMenuId.value = null;
+}
+
+function openSongModal(song) {
+  selectedSong.value = song;
+  targetPlaylistId.value = "";
+  showSongModal.value = true;
 }
 
 function addSongToPlaylist() {
-  if (!targetPlaylistId.value || !selectedSong.value) return
-  store.dispatch('auth/addTrackToPlaylist', {
+  if (!targetPlaylistId.value || !selectedSong.value) return;
+  store.dispatch("auth/addTrackToPlaylist", {
     playlistId: targetPlaylistId.value,
-    track: selectedSong.value
-  })
-  alert('Added song to playlist!')
-  showSongModal.value = false
+    track: selectedSong.value,
+  });
+  alert("Added song to playlist!");
+  showSongModal.value = false;
 }
 
-// Playlist Detail Page View (Card Click)
 function openPlaylistDetail(playlist) {
-  selectedPlaylist.value = playlist
-  activeMenuId.value = null
+  selectedPlaylist.value = playlist;
+  activeMenuId.value = null;
 }
 
-// Playlist 3-Dots Menu Toggling
 function toggleMenu(playlistId, event) {
-  event.stopPropagation()
-  activeMenuId.value = activeMenuId.value === playlistId ? null : playlistId
+  event.stopPropagation();
+  activeMenuId.value = activeMenuId.value === playlistId ? null : playlistId;
 }
 
 function startEditing(playlist) {
-  selectedPlaylist.value = playlist
-  editedPlaylistName.value = playlist.title
-  isEditingName.value = true
-  activeMenuId.value = null
+  selectedPlaylist.value = playlist;
+  editedPlaylistName.value = playlist.title;
+  isEditingName.value = true;
+  activeMenuId.value = null;
+}
+
+function openAddSongsToPlaylistModal(playlist) {
+  selectedPlaylist.value = playlist;
+  activeMenuId.value = null;
+  openCreateModal();
 }
 
 function savePlaylistName() {
-  if (!editedPlaylistName.value.trim()) return
-  store.dispatch('auth/updatePlaylistName', {
+  if (!editedPlaylistName.value.trim()) return;
+  store.dispatch("auth/updatePlaylistName", {
     playlistId: selectedPlaylist.value.id,
-    newName: editedPlaylistName.value.trim()
-  })
-  selectedPlaylist.value.title = editedPlaylistName.value.trim()
-  isEditingName.value = false
+    newName: editedPlaylistName.value.trim(),
+  });
+  selectedPlaylist.value.title = editedPlaylistName.value.trim();
+  isEditingName.value = false;
 }
 
 function removeTrackFromPlaylist(trackId) {
-  store.dispatch('auth/removeTrackFromPlaylist', {
+  store.dispatch("auth/removeTrackFromPlaylist", {
     playlistId: selectedPlaylist.value.id,
-    trackId
-  })
-  selectedPlaylist.value.tracks = selectedPlaylist.value.tracks.filter(t => t.id !== trackId)
+    trackId,
+  });
+  selectedPlaylist.value.tracks = selectedPlaylist.value.tracks.filter(
+    (t) => t.id !== trackId,
+  );
+  activeSongMenuId.value = null;
 }
 
 function deletePlaylist(playlist) {
   if (confirm(`Are you sure you want to delete "${playlist.title}"?`)) {
-    store.dispatch('auth/deletePlaylist', playlist.id)
+    store.dispatch("auth/deletePlaylist", playlist.id);
     if (selectedPlaylist.value?.id === playlist.id) {
-      selectedPlaylist.value = null
+      selectedPlaylist.value = null;
     }
-    activeMenuId.value = null
+    activeMenuId.value = null;
   }
 }
 
 function playTrackFromPlaylist(track) {
   if (track.audioUrl) {
-    store.dispatch('player/playTrack', track)
+    store.dispatch("player/playTrack", track);
   } else {
-    alert('Audio stream not available for this track.')
+    alert("Audio stream not available for this track.");
   }
 }
 
+// Navigation mapping handlers
+function goToTrackDetail(track) {
+  router.push(`/track/${track.id}`);
+}
+
 function goToArtist(artistId) {
-  router.push(`/artists/${artistId}`)
+  if (artistId) router.push(`/artists/${artistId}`);
+}
+
+function goToArtistByTrack(track) {
+  if (track.artistId) {
+    router.push(`/artists/${track.artistId}`);
+  }
+}
+
+function toggleSongMenu(songId, event) {
+  event.stopPropagation();
+  activeSongMenuId.value = activeSongMenuId.value === songId ? null : songId;
+}
+
+function toggleLikeFromMenu(song) {
+  store.dispatch("auth/toggleLike", song.id);
+  activeSongMenuId.value = null;
+}
+
+function openAddToPlaylistModal(song) {
+  activeLikedSongMenuId.value = null;
+  activeSongMenuId.value = null;
+  openSongModal(song);
 }
 </script>
 
@@ -453,9 +685,16 @@ function goToArtist(artistId) {
   background: #f5f5f5;
 }
 
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .library-section h2 {
   font-size: 1rem;
-  margin-bottom: 1rem;
+  margin: 0;
 }
 
 .track-grid,
@@ -502,12 +741,12 @@ function goToArtist(artistId) {
   right: 6px;
   background: white;
   border: 1px solid #eee;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
   z-index: 10;
-  min-width: 120px;
+  min-width: 140px;
   overflow: hidden;
 }
 
@@ -565,12 +804,19 @@ function goToArtist(artistId) {
   font-size: 0.85rem;
   font-weight: 600;
   margin: 0;
+  cursor: pointer;
+}
+
+.track-title:hover,
+.track-artist:hover {
+  text-decoration: underline;
 }
 
 .track-artist {
   font-size: 0.75rem;
   opacity: 0.7;
   margin: 0;
+  cursor: pointer;
 }
 
 .artist-card {
@@ -640,7 +886,7 @@ function goToArtist(artistId) {
 .title-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin: 0.25rem 0;
 }
 
@@ -649,11 +895,20 @@ function goToArtist(artistId) {
   font-size: 1.8rem;
 }
 
-.icon-btn {
+.text-action-btn {
   background: transparent;
-  border: none;
+  border: 1px solid #ccc;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.text-action-btn:hover {
+  background: #f5f5f5;
+  border-color: #999;
 }
 
 .edit-title-row {
@@ -700,7 +955,8 @@ function goToArtist(artistId) {
   flex-direction: column;
 }
 
-.table-header, .table-row {
+.table-header,
+.table-row {
   display: grid;
   grid-template-columns: 40px 2fr 1fr 40px;
   padding: 0.6rem 0.5rem;
@@ -729,12 +985,12 @@ function goToArtist(artistId) {
   text-decoration: underline;
 }
 
-.remove-btn {
-  background: transparent;
-  border: none;
-  color: #ff4d4d;
+.track-col-artist {
   cursor: pointer;
-  font-weight: bold;
+}
+
+.track-col-artist:hover {
+  text-decoration: underline;
 }
 
 /* Modal Styling */
@@ -859,21 +1115,6 @@ function goToArtist(artistId) {
   margin: 0 0 1rem;
 }
 
-.modal-buttons-row {
-  margin-bottom: 1rem;
-}
-
-.btn-primary {
-  width: 100%;
-  background: #1db954;
-  color: white;
-  border: none;
-  padding: 0.6rem;
-  border-radius: 20px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
 .btn-secondary {
   width: 100%;
   background: #333;
@@ -924,7 +1165,48 @@ function goToArtist(artistId) {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.playlist-track-row {
+  position: relative;
+}
+
+.song-menu-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.options-dots-btn-inline {
+  background: transparent;
+  color: #666;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.options-dots-btn-inline:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #000;
+}
+
+.song-dropdown {
+  right: 0;
+  top: 28px;
+  z-index: 20;
 }
 </style>
