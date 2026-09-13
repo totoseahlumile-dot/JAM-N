@@ -4,7 +4,13 @@ const state = () => ({
     name: "JAMN Team",
     email: "music@jamn.co.za",
     roles: ["listener", "artist"],
-    followingList: [],
+    followingList: (() => {
+      try {
+        return JSON.parse(localStorage.getItem("user_following")) || [];
+      } catch (e) {
+        return [];
+      }
+    })(),
     uploads: (() => {
       try {
         return JSON.parse(localStorage.getItem("user_uploads")) || [];
@@ -77,6 +83,10 @@ const mutations = {
     } else {
       state.user.followingList.push(artist);
     }
+    localStorage.setItem(
+      "user_following",
+      JSON.stringify(state.user.followingList),
+    );
   },
   ADD_UPLOAD(state, newPost) {
     if (!state.user.uploads) {
@@ -105,7 +115,6 @@ const mutations = {
     const playlist = state.user.playlists.find((p) => p.id === playlistId);
     if (playlist) {
       if (!playlist.tracks) playlist.tracks = [];
-      // Prevent duplicate entries
       if (!playlist.tracks.some((t) => t.id === track.id)) {
         playlist.tracks.push(track);
         playlist.trackCount = playlist.tracks.length;
@@ -178,19 +187,22 @@ const actions = {
   login({ commit }, credentials) {
     let savedUploads = [];
     let savedPlaylists = [];
+    let savedFollowing = [];
     try {
       savedUploads = JSON.parse(localStorage.getItem("user_uploads")) || [];
       savedPlaylists = JSON.parse(localStorage.getItem("user_playlists")) || [];
+      savedFollowing = JSON.parse(localStorage.getItem("user_following")) || [];
     } catch (e) {
       savedUploads = [];
       savedPlaylists = [];
+      savedFollowing = [];
     }
     commit("SET_USER", {
       id: "usr_102",
       name: credentials.email.split("@")[0],
       email: credentials.email,
       roles: ["listener"],
-      followingList: [],
+      followingList: savedFollowing,
       uploads: savedUploads,
       playlists: savedPlaylists,
     });
