@@ -11,6 +11,7 @@ Node.js, Express, and MySQL REST API.
 
 For an existing database, run `npm run migrate` before starting the API. Each
 numbered file in `database/migrations` runs once and is checksum-protected.
+Run `npm run seed` to idempotently insert or refresh the development catalog.
 
 ## Testing
 

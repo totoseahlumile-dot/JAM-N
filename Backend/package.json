@@ -9,6 +9,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
     "backup": "node scripts/backup.js",
     "test": "node --test test/app.test.js",
     "test:integration": "node --test test/integration.test.js",
