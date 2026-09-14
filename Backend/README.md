@@ -91,3 +91,15 @@ target post. Supported preference types are `post_like`, `post_comment`,
 Follow writes are authenticated and idempotent. Users cannot follow themselves
 or their own artist profile. New follows generate deduplicated alerts when the
 recipient has enabled the `new_follower` alert category.
+
+## Playlist endpoints
+
+- `GET /api/playlists` lists public playlists; `GET /api/playlists/:id` includes ordered tracks
+- `GET /api/playlists/mine` lists all playlists owned by the authenticated user
+- `POST`, `PUT`, and `DELETE /api/playlists[/:id]` provide owner-scoped CRUD
+- `POST /api/playlists/:id/tracks` adds `{ "trackId": 1 }` idempotently
+- `DELETE /api/playlists/:id/tracks/:trackId` removes a track
+- `PUT /api/playlists/:id/tracks/order` accepts the complete ordered `trackIds` array
+
+Private playlists are hidden from anonymous users and non-owners. Admins may
+manage any playlist. Track removal and reordering preserve contiguous positions.

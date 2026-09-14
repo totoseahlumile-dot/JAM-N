@@ -68,7 +68,7 @@ const openApiDocument = {
     { name: "Health" }, { name: "Authentication" }, { name: "Artists" },
     { name: "Genres" }, { name: "Events" }, { name: "Albums" },
     { name: "Tracks" }, { name: "Posts" }, { name: "Comments" },
-    { name: "Follows" }, { name: "Alerts" }
+    { name: "Follows" }, { name: "Alerts" }, { name: "Playlists" }
   ],
   components: {
     securitySchemes: {
@@ -149,7 +149,10 @@ const openApiDocument = {
           mediaTypeId: { type: ["integer", "null"] }
         }
       },
-      CommentInput: { type: "object", required: ["body"], properties: { body: { type: "string", maxLength: 1000 } } }
+      CommentInput: { type: "object", required: ["body"], properties: { body: { type: "string", maxLength: 1000 } } },
+      PlaylistInput: { type: "object", properties: {
+        name: { type: "string", maxLength: 120 }, description: { type: ["string", "null"], maxLength: 500 }, isPublic: { type: "boolean" }
+      } }
     }
   },
   paths: {
@@ -251,7 +254,20 @@ const openApiDocument = {
     },
     "/api/artists/{artistId}/followers": { get: { tags: ["Follows"], summary: "List an artist's followers", parameters: [idParameter("artistId"), ...listParameters], responses: { 200: { description: "Paginated followers" }, ...errorResponses } } },
     "/api/artists/{artistId}/follow-stats": { get: { tags: ["Follows"], summary: "Get artist follower count", parameters: [idParameter("artistId")], responses: { 200: { description: "Follower count" }, ...errorResponses } } },
-    "/api/follows": { get: { tags: ["Follows"], summary: "List my followed users and artists", security: bearer, responses: { 200: { description: "Followed users and artists" }, ...errorResponses } } }
+    "/api/follows": { get: { tags: ["Follows"], summary: "List my followed users and artists", security: bearer, responses: { 200: { description: "Followed users and artists" }, ...errorResponses } } },
+    "/api/playlists": {
+      get: { tags: ["Playlists"], summary: "List public playlists", parameters: listParameters, responses: { 200: { description: "Paginated playlists" }, ...errorResponses } },
+      post: { tags: ["Playlists"], summary: "Create a playlist", security: bearer, requestBody: jsonBody({ $ref: "#/components/schemas/PlaylistInput" }), responses: { 201: mutationResponse, ...errorResponses } }
+    },
+    "/api/playlists/mine": { get: { tags: ["Playlists"], summary: "List my playlists", security: bearer, parameters: listParameters, responses: { 200: { description: "Own playlists" }, ...errorResponses } } },
+    "/api/playlists/{id}": {
+      get: { tags: ["Playlists"], summary: "Get a visible playlist and its ordered tracks", parameters: [idParameter()], responses: { 200: { description: "Playlist details" }, ...errorResponses } },
+      put: { tags: ["Playlists"], summary: "Update own playlist", security: bearer, parameters: [idParameter()], requestBody: jsonBody({ $ref: "#/components/schemas/PlaylistInput" }), responses: { 200: mutationResponse, ...errorResponses } },
+      delete: { tags: ["Playlists"], summary: "Delete own playlist", security: bearer, parameters: [idParameter()], responses: { 204: { description: "Deleted" }, ...errorResponses } }
+    },
+    "/api/playlists/{id}/tracks": { post: { tags: ["Playlists"], summary: "Add a track idempotently", security: bearer, parameters: [idParameter()], requestBody: jsonBody({ type: "object", required: ["trackId"], properties: { trackId: { type: "integer" } } }), responses: { 201: mutationResponse, ...errorResponses } } },
+    "/api/playlists/{id}/tracks/{trackId}": { delete: { tags: ["Playlists"], summary: "Remove a track", security: bearer, parameters: [idParameter(), idParameter("trackId")], responses: { 204: { description: "Removed" }, ...errorResponses } } },
+    "/api/playlists/{id}/tracks/order": { put: { tags: ["Playlists"], summary: "Replace the complete track order", security: bearer, parameters: [idParameter()], requestBody: jsonBody({ type: "object", required: ["trackIds"], properties: { trackIds: { type: "array", uniqueItems: true, items: { type: "integer" } } } }), responses: { 200: mutationResponse, ...errorResponses } } }
   }
 };
 

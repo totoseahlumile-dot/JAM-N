@@ -97,11 +97,38 @@ test("schema and seed are installed only in the test database", async () => {
   const [artistGenres] = await appPool.query("SELECT COUNT(*) AS count FROM artist_genres");
   const [albums] = await appPool.query("SELECT COUNT(*) AS count FROM albums");
   const [tracks] = await appPool.query("SELECT COUNT(*) AS count FROM tracks");
-  assert.equal(tables.length, 18);
+  assert.equal(tables.length, 20);
   assert.equal(artists[0].count, 10);
   assert.equal(artistGenres[0].count, 10);
   assert.equal(albums[0].count, 6);
   assert.equal(tracks[0].count, 12);
+});
+
+test("playlist CRUD enforces privacy, ownership, and track ordering", async () => {
+  const owner = await register("playlist_owner");
+  const stranger = await register("playlist_stranger");
+  const [seedTracks] = await appPool.query("SELECT id FROM tracks ORDER BY id LIMIT 2");
+
+  const created = await expectStatus(201, "/api/playlists", {
+    method: "POST", token: owner.body.accessToken,
+    body: { name: "Integration mix", description: "Private during editing", isPublic: false }
+  });
+  const path = `/api/playlists/${created.body.id}`;
+  await expectStatus(404, path);
+  await expectStatus(403, path, { method: "PUT", token: stranger.body.accessToken, body: { name: "Stolen" } });
+
+  for (const track of seedTracks) {
+    await expectStatus(201, `${path}/tracks`, { method: "POST", token: owner.body.accessToken, body: { trackId: track.id } });
+  }
+  await expectStatus(200, `${path}/tracks`, { method: "POST", token: owner.body.accessToken, body: { trackId: seedTracks[0].id } });
+  await expectStatus(200, `${path}/tracks/order`, {
+    method: "PUT", token: owner.body.accessToken, body: { trackIds: seedTracks.map((row) => row.id).reverse() }
+  });
+  await expectStatus(200, path, { method: "PUT", token: owner.body.accessToken, body: { isPublic: true } });
+  const visible = await expectStatus(200, path);
+  assert.deepEqual(visible.body.playlist.tracks.map((track) => Number(track.id)), seedTracks.map((row) => row.id).reverse());
+  await expectStatus(204, `${path}/tracks/${seedTracks[0].id}`, { method: "DELETE", token: owner.body.accessToken });
+  await expectStatus(204, path, { method: "DELETE", token: owner.body.accessToken });
 });
 
 test("authentication rotates refresh tokens and rejects replay", async () => {
