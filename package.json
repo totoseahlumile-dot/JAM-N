@@ -1,0 +1,13 @@
+{
+  "name": "jam-n",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npm --prefix Backend run dev",
+    "dev:backend": "npm --prefix Backend run dev",
+    "dev:frontend": "npm --prefix Frontend run dev",
+    "test": "npm --prefix Backend run test:all",
+    "build": "npm --prefix Frontend run build"
+  }
+}
