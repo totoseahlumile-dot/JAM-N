@@ -1,6 +1,7 @@
 import * as follows from "../models/follow.model.js";
 import * as notifications from "../models/notification.model.js";
 import httpError from "../utils/httpError.js";
+import * as users from "../models/user.model.js";
 
 const positiveInteger = (value, name) => {
   const parsed = Number(value);
@@ -23,12 +24,16 @@ const handleReferenceError = (next, error, label) => {
 const createFollowerAlert = async ({ recipientId, actorId, targetType, targetId, actionUrl, dedupeKey }) => {
   if (!recipientId) return;
   try {
+    const actor = await users.findById(actorId);
+    const username = actor?.username || "A user";
     await notifications.create({
       userId: recipientId,
       actorUserId: actorId,
       type: "new_follower",
       title: "New follower",
-      message: targetType === "artist" ? "Someone followed your artist profile." : "Someone followed you.",
+      message: targetType === "artist"
+        ? `${username} followed your artist profile.`
+        : `${username} followed you.`,
       targetType,
       targetId,
       actionUrl,

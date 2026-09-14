@@ -1,5 +1,6 @@
 import * as social from "../models/social.model.js";
 import * as notifications from "../models/notification.model.js";
+import * as users from "../models/user.model.js";
 import httpError from "../utils/httpError.js";
 
 const positiveInteger = (value, name, optional = false) => {
@@ -119,17 +120,20 @@ const likePost = async (req, res, next) => {
     const post = await social.findPostById(postId);
     if (!post) throw httpError(404, "POST_NOT_FOUND", "Post not found");
     const added = await social.addLike(postId, req.user.id);
-    if (added) await createAlert({
-      userId: post.authorId,
-      actorUserId: req.user.id,
-      type: "post_like",
-      title: "New like",
-      message: "Someone liked your post.",
-      targetType: "post",
-      targetId: postId,
-      actionUrl: `/posts/${postId}`,
-      dedupeKey: `post_like:${postId}:${req.user.id}`
-    });
+    if (added) {
+      const actor = await users.findById(req.user.id);
+      await createAlert({
+        userId: post.authorId,
+        actorUserId: req.user.id,
+        type: "post_like",
+        title: "New like",
+        message: `${actor?.username || "A user"} liked your post.`,
+        targetType: "post",
+        targetId: postId,
+        actionUrl: `/posts/${postId}`,
+        dedupeKey: `post_like:${postId}:${req.user.id}`
+      });
+    }
     res.status(204).end();
   } catch (error) { handleDatabaseError(next, error); }
 };
@@ -158,12 +162,13 @@ const createComment = async (req, res, next) => {
       userId: req.user.id,
       body: requiredText(req.body?.body, "body", 1000)
     });
+    const actor = await users.findById(req.user.id);
     await createAlert({
       userId: post.authorId,
       actorUserId: req.user.id,
       type: "post_comment",
       title: "New comment",
-      message: "Someone commented on your post.",
+      message: `${actor?.username || "A user"} commented on your post.`,
       targetType: "post",
       targetId: postId,
       actionUrl: `/posts/${postId}`,

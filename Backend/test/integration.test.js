@@ -159,6 +159,7 @@ test("post ownership, comments, and idempotent likes work together", async () =>
   const inbox = await expectStatus(200, "/api/alerts", { token: author.body.accessToken });
   assert.equal(inbox.body.alerts.length, 2);
   assert.deepEqual(new Set(inbox.body.alerts.map((alert) => alert.type)), new Set(["post_like", "post_comment"]));
+  assert.ok(inbox.body.alerts.every((alert) => alert.message.includes("integration_post_reader")));
   const unread = await expectStatus(200, "/api/alerts/unread-count", { token: author.body.accessToken });
   assert.equal(unread.body.unreadCount, 2);
   await expectStatus(200, `/api/alerts/${inbox.body.alerts[0].id}/read`, {
@@ -227,6 +228,7 @@ test("user and artist follows are idempotent, counted, and alerted", async () =>
 
   const alerts = await expectStatus(200, "/api/alerts?type=new_follower", { token: creator.body.accessToken });
   assert.equal(alerts.body.alerts.length, 2);
+  assert.ok(alerts.body.alerts.every((alert) => alert.message.includes("integration_follower")));
 
   await expectStatus(204, `/api/users/${creatorId}/follow`, {
     method: "DELETE", token: follower.body.accessToken
