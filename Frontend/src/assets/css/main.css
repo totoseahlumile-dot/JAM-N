@@ -1,35 +1,270 @@
-@import './base.css';
+/* 1. Global CSS Custom Properties (60-30-10 Design Rule) */
+
+@property --badge-bg {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #e03c31;
+}
+
+@property --badge-color {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #ffffff;
+}
+
+:root {
+  /* Base Surfaces (60%) - Canvas & Grounding */
+  --bg-main: #fafafd;
+  --bg-surface: #ffffff;
+  --bg-card-hover: #adebff;
+  --bg-dark-overlay: #0a0908;
+
+  /* Brand Dominant (30%) - Key Actions & Featured Containers */
+  --primary-wisteria: #ba93dc;
+  --secondary-frosted: #adebff;
+
+  /* Accent Pop (10%) - Status & Micro-Interactions */
+  --accent-gold: #f7e88a;
+  --accent-plum: #eaa0d2;
+
+  /* Typography & Text Contrast */
+  --text-main: #1d1e18;
+  --text-dark-btn: #1d1e18;
+  --text-muted: #66666e;
+  --text-light: #fafafd;
+  --border-subtle: #e2e2e8;
+
+  --font-family-base:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* 2. Base Reset & Layout Constraints */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--font-family-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-a,
-.green {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-main);
+  font-weight: 800;
+  font-family: var(--font-family-base);
+}
+
+a {
+  color: inherit;
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+button {
+  font-family: var(--font-family-base);
+  cursor: pointer;
+  border: none;
+  background: none;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+/* 3. Primary Brand Actions & Interactive Elements */
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+/* Wisteria Purple (#BA93DC) - Primary Action Buttons */
+.btn-primary,
+.btn-sign-in,
+.btn-follow,
+.btn-join {
+  background-color: var(--primary-wisteria);
+  color: var(--text-dark-btn);
+  font-weight: 700;
+  border: none;
+  padding: 0.75rem 2.25rem;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition:
+    opacity 0.2s ease,
+    transform 0.15s ease;
+}
+
+.btn-primary:hover,
+.btn-sign-in:hover,
+.btn-follow:hover,
+.btn-join:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Active Navigation & Tab Indicators */
+.nav-link.active,
+.tab-indicator.active {
+  color: var(--text-main);
+  border-bottom: 3px solid var(--primary-wisteria);
+  font-weight: 800;
+}
+
+.pagination-dot.active {
+  background-color: var(--primary-wisteria);
+}
+
+/* Audio Player Controls & Playback Fill */
+.audio-progress-bar .fill,
+.volume-slider .fill {
+  background-color: var(--primary-wisteria);
+}
+
+.btn-play-state.active {
+  background-color: var(--primary-wisteria);
+  color: var(--text-dark-btn);
+}
+
+/* 4. Secondary Actions & Hero Containers */
+
+/* Secondary Text/Link Button Style */
+.btn-secondary {
+  background-color: transparent;
+  color: var(--text-dark-btn);
+  border: none;
+  padding: 0;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: opacity 0.2s ease;
+}
+
+.btn-secondary:hover {
+  opacity: 0.75;
+}
+
+/* Hero Section & Feature Card + Backdrop Tint */
+.hero-card,
+.hero-carousel-container {
+  background-color: var(--secondary-frosted);
+  border-radius: 20px;
+  padding: 2.5rem;
+  border: 1px solid rgba(29, 30, 24, 0.08);
+}
+
+/* Row & Card Hover Highlights */
+.track-row:hover,
+.media-card:hover {
+  background-color: rgba(173, 235, 255, 0.25);
+  transition: background-color 0.2s ease;
+}
+
+/* 5. Status Badges & High-Visibility Callouts */
+
+.status-pill {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.25rem 0.65rem;
+  border-radius: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.announcement-banner {
+  background-color: var(--accent-gold);
+  color: var(--text-dark-btn);
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+}
+
+/* 6. Engagement & Social Highlights */
+
+/* Plum Pink (#EAA0D2) - Micro-Interactions & Genre Pills */
+.genre-pill,
+.filter-chip {
+  background-color: var(--accent-plum);
+  color: var(--text-dark-btn);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.genre-pill:hover,
+.filter-chip:hover {
+  opacity: 0.85;
+}
+
+.icon-like.active,
+.icon-favorite.active {
+  color: var(--accent-plum);
+  fill: var(--accent-plum);
+}
+
+/* 7. Dark Surfaces & Global Footer */
+
+/* Dark Surfaces (#0A0908) - Modals, Navigation Header, Audio Player */
+.modal-overlay,
+.modal-container,
+.persistent-audio-player,
+.app-header-dark {
+  background-color: var(--bg-dark-overlay);
+  color: var(--text-light);
+}
+
+.modal-container h1,
+.modal-container h2,
+.modal-container p {
+  color: var(--text-light);
+}
+
+/* Global Footer */
+footer,
+.app-footer {
+  background-color: var(--primary-wisteria);
+  color: var(--text-dark-btn);
+  padding: 2.5rem 1.5rem 2rem;
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.footer-brand {
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: 0.05em;
+  color: var(--text-dark-btn);
+}
+
+.footer-tagline {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark-btn);
+}
+
+.footer-bottom {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dark-btn);
+  margin-top: 0.75rem;
 }
