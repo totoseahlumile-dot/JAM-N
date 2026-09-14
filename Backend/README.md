@@ -9,6 +9,9 @@ Node.js, Express, and MySQL REST API.
 3. Run the root `database.sql` file in MySQL to create the schema and seed data.
 4. Start the API with `npm run dev`.
 
+For an existing database, run `npm run migrate` before starting the API. Each
+numbered file in `database/migrations` runs once and is checksum-protected.
+
 ## Testing
 
 - `npm test` runs fast API tests without requiring database records.
