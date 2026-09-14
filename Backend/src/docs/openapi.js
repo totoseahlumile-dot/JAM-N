@@ -158,6 +158,8 @@ const openApiDocument = {
   paths: {
     "/api/health": { get: { tags: ["Health"], summary: "API health", responses: { 200: { description: "API is running" } } } },
     "/api/health/database": { get: { tags: ["Health"], summary: "Database health", responses: { 200: { description: "Database is connected" }, 503: { description: "Database unavailable" } } } },
+    "/api/health/ready": { get: { tags: ["Health"], summary: "Dependency readiness", responses: { 200: { description: "MySQL and configured Redis are ready" }, 503: { description: "Dependency unavailable" } } } },
+    "/api/health/metrics": { get: { tags: ["Health"], summary: "Prometheus metrics", responses: { 200: { description: "Text-format service metrics" } } } },
     "/api/auth/register": { post: {
       tags: ["Authentication"], summary: "Register and start a session",
       requestBody: jsonBody({ $ref: "#/components/schemas/RegisterInput" }),

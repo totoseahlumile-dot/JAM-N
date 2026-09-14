@@ -20,6 +20,7 @@ const env = Object.freeze({
   frontendOrigin: process.env.FRONTEND_ORIGIN || "http://localhost:5500",
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "15m",
+  redisUrl: process.env.REDIS_URL || "",
   refreshTokenDays: readNumber("REFRESH_TOKEN_DAYS", 30),
   database: {
     host: process.env.DB_HOST || "localhost",
@@ -30,5 +31,14 @@ const env = Object.freeze({
     connectionLimit: readNumber("DB_CONNECTION_LIMIT", 10)
   }
 });
+
+if (env.nodeEnv === "production") {
+  const problems = [];
+  if (!env.jwtSecret || env.jwtSecret.length < 32 || env.jwtSecret.includes("replace-with")) problems.push("JWT_SECRET must be an unpredictable value of at least 32 characters");
+  if (!env.redisUrl) problems.push("REDIS_URL is required for shared rate limiting");
+  if (!env.database.password) problems.push("DB_PASSWORD is required");
+  if (!env.frontendOrigin.startsWith("https://")) problems.push("FRONTEND_ORIGIN must use HTTPS");
+  if (problems.length) throw new Error(`Invalid production configuration: ${problems.join("; ")}`);
+}
 
 export default env;

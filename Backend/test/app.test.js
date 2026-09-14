@@ -54,6 +54,15 @@ test("protected endpoints require a Bearer token", async () => {
   });
 });
 
+test("GET /api/health/metrics exposes Prometheus text", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/health/metrics`);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /text\/plain/);
+    assert.match(await response.text(), /jamn_process_uptime_seconds/);
+  });
+});
+
 test("catalog endpoints reject invalid artist identifiers", async () => {
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/api/artists/not-a-number`);

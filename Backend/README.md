@@ -125,3 +125,17 @@ results are grouped by type; the per-type limit is 1–25.
 All `/api/admin` routes require the `admin` role. Mutations and audit records
 share a transaction. Suspension revokes active refresh sessions immediately;
 already-issued access tokens retain their normal short (15-minute) expiry.
+
+## Production operations
+
+- `NODE_ENV=production` validates a strong JWT secret, HTTPS frontend origin,
+  database password, and `REDIS_URL` before the server starts.
+- Helmet security headers, request IDs, and structured JSON request logs are enabled.
+- `/api/health` is liveness; `/api/health/ready` checks MySQL and configured Redis.
+- `/api/health/metrics` exposes process uptime and labelled HTTP counters.
+- Authentication rate limits use Redis when configured and in-memory state locally.
+- `npm run backup` writes a consistent timestamped SQL dump under `backups/`;
+  keep off-site copies and test restoration on a schedule.
+
+Run migrations during deployment before starting new API instances. Termination
+signals drain HTTP connections and close MySQL and Redis clients cleanly.
