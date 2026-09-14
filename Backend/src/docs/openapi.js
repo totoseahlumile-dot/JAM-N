@@ -68,7 +68,7 @@ const openApiDocument = {
     { name: "Health" }, { name: "Authentication" }, { name: "Artists" },
     { name: "Genres" }, { name: "Events" }, { name: "Albums" },
     { name: "Tracks" }, { name: "Posts" }, { name: "Comments" },
-    { name: "Follows" }, { name: "Alerts" }, { name: "Playlists" }
+    { name: "Follows" }, { name: "Alerts" }, { name: "Playlists" }, { name: "Search" }
   ],
   components: {
     securitySchemes: {
@@ -267,7 +267,12 @@ const openApiDocument = {
     },
     "/api/playlists/{id}/tracks": { post: { tags: ["Playlists"], summary: "Add a track idempotently", security: bearer, parameters: [idParameter()], requestBody: jsonBody({ type: "object", required: ["trackId"], properties: { trackId: { type: "integer" } } }), responses: { 201: mutationResponse, ...errorResponses } } },
     "/api/playlists/{id}/tracks/{trackId}": { delete: { tags: ["Playlists"], summary: "Remove a track", security: bearer, parameters: [idParameter(), idParameter("trackId")], responses: { 204: { description: "Removed" }, ...errorResponses } } },
-    "/api/playlists/{id}/tracks/order": { put: { tags: ["Playlists"], summary: "Replace the complete track order", security: bearer, parameters: [idParameter()], requestBody: jsonBody({ type: "object", required: ["trackIds"], properties: { trackIds: { type: "array", uniqueItems: true, items: { type: "integer" } } } }), responses: { 200: mutationResponse, ...errorResponses } } }
+    "/api/playlists/{id}/tracks/order": { put: { tags: ["Playlists"], summary: "Replace the complete track order", security: bearer, parameters: [idParameter()], requestBody: jsonBody({ type: "object", required: ["trackIds"], properties: { trackIds: { type: "array", uniqueItems: true, items: { type: "integer" } } } }), responses: { 200: mutationResponse, ...errorResponses } } },
+    "/api/search": { get: { tags: ["Search"], summary: "Search across the platform", parameters: [
+      { in: "query", name: "q", required: true, schema: { type: "string", minLength: 2, maxLength: 100 } },
+      { in: "query", name: "types", schema: { type: "string", example: "artists,tracks" } },
+      { in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 25, default: 10 } }
+    ], responses: { 200: { description: "Results grouped by requested resource type" }, ...errorResponses } } }
   }
 };
 

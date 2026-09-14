@@ -131,6 +131,16 @@ test("playlist CRUD enforces privacy, ownership, and track ordering", async () =
   await expectStatus(204, path, { method: "DELETE", token: owner.body.accessToken });
 });
 
+test("unified search returns grouped and selectable resource types", async () => {
+  const all = await expectStatus(200, "/api/search?q=Moon");
+  assert.deepEqual(Object.keys(all.body.results), ["artists", "albums", "tracks", "events", "users"]);
+  assert.equal(all.body.results.artists[0].stageName, "Moonchild Sanelly");
+  const selected = await expectStatus(200, "/api/search?q=Full&types=albums,tracks&limit=2");
+  assert.deepEqual(Object.keys(selected.body.results), ["albums", "tracks"]);
+  await expectStatus(400, "/api/search?q=x");
+  await expectStatus(400, "/api/search?q=music&types=passwords");
+});
+
 test("authentication rotates refresh tokens and rejects replay", async () => {
   const session = await register("session");
   assert.ok(session.body.accessToken);

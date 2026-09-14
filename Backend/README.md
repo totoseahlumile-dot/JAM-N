@@ -103,3 +103,9 @@ recipient has enabled the `new_follower` alert category.
 
 Private playlists are hidden from anonymous users and non-owners. Admins may
 manage any playlist. Track removal and reordering preserve contiguous positions.
+
+## Search endpoint
+
+`GET /api/search?q=moon&types=artists,tracks&limit=10` searches artists,
+albums, tracks, events, and active public user profiles. `types` is optional and
+results are grouped by type; the per-type limit is 1–25.
