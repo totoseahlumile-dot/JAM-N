@@ -1,6 +1,6 @@
 import { pool } from "../config/database.js";
 
-const supportedTypes = ["post_like", "post_comment", "artist_release", "event_reminder", "system"];
+const supportedTypes = ["post_like", "post_comment", "new_follower", "artist_release", "event_reminder", "system"];
 
 const create = async ({ userId, actorUserId, type, title, message, targetType, targetId, actionUrl, dedupeKey }) => {
   // Missing preference rows mean enabled. INSERT ... SELECT lets MySQL apply the

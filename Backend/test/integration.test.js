@@ -94,7 +94,7 @@ after(async () => {
 test("schema and seed are installed only in the test database", async () => {
   const [tables] = await appPool.query("SHOW TABLES");
   const [artists] = await appPool.query("SELECT COUNT(*) AS count FROM artist_profiles");
-  assert.equal(tables.length, 16);
+  assert.equal(tables.length, 18);
   assert.equal(artists[0].count, 10);
 });
 
@@ -167,7 +167,7 @@ test("post ownership, comments, and idempotent likes work together", async () =>
   await expectStatus(200, "/api/alerts/read-all", { method: "PUT", token: author.body.accessToken });
 
   const preferences = await expectStatus(200, "/api/alert-preferences", { token: author.body.accessToken });
-  assert.equal(preferences.body.preferences.length, 5);
+  assert.equal(preferences.body.preferences.length, 6);
   await expectStatus(200, "/api/alert-preferences/post_like", {
     method: "PUT", token: author.body.accessToken, body: { inAppEnabled: false }
   });
@@ -186,4 +186,54 @@ test("post ownership, comments, and idempotent likes work together", async () =>
   );
   assert.equal(children[0].likes, 0);
   assert.equal(children[0].comments, 0);
+});
+
+test("user and artist follows are idempotent, counted, and alerted", async () => {
+  const follower = await register("follower");
+  const creator = await register("followed_artist", "artist");
+  const followerId = follower.body.user.id;
+  const creatorId = creator.body.user.id;
+
+  await expectStatus(400, `/api/users/${followerId}/follow`, {
+    method: "PUT", token: follower.body.accessToken
+  });
+  await expectStatus(204, `/api/users/${creatorId}/follow`, {
+    method: "PUT", token: follower.body.accessToken
+  });
+  await expectStatus(204, `/api/users/${creatorId}/follow`, {
+    method: "PUT", token: follower.body.accessToken
+  });
+
+  const profile = await expectStatus(201, "/api/artists", {
+    method: "POST", token: creator.body.accessToken, body: { stageName: "Followed Integration Artist" }
+  });
+  await expectStatus(400, `/api/artists/${profile.body.id}/follow`, {
+    method: "PUT", token: creator.body.accessToken
+  });
+  await expectStatus(204, `/api/artists/${profile.body.id}/follow`, {
+    method: "PUT", token: follower.body.accessToken
+  });
+  await expectStatus(204, `/api/artists/${profile.body.id}/follow`, {
+    method: "PUT", token: follower.body.accessToken
+  });
+
+  const userStats = await expectStatus(200, `/api/users/${creatorId}/follow-stats`);
+  assert.deepEqual(userStats.body, { followerCount: 1, followingCount: 0 });
+  const artistStats = await expectStatus(200, `/api/artists/${profile.body.id}/follow-stats`);
+  assert.equal(artistStats.body.followerCount, 1);
+  const mine = await expectStatus(200, "/api/follows", { token: follower.body.accessToken });
+  assert.equal(mine.body.users.length, 1);
+  assert.equal(mine.body.artists.length, 1);
+
+  const alerts = await expectStatus(200, "/api/alerts?type=new_follower", { token: creator.body.accessToken });
+  assert.equal(alerts.body.alerts.length, 2);
+
+  await expectStatus(204, `/api/users/${creatorId}/follow`, {
+    method: "DELETE", token: follower.body.accessToken
+  });
+  await expectStatus(204, `/api/artists/${profile.body.id}/follow`, {
+    method: "DELETE", token: follower.body.accessToken
+  });
+  const userStatsAfter = await expectStatus(200, `/api/users/${creatorId}/follow-stats`);
+  assert.equal(userStatsAfter.body.followerCount, 0);
 });

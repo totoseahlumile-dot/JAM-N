@@ -67,7 +67,8 @@ const openApiDocument = {
   tags: [
     { name: "Health" }, { name: "Authentication" }, { name: "Artists" },
     { name: "Genres" }, { name: "Events" }, { name: "Albums" },
-    { name: "Tracks" }, { name: "Posts" }, { name: "Comments" }, { name: "Alerts" }
+    { name: "Tracks" }, { name: "Posts" }, { name: "Comments" },
+    { name: "Follows" }, { name: "Alerts" }
   ],
   components: {
     securitySchemes: {
@@ -208,7 +209,7 @@ const openApiDocument = {
       tags: ["Alerts"], summary: "List the current user's alert inbox", security: bearer,
       parameters: [...listParameters,
         { in: "query", name: "unread", schema: { type: "boolean" } },
-        { in: "query", name: "type", schema: { type: "string", enum: ["post_like", "post_comment", "artist_release", "event_reminder", "system"] } }
+        { in: "query", name: "type", schema: { type: "string", enum: ["post_like", "post_comment", "new_follower", "artist_release", "event_reminder", "system"] } }
       ], responses: { 200: { description: "Paginated alerts, newest first" }, ...errorResponses }
     } },
     "/api/alerts/unread-count": { get: {
@@ -233,10 +234,24 @@ const openApiDocument = {
     } },
     "/api/alert-preferences/{type}": { put: {
       tags: ["Alerts"], summary: "Enable or disable an alert category", security: bearer,
-      parameters: [{ in: "path", name: "type", required: true, schema: { type: "string", enum: ["post_like", "post_comment", "artist_release", "event_reminder", "system"] } }],
+      parameters: [{ in: "path", name: "type", required: true, schema: { type: "string", enum: ["post_like", "post_comment", "new_follower", "artist_release", "event_reminder", "system"] } }],
       requestBody: jsonBody({ type: "object", required: ["inAppEnabled"], properties: { inAppEnabled: { type: "boolean" } } }),
       responses: { 200: { description: "Preference updated" }, ...errorResponses }
-    } }
+    } },
+    "/api/users/{userId}/follow": {
+      put: { tags: ["Follows"], summary: "Follow a user", security: bearer, parameters: [idParameter("userId")], responses: { 204: { description: "Following" }, ...errorResponses } },
+      delete: { tags: ["Follows"], summary: "Unfollow a user", security: bearer, parameters: [idParameter("userId")], responses: { 204: { description: "Unfollowed" }, ...errorResponses } }
+    },
+    "/api/users/{userId}/followers": { get: { tags: ["Follows"], summary: "List a user's followers", parameters: [idParameter("userId"), ...listParameters], responses: { 200: { description: "Paginated followers" }, ...errorResponses } } },
+    "/api/users/{userId}/following": { get: { tags: ["Follows"], summary: "List users followed by a user", parameters: [idParameter("userId"), ...listParameters], responses: { 200: { description: "Paginated following" }, ...errorResponses } } },
+    "/api/users/{userId}/follow-stats": { get: { tags: ["Follows"], summary: "Get user follow counts", parameters: [idParameter("userId")], responses: { 200: { description: "Follower and following counts" }, ...errorResponses } } },
+    "/api/artists/{artistId}/follow": {
+      put: { tags: ["Follows"], summary: "Follow an artist", security: bearer, parameters: [idParameter("artistId")], responses: { 204: { description: "Following" }, ...errorResponses } },
+      delete: { tags: ["Follows"], summary: "Unfollow an artist", security: bearer, parameters: [idParameter("artistId")], responses: { 204: { description: "Unfollowed" }, ...errorResponses } }
+    },
+    "/api/artists/{artistId}/followers": { get: { tags: ["Follows"], summary: "List an artist's followers", parameters: [idParameter("artistId"), ...listParameters], responses: { 200: { description: "Paginated followers" }, ...errorResponses } } },
+    "/api/artists/{artistId}/follow-stats": { get: { tags: ["Follows"], summary: "Get artist follower count", parameters: [idParameter("artistId")], responses: { 200: { description: "Follower count" }, ...errorResponses } } },
+    "/api/follows": { get: { tags: ["Follows"], summary: "List my followed users and artists", security: bearer, responses: { 200: { description: "Followed users and artists" }, ...errorResponses } } }
   }
 };
 

@@ -143,6 +143,27 @@ CREATE TABLE IF NOT EXISTS notifications (
   CONSTRAINT fk_notifications_actor FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS user_follows (
+  follower_user_id BIGINT UNSIGNED NOT NULL,
+  followed_user_id BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (follower_user_id, followed_user_id),
+  KEY idx_user_follows_followed (followed_user_id, created_at),
+  CONSTRAINT fk_user_follows_follower FOREIGN KEY (follower_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_user_follows_followed FOREIGN KEY (followed_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT chk_user_follows_not_self CHECK (follower_user_id <> followed_user_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS artist_follows (
+  user_id BIGINT UNSIGNED NOT NULL,
+  artist_id BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, artist_id),
+  KEY idx_artist_follows_artist (artist_id, created_at),
+  CONSTRAINT fk_artist_follows_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_artist_follows_artist FOREIGN KEY (artist_id) REFERENCES artist_profiles(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS albums (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   artist_id BIGINT UNSIGNED NOT NULL,

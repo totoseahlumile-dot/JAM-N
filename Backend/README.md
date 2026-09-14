@@ -78,4 +78,16 @@ all records. Likes are idempotent, so repeated like requests do not duplicate da
 Likes and comments create inbox alerts for the post owner. Alerts are suppressed
 for self-actions, deduplicated, scoped to their recipient, and removed with their
 target post. Supported preference types are `post_like`, `post_comment`,
-`artist_release`, `event_reminder`, and `system`.
+`new_follower`, `artist_release`, `event_reminder`, and `system`.
+
+## Follow endpoints
+
+- `PUT` or `DELETE /api/users/:userId/follow`
+- `GET /api/users/:userId/followers`, `/following`, and `/follow-stats`
+- `PUT` or `DELETE /api/artists/:artistId/follow`
+- `GET /api/artists/:artistId/followers` and `/follow-stats`
+- `GET /api/follows` lists the authenticated user's followed users and artists
+
+Follow writes are authenticated and idempotent. Users cannot follow themselves
+or their own artist profile. New follows generate deduplicated alerts when the
+recipient has enabled the `new_follower` alert category.
