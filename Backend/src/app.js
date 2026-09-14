@@ -10,6 +10,7 @@ import notificationRoutes from "./routes/notification.routes.js";
 import followRoutes from "./routes/follow.routes.js";
 import playlistRoutes from "./routes/playlist.routes.js";
 import searchRoutes from "./routes/search.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorHandler.js";
 import openApiDocument from "./docs/openapi.js";
@@ -36,6 +37,7 @@ app.use("/api", notificationRoutes);
 app.use("/api", followRoutes);
 app.use("/api", playlistRoutes);
 app.use("/api", searchRoutes);
+app.use("/api", adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -109,3 +109,16 @@ manage any playlist. Track removal and reordering preserve contiguous positions.
 `GET /api/search?q=moon&types=artists,tracks&limit=10` searches artists,
 albums, tracks, events, and active public user profiles. `types` is optional and
 results are grouped by type; the per-type limit is 1–25.
+
+## Moderation and admin endpoints
+
+- `POST /api/reports` lets authenticated users report posts, comments, users, or artists
+- `GET` and `PUT /api/admin/reports[/:id]` operate the moderation queue
+- `PUT /api/admin/artists/:id/verification` changes verified status
+- `PUT /api/admin/users/:id/status` suspends or restores an account
+- `DELETE /api/admin/content/:type/:id` removes a post or comment
+- `GET /api/admin/audit-logs` returns newest-first administrative history
+
+All `/api/admin` routes require the `admin` role. Mutations and audit records
+share a transaction. Suspension revokes active refresh sessions immediately;
+already-issued access tokens retain their normal short (15-minute) expiry.

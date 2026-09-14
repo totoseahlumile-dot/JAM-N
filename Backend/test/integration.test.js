@@ -71,6 +71,7 @@ before(async () => {
   // env.js reads process.env when dynamically imported, so the application pool
   // is guaranteed to point at the isolated database for the entire test process.
   process.env.DB_NAME = testDatabase;
+  process.env.NODE_ENV = "test";
   process.env.JWT_SECRET ||= "integration-only-jwt-secret-at-least-32-characters";
   const [{ default: app }, database] = await Promise.all([
     import("../src/app.js"),
@@ -97,7 +98,7 @@ test("schema and seed are installed only in the test database", async () => {
   const [artistGenres] = await appPool.query("SELECT COUNT(*) AS count FROM artist_genres");
   const [albums] = await appPool.query("SELECT COUNT(*) AS count FROM albums");
   const [tracks] = await appPool.query("SELECT COUNT(*) AS count FROM tracks");
-  assert.equal(tables.length, 20);
+  assert.equal(tables.length, 22);
   assert.equal(artists[0].count, 10);
   assert.equal(artistGenres[0].count, 10);
   assert.equal(albums[0].count, 6);
@@ -139,6 +140,31 @@ test("unified search returns grouped and selectable resource types", async () =>
   assert.deepEqual(Object.keys(selected.body.results), ["albums", "tracks"]);
   await expectStatus(400, "/api/search?q=x");
   await expectStatus(400, "/api/search?q=music&types=passwords");
+});
+
+test("admin moderation changes state and records an audit trail", async () => {
+  const adminRegistration = await register("moderator");
+  await appPool.execute("UPDATE users SET role = 'admin' WHERE id = ?", [adminRegistration.body.user.id]);
+  const adminLogin = await expectStatus(200, "/api/auth/login", {
+    method: "POST", body: { email: "integration_moderator@example.test", password: "Integration!2026" }
+  });
+  const member = await register("reported_member");
+  const post = await expectStatus(201, "/api/posts", {
+    method: "POST", token: member.body.accessToken, body: { caption: "Content awaiting moderation" }
+  });
+  const report = await expectStatus(201, "/api/reports", {
+    method: "POST", token: member.body.accessToken,
+    body: { targetType: "post", targetId: post.body.id, reason: "Integration moderation test" }
+  });
+  const token = adminLogin.body.accessToken;
+  await expectStatus(200, `/api/admin/reports/${report.body.id}`, { method: "PUT", token, body: { status: "actioned" } });
+  await expectStatus(204, `/api/admin/content/post/${post.body.id}`, { method: "DELETE", token });
+  await expectStatus(200, `/api/admin/users/${member.body.user.id}/status`, { method: "PUT", token, body: { active: false } });
+  const [artistRows] = await appPool.query("SELECT id FROM artist_profiles ORDER BY id LIMIT 1");
+  await expectStatus(200, `/api/admin/artists/${artistRows[0].id}/verification`, { method: "PUT", token, body: { verified: true } });
+  const logs = await expectStatus(200, "/api/admin/audit-logs", { token });
+  assert.ok(logs.body.auditLogs.length >= 4);
+  assert.equal((await jsonRequest("/api/auth/login", { method: "POST", body: { email: "integration_reported_member@example.test", password: "Integration!2026" } })).status, 401);
 });
 
 test("authentication rotates refresh tokens and rejects replay", async () => {

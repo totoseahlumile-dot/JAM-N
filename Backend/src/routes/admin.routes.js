@@ -1,0 +1,14 @@
+import express from "express";
+import * as controller from "../controllers/admin.controller.js";
+import authenticate from "../middleware/authenticate.js";
+import authorizeRoles from "../middleware/authorizeRoles.js";
+const router = express.Router();
+router.post("/reports", authenticate, controller.report);
+router.use("/admin", authenticate, authorizeRoles("admin"));
+router.get("/admin/reports", controller.listReports);
+router.put("/admin/reports/:id", controller.reviewReport);
+router.put("/admin/artists/:id/verification", controller.verifyArtist);
+router.put("/admin/users/:id/status", controller.setUserStatus);
+router.delete("/admin/content/:type/:id", controller.deleteContent);
+router.get("/admin/audit-logs", controller.auditLogs);
+export default router;

@@ -68,7 +68,7 @@ const openApiDocument = {
     { name: "Health" }, { name: "Authentication" }, { name: "Artists" },
     { name: "Genres" }, { name: "Events" }, { name: "Albums" },
     { name: "Tracks" }, { name: "Posts" }, { name: "Comments" },
-    { name: "Follows" }, { name: "Alerts" }, { name: "Playlists" }, { name: "Search" }
+    { name: "Follows" }, { name: "Alerts" }, { name: "Playlists" }, { name: "Search" }, { name: "Moderation" }
   ],
   components: {
     securitySchemes: {
@@ -272,7 +272,14 @@ const openApiDocument = {
       { in: "query", name: "q", required: true, schema: { type: "string", minLength: 2, maxLength: 100 } },
       { in: "query", name: "types", schema: { type: "string", example: "artists,tracks" } },
       { in: "query", name: "limit", schema: { type: "integer", minimum: 1, maximum: 25, default: 10 } }
-    ], responses: { 200: { description: "Results grouped by requested resource type" }, ...errorResponses } } }
+    ], responses: { 200: { description: "Results grouped by requested resource type" }, ...errorResponses } } },
+    "/api/reports": { post: { tags: ["Moderation"], summary: "Report content or an account", security: bearer, responses: { 201: mutationResponse, ...errorResponses } } },
+    "/api/admin/reports": { get: { tags: ["Moderation"], summary: "List moderation reports", security: bearer, parameters: listParameters, responses: { 200: { description: "Moderation queue" }, ...errorResponses } } },
+    "/api/admin/reports/{id}": { put: { tags: ["Moderation"], summary: "Review a report", security: bearer, parameters: [idParameter()], responses: { 200: mutationResponse, ...errorResponses } } },
+    "/api/admin/artists/{id}/verification": { put: { tags: ["Moderation"], summary: "Set artist verification", security: bearer, parameters: [idParameter()], responses: { 200: mutationResponse, ...errorResponses } } },
+    "/api/admin/users/{id}/status": { put: { tags: ["Moderation"], summary: "Suspend or restore a user", security: bearer, parameters: [idParameter()], responses: { 200: mutationResponse, ...errorResponses } } },
+    "/api/admin/content/{type}/{id}": { delete: { tags: ["Moderation"], summary: "Remove a post or comment", security: bearer, parameters: [{ in: "path", name: "type", required: true, schema: { type: "string", enum: ["post", "comment"] } }, idParameter()], responses: { 204: { description: "Removed" }, ...errorResponses } } },
+    "/api/admin/audit-logs": { get: { tags: ["Moderation"], summary: "List admin audit history", security: bearer, parameters: listParameters, responses: { 200: { description: "Audit records" }, ...errorResponses } } }
   }
 };
 
