@@ -94,7 +94,7 @@ after(async () => {
 test("schema and seed are installed only in the test database", async () => {
   const [tables] = await appPool.query("SHOW TABLES");
   const [artists] = await appPool.query("SELECT COUNT(*) AS count FROM artist_profiles");
-  assert.equal(tables.length, 14);
+  assert.equal(tables.length, 16);
   assert.equal(artists[0].count, 10);
 });
 
@@ -155,6 +155,30 @@ test("post ownership, comments, and idempotent likes work together", async () =>
   const fetched = await expectStatus(200, `/api/posts/${post.body.id}`);
   assert.equal(Number(fetched.body.post.likeCount), 1);
   assert.equal(Number(fetched.body.post.commentCount), 1);
+
+  const inbox = await expectStatus(200, "/api/alerts", { token: author.body.accessToken });
+  assert.equal(inbox.body.alerts.length, 2);
+  assert.deepEqual(new Set(inbox.body.alerts.map((alert) => alert.type)), new Set(["post_like", "post_comment"]));
+  const unread = await expectStatus(200, "/api/alerts/unread-count", { token: author.body.accessToken });
+  assert.equal(unread.body.unreadCount, 2);
+  await expectStatus(200, `/api/alerts/${inbox.body.alerts[0].id}/read`, {
+    method: "PUT", token: author.body.accessToken
+  });
+  await expectStatus(200, "/api/alerts/read-all", { method: "PUT", token: author.body.accessToken });
+
+  const preferences = await expectStatus(200, "/api/alert-preferences", { token: author.body.accessToken });
+  assert.equal(preferences.body.preferences.length, 5);
+  await expectStatus(200, "/api/alert-preferences/post_like", {
+    method: "PUT", token: author.body.accessToken, body: { inAppEnabled: false }
+  });
+  const quietPost = await expectStatus(201, "/api/posts", {
+    method: "POST", token: author.body.accessToken, body: { caption: "No like alert" }
+  });
+  await expectStatus(204, `/api/posts/${quietPost.body.id}/like`, { method: "PUT", token: reader.body.accessToken });
+  const quietInbox = await expectStatus(200, "/api/alerts?unread=true", { token: author.body.accessToken });
+  assert.equal(quietInbox.body.alerts.length, 0);
+  await expectStatus(204, `/api/posts/${quietPost.body.id}`, { method: "DELETE", token: author.body.accessToken });
+
   await expectStatus(204, `/api/posts/${post.body.id}`, { method: "DELETE", token: author.body.accessToken });
 
   const [children] = await appPool.query(

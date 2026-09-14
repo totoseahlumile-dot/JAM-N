@@ -65,3 +65,17 @@ profile, albums, or tracks. Admin accounts may manage all catalog records.
 Reads are public. Creating posts, likes, and comments requires authentication.
 Users may update or delete only their own posts and comments; admins may moderate
 all records. Likes are idempotent, so repeated like requests do not duplicate data.
+
+## Alert endpoints
+
+- `GET /api/alerts` supports `unread=true`, `type`, `limit`, and `offset`
+- `GET /api/alerts/unread-count`
+- `PUT /api/alerts/:id/read` and `PUT /api/alerts/read-all`
+- `DELETE /api/alerts/:id`
+- `GET /api/alert-preferences`
+- `PUT /api/alert-preferences/:type` with `{ "inAppEnabled": false }`
+
+Likes and comments create inbox alerts for the post owner. Alerts are suppressed
+for self-actions, deduplicated, scoped to their recipient, and removed with their
+target post. Supported preference types are `post_like`, `post_comment`,
+`artist_release`, `event_reminder`, and `system`.

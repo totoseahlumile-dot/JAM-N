@@ -149,6 +149,7 @@ test("OpenAPI documentation exposes the implemented API routes", async () => {
     assert.ok(document.paths["/api/auth/refresh"].post);
     assert.ok(document.paths["/api/artists/{id}"].put);
     assert.ok(document.paths["/api/posts/{postId}/comments"].post);
+    assert.ok(document.paths["/api/alerts/unread-count"].get);
   });
 });
 

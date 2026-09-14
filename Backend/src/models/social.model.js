@@ -51,12 +51,26 @@ const updatePost = async (id, fields) => {
 };
 
 const deletePost = async (id) => {
-  const [result] = await pool.execute("DELETE FROM posts WHERE id = ?", [id]);
-  return result.affectedRows > 0;
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    // Generic notification targets cannot use a foreign key, so remove their
+    // deep links explicitly in the same transaction as the post.
+    await connection.execute("DELETE FROM notifications WHERE target_type = 'post' AND target_id = ?", [id]);
+    const [result] = await connection.execute("DELETE FROM posts WHERE id = ?", [id]);
+    await connection.commit();
+    return result.affectedRows > 0;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
 const addLike = async (postId, userId) => {
-  await pool.execute("INSERT IGNORE INTO post_likes (post_id, user_id) VALUES (?, ?)", [postId, userId]);
+  const [result] = await pool.execute("INSERT IGNORE INTO post_likes (post_id, user_id) VALUES (?, ?)", [postId, userId]);
+  return result.affectedRows > 0;
 };
 
 const removeLike = async (postId, userId) => {

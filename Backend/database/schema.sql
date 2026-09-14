@@ -113,6 +113,36 @@ CREATE TABLE IF NOT EXISTS comments (
   CONSTRAINT fk_comments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS notification_preferences (
+  user_id BIGINT UNSIGNED NOT NULL,
+  notification_type VARCHAR(50) NOT NULL,
+  in_app_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, notification_type),
+  CONSTRAINT fk_notification_preferences_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  actor_user_id BIGINT UNSIGNED NULL,
+  notification_type VARCHAR(50) NOT NULL,
+  title VARCHAR(120) NOT NULL,
+  message VARCHAR(500) NOT NULL,
+  target_type VARCHAR(50) NULL,
+  target_id BIGINT UNSIGNED NULL,
+  action_url VARCHAR(2048) NULL,
+  dedupe_key VARCHAR(190) NULL,
+  read_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_notifications_dedupe (dedupe_key),
+  KEY idx_notifications_inbox (user_id, read_at, created_at),
+  KEY idx_notifications_actor (actor_user_id),
+  CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_notifications_actor FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS albums (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   artist_id BIGINT UNSIGNED NOT NULL,

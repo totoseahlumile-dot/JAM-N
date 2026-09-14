@@ -1,4 +1,5 @@
 import * as social from "../models/social.model.js";
+import * as notifications from "../models/notification.model.js";
 import httpError from "../utils/httpError.js";
 
 const positiveInteger = (value, name, optional = false) => {
@@ -43,6 +44,16 @@ const handleDatabaseError = (next, error) => {
     return next(httpError(404, "RELATED_RESOURCE_NOT_FOUND", "A related post, user, or media type does not exist"));
   }
   return next(error);
+};
+
+const createAlert = async (details) => {
+  try {
+    await notifications.create(details);
+  } catch (error) {
+    // Alerts are secondary: a temporary inbox failure must not roll back a
+    // successful like or comment. Production logging can surface this failure.
+    if (process.env.NODE_ENV !== "test") console.error("Unable to create alert", error);
+  }
 };
 
 const getPosts = async (req, res, next) => {
@@ -104,7 +115,21 @@ const deletePost = async (req, res, next) => {
 
 const likePost = async (req, res, next) => {
   try {
-    await social.addLike(positiveInteger(req.params.postId, "post id"), req.user.id);
+    const postId = positiveInteger(req.params.postId, "post id");
+    const post = await social.findPostById(postId);
+    if (!post) throw httpError(404, "POST_NOT_FOUND", "Post not found");
+    const added = await social.addLike(postId, req.user.id);
+    if (added) await createAlert({
+      userId: post.authorId,
+      actorUserId: req.user.id,
+      type: "post_like",
+      title: "New like",
+      message: "Someone liked your post.",
+      targetType: "post",
+      targetId: postId,
+      actionUrl: `/posts/${postId}`,
+      dedupeKey: `post_like:${postId}:${req.user.id}`
+    });
     res.status(204).end();
   } catch (error) { handleDatabaseError(next, error); }
 };
@@ -125,10 +150,24 @@ const getComments = async (req, res, next) => {
 
 const createComment = async (req, res, next) => {
   try {
+    const postId = positiveInteger(req.params.postId, "post id");
+    const post = await social.findPostById(postId);
+    if (!post) throw httpError(404, "POST_NOT_FOUND", "Post not found");
     const id = await social.createComment({
-      postId: positiveInteger(req.params.postId, "post id"),
+      postId,
       userId: req.user.id,
       body: requiredText(req.body?.body, "body", 1000)
+    });
+    await createAlert({
+      userId: post.authorId,
+      actorUserId: req.user.id,
+      type: "post_comment",
+      title: "New comment",
+      message: "Someone commented on your post.",
+      targetType: "post",
+      targetId: postId,
+      actionUrl: `/posts/${postId}`,
+      dedupeKey: `post_comment:${id}`
     });
     res.status(201).json({ id });
   } catch (error) { handleDatabaseError(next, error); }

@@ -6,6 +6,7 @@ import healthRoutes from "./routes/health.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import catalogRoutes from "./routes/catalog.routes.js";
 import socialRoutes from "./routes/social.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 import notFound from "./middleware/notFound.js";
 import errorHandler from "./middleware/errorHandler.js";
 import openApiDocument from "./docs/openapi.js";
@@ -28,6 +29,7 @@ app.use("/api/health", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api", catalogRoutes);
 app.use("/api", socialRoutes);
+app.use("/api", notificationRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

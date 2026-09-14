@@ -67,7 +67,7 @@ const openApiDocument = {
   tags: [
     { name: "Health" }, { name: "Authentication" }, { name: "Artists" },
     { name: "Genres" }, { name: "Events" }, { name: "Albums" },
-    { name: "Tracks" }, { name: "Posts" }, { name: "Comments" }
+    { name: "Tracks" }, { name: "Posts" }, { name: "Comments" }, { name: "Alerts" }
   ],
   components: {
     securitySchemes: {
@@ -203,7 +203,40 @@ const openApiDocument = {
     "/api/comments/{id}": {
       put: { tags: ["Comments"], summary: "Update own comment", security: bearer, parameters: [idParameter()], requestBody: jsonBody({ $ref: "#/components/schemas/CommentInput" }), responses: { 200: mutationResponse, ...errorResponses } },
       delete: { tags: ["Comments"], summary: "Delete own comment", security: bearer, parameters: [idParameter()], responses: { 204: { description: "Deleted" }, ...errorResponses } }
-    }
+    },
+    "/api/alerts": { get: {
+      tags: ["Alerts"], summary: "List the current user's alert inbox", security: bearer,
+      parameters: [...listParameters,
+        { in: "query", name: "unread", schema: { type: "boolean" } },
+        { in: "query", name: "type", schema: { type: "string", enum: ["post_like", "post_comment", "artist_release", "event_reminder", "system"] } }
+      ], responses: { 200: { description: "Paginated alerts, newest first" }, ...errorResponses }
+    } },
+    "/api/alerts/unread-count": { get: {
+      tags: ["Alerts"], summary: "Get the unread badge count", security: bearer,
+      responses: { 200: { description: "Unread count" }, ...errorResponses }
+    } },
+    "/api/alerts/read-all": { put: {
+      tags: ["Alerts"], summary: "Mark all alerts as read", security: bearer,
+      responses: { 200: { description: "Number of alerts updated" }, ...errorResponses }
+    } },
+    "/api/alerts/{id}/read": { put: {
+      tags: ["Alerts"], summary: "Mark one alert as read", security: bearer,
+      parameters: [idParameter()], responses: { 200: { description: "Alert marked read" }, ...errorResponses }
+    } },
+    "/api/alerts/{id}": { delete: {
+      tags: ["Alerts"], summary: "Delete one alert", security: bearer,
+      parameters: [idParameter()], responses: { 204: { description: "Alert deleted" }, ...errorResponses }
+    } },
+    "/api/alert-preferences": { get: {
+      tags: ["Alerts"], summary: "List alert preferences", security: bearer,
+      responses: { 200: { description: "All supported alert types and their enabled state" }, ...errorResponses }
+    } },
+    "/api/alert-preferences/{type}": { put: {
+      tags: ["Alerts"], summary: "Enable or disable an alert category", security: bearer,
+      parameters: [{ in: "path", name: "type", required: true, schema: { type: "string", enum: ["post_like", "post_comment", "artist_release", "event_reminder", "system"] } }],
+      requestBody: jsonBody({ type: "object", required: ["inAppEnabled"], properties: { inAppEnabled: { type: "boolean" } } }),
+      responses: { 200: { description: "Preference updated" }, ...errorResponses }
+    } }
   }
 };
 
