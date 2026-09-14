@@ -94,8 +94,14 @@ after(async () => {
 test("schema and seed are installed only in the test database", async () => {
   const [tables] = await appPool.query("SHOW TABLES");
   const [artists] = await appPool.query("SELECT COUNT(*) AS count FROM artist_profiles");
+  const [artistGenres] = await appPool.query("SELECT COUNT(*) AS count FROM artist_genres");
+  const [albums] = await appPool.query("SELECT COUNT(*) AS count FROM albums");
+  const [tracks] = await appPool.query("SELECT COUNT(*) AS count FROM tracks");
   assert.equal(tables.length, 18);
   assert.equal(artists[0].count, 10);
+  assert.equal(artistGenres[0].count, 10);
+  assert.equal(albums[0].count, 6);
+  assert.equal(tracks[0].count, 12);
 });
 
 test("authentication rotates refresh tokens and rejects replay", async () => {

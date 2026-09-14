@@ -37,3 +37,53 @@ INSERT INTO events (name, location, starts_at, ends_at, price_description) VALUE
   ('We Love R&B Johannesburg', 'Maracana, Johannesburg', '2026-09-04 18:00:00', '2026-09-05 23:59:00', 'From R150')
 ON DUPLICATE KEY UPDATE location = VALUES(location), ends_at = VALUES(ends_at),
   price_description = VALUES(price_description);
+
+INSERT INTO artist_genres (artist_id, genre_id, is_primary)
+SELECT ap.id, g.id, TRUE FROM artist_profiles ap JOIN genres g
+WHERE (ap.stage_name = 'Usimamane' AND g.name = 'Hip-Hop')
+   OR (ap.stage_name = 'Bongeziwe Mabandla' AND g.name = 'Folk')
+   OR (ap.stage_name = 'Will Linley' AND g.name = 'Pop')
+   OR (ap.stage_name = 'Moonchild Sanelly' AND g.name = 'South African Afropop')
+   OR (ap.stage_name = 'A-Reece' AND g.name = 'Rap')
+   OR (ap.stage_name = 'Hunter Rose' AND g.name = 'Neo-Soul')
+   OR (ap.stage_name = 'Vigro Deep' AND g.name = 'Amapiano')
+   OR (ap.stage_name = 'Alice Phoebe Lou' AND g.name = 'Indie Pop')
+   OR (ap.stage_name = 'Internet Girl' AND g.name = 'Alternative Rock')
+   OR (ap.stage_name = 'The Parlotones' AND g.name = 'Rock')
+ON DUPLICATE KEY UPDATE is_primary = VALUES(is_primary);
+
+INSERT INTO albums (artist_id, title, release_date)
+SELECT ap.id, seed.title, seed.release_date
+FROM artist_profiles ap JOIN (
+  SELECT 'Usimamane' artist, '20th: Days Before Maud' title, '2024-09-20' release_date UNION ALL
+  SELECT 'Bongeziwe Mabandla', 'iimini', '2020-03-27' UNION ALL
+  SELECT 'Will Linley', 'Don''t Cry Because It''s Over', '2025-01-01' UNION ALL
+  SELECT 'Moonchild Sanelly', 'Full Moon', '2025-01-10' UNION ALL
+  SELECT 'Vigro Deep', 'Your Piano Is Not My Piano', '2024-11-29' UNION ALL
+  SELECT 'Alice Phoebe Lou', 'Glow', '2021-03-19'
+) seed ON seed.artist = ap.stage_name
+ON DUPLICATE KEY UPDATE release_date = VALUES(release_date);
+
+INSERT INTO tracks (artist_id, album_id, title, release_date)
+SELECT ap.id, a.id, seed.title, seed.release_date
+FROM artist_profiles ap
+JOIN (
+  SELECT 'Usimamane' artist, 'Soft' title, NULL album_title, '2025-01-01' release_date UNION ALL
+  SELECT 'Usimamane', 'Star', '20th: Days Before Maud', '2024-09-20' UNION ALL
+  SELECT 'Bongeziwe Mabandla', 'salanabani', 'iimini', '2020-03-27' UNION ALL
+  SELECT 'Bongeziwe Mabandla', 'jikeleza', 'iimini', '2020-03-27' UNION ALL
+  SELECT 'Will Linley', 'Quite Like Us...', 'Don''t Cry Because It''s Over', '2025-01-01' UNION ALL
+  SELECT 'Moonchild Sanelly', 'Falling', 'Full Moon', '2025-01-10' UNION ALL
+  SELECT 'A-Reece', 'Activity', NULL, '2026-01-01' UNION ALL
+  SELECT 'Hunter Rose', 'Fine Wine', NULL, '2026-01-01' UNION ALL
+  SELECT 'Vigro Deep', 'Nomsa', 'Your Piano Is Not My Piano', '2024-11-29' UNION ALL
+  SELECT 'Alice Phoebe Lou', 'Only When I', 'Glow', '2021-03-19' UNION ALL
+  SELECT 'Internet Girl', 'PULL UP', NULL, '2024-01-01' UNION ALL
+  SELECT 'The Parlotones', 'Colourful', NULL, '2005-01-01'
+) seed ON seed.artist = ap.stage_name
+LEFT JOIN albums a ON a.artist_id = ap.id AND a.title = seed.album_title
+WHERE NOT EXISTS (
+  SELECT 1 FROM tracks existing
+  WHERE existing.artist_id = ap.id AND existing.title = seed.title
+)
+ON DUPLICATE KEY UPDATE album_id = VALUES(album_id), release_date = VALUES(release_date);

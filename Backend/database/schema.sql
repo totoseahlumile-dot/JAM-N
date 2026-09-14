@@ -184,7 +184,8 @@ CREATE TABLE IF NOT EXISTS tracks (
   release_date DATE NULL,
   stream_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id), KEY idx_tracks_artist (artist_id), KEY idx_tracks_album (album_id),
+  PRIMARY KEY (id), UNIQUE KEY uq_tracks_artist_title (artist_id, title),
+  KEY idx_tracks_artist (artist_id), KEY idx_tracks_album (album_id),
   CONSTRAINT fk_tracks_artist FOREIGN KEY (artist_id) REFERENCES artist_profiles(id) ON DELETE CASCADE,
   CONSTRAINT fk_tracks_album FOREIGN KEY (album_id) REFERENCES albums(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
