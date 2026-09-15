@@ -30,9 +30,11 @@
         <span class="track-col-title" @click="playTrack(song)">{{
           song.title
         }}</span>
-        <span class="track-col-artist">{{ song.artist }}</span>
+        <span class="track-col-artist" @click="goToArtistByTrack(song)">{{
+          song.artist
+        }}</span>
 
-        <!-- 3-dot menu, replaces the standalone remove button -->
+        <!-- 3-dot menu -->
         <div class="track-menu-wrapper">
           <button
             class="menu-btn"
@@ -44,13 +46,13 @@
 
           <div v-if="openMenuId === song.id" class="track-menu" @click.stop>
             <button class="menu-item" @click="handleLike(song)">
-              {{ isLiked(song.id) ? "♥ Unlike" : "♡ Like" }}
+              {{ isLiked(song.id) ? "Remove from Liked Songs" : "Save to Liked Songs" }}
             </button>
             <button class="menu-item" @click="handleAddToPlaylist(song)">
-              + Add to another playlist
+              Add to playlist
             </button>
             <button class="menu-item danger" @click="removeTrack(song.id)">
-              ✕ Remove from this playlist
+              Remove from playlist
             </button>
           </div>
         </div>
@@ -66,11 +68,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useStore } from "vuex";
 
 const route = useRoute();
+const router = useRouter();
 const store = useStore();
 
 const playlistId = route.params.id;
@@ -102,21 +105,34 @@ function toggleMenu(songId) {
   openMenuId.value = openMenuId.value === songId ? null : songId;
 }
 
+function handleClickOutside(e) {
+  if (!e.target.closest(".track-menu-wrapper")) {
+    openMenuId.value = null;
+  }
+}
+
+onMounted(() => window.addEventListener("click", handleClickOutside));
+onUnmounted(() => window.removeEventListener("click", handleClickOutside));
+
 function isLiked(trackId) {
-  return store.getters["auth/isLiked"]?.(trackId) ?? false;
+  const likedIds = store.getters["auth/likedSongIds"] || [];
+  return likedIds.includes(trackId);
 }
 
 function handleLike(song) {
-  store.commit("auth/TOGGLE_LIKE", song.id);
+  store.dispatch("auth/toggleLike", song.id);
   openMenuId.value = null;
 }
 
 function handleAddToPlaylist(song) {
-  // TODO: wire this up to whichever playlist-picker UI already exists
-  // for the "create playlist" flow, so a song can be added to a
-  // *different* playlist from here too.
-  console.log("Add to another playlist:", song);
+  console.log("Add to playlist:", song);
   openMenuId.value = null;
+}
+
+function goToArtistByTrack(track) {
+  if (track.artistId) {
+    router.push(`/artists/${track.artistId}`);
+  }
 }
 </script>
 
@@ -125,75 +141,143 @@ function handleAddToPlaylist(song) {
   padding: 2rem;
   max-width: 1000px;
   margin: 0 auto;
+  background-color: var(--bg-main, #ffffff);
+  color: var(--text-main, #111111);
 }
+
 .back-btn {
   background: transparent;
   border: none;
   font-weight: 600;
   cursor: pointer;
   margin-bottom: 1.5rem;
+  color: var(--text-main, #333);
 }
+
 .playlist-hero {
   display: flex;
   align-items: flex-end;
   gap: 1.5rem;
   margin-bottom: 2rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-subtle, #eee);
   padding-bottom: 1.5rem;
 }
+
+/* Yellow background removed — replaced with clean surface background & border */
 .playlist-hero-cover {
   width: 140px;
   height: 140px;
-  background: #e4e6eb;
+  background-color: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #e5e5e5);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 3rem;
 }
+
+.playlist-tag {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #666);
+  opacity: 0.8;
+}
+
+.playlist-hero-info h2 {
+  margin: 0.25rem 0;
+  font-size: 1.8rem;
+  color: var(--text-main, #111);
+}
+
+.playlist-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted, #666);
+  opacity: 0.8;
+  margin: 0;
+}
+
+.playlist-table {
+  display: flex;
+  flex-direction: column;
+}
+
 .table-header,
 .table-row {
   display: grid;
   grid-template-columns: 40px 2fr 1fr 40px;
   padding: 0.6rem 0.5rem;
   align-items: center;
-  border-bottom: 1px solid #f2f2f2;
+  border-bottom: 1px solid var(--border-subtle, #f2f2f2);
   font-size: 0.85rem;
 }
+
 .table-header {
   font-weight: 600;
-  opacity: 0.6;
+  color: var(--text-muted, #666);
+  opacity: 0.8;
+  border-bottom: 2px solid var(--border-subtle, #eee);
 }
+
+.table-row:hover {
+  background: var(--accent-yellow, rgba(250, 225, 132, 0.2));
+  border-radius: 4px;
+}
+
 .track-col-title {
   font-weight: 600;
   cursor: pointer;
+  color: var(--text-main, #111);
+}
+
+.track-col-title:hover {
+  text-decoration: underline;
+}
+
+.track-col-artist {
+  cursor: pointer;
+  color: var(--text-muted, #666);
+}
+
+.track-col-artist:hover {
+  text-decoration: underline;
 }
 
 .track-menu-wrapper {
   position: relative;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .menu-btn {
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 1rem;
-  opacity: 0.6;
+  font-size: 1.1rem;
+  color: var(--text-muted, #666);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
 }
 
 .menu-btn:hover {
-  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-main, #000);
 }
 
 .track-menu {
   position: absolute;
   right: 0;
   top: 100%;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #eee);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 20;
   min-width: 180px;
   overflow: hidden;
 }
@@ -207,19 +291,21 @@ function handleAddToPlaylist(song) {
   background: transparent;
   font-size: 0.8rem;
   cursor: pointer;
+  color: var(--text-main, #111);
 }
 
 .menu-item:hover {
-  background: #f5f5f5;
+  background: var(--accent-yellow, #fae184);
 }
 
 .menu-item.danger {
-  color: #c0392b;
+  color: #ff4d4d;
 }
 
 .empty-state {
-  opacity: 0.6;
-  font-size: 0.85rem;
+  color: var(--text-muted, #666);
+  opacity: 0.7;
+  font-size: 0.9rem;
   text-align: center;
   padding: 2rem 0;
 }

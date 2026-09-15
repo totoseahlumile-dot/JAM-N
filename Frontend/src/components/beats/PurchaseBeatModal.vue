@@ -33,16 +33,16 @@
         <div class="license-buttons">
           <button
             type="button"
-            class="license-btn"
+            class="license-btn license-btn-non-exclusive"
             :class="{ active: selectedLicenseType === 'non-exclusive' }"
             @click="selectedLicenseType = 'non-exclusive'"
           >
-            Non- Exclusive
+            Non-Exclusive
           </button>
 
           <button
             type="button"
-            class="license-btn"
+            class="license-btn license-btn-exclusive"
             :class="{ active: selectedLicenseType === 'exclusive' }"
             @click="selectedLicenseType = 'exclusive'"
           >
@@ -110,7 +110,7 @@ function addToCart() {
 .artwork-container {
   width: 100%;
   aspect-ratio: 16 / 9;
-  background-color: #e5e5e5;
+  background-color: var(--border-subtle);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
@@ -127,7 +127,7 @@ function addToCart() {
 .placeholder-icon {
   width: 64px;
   height: 64px;
-  color: #a0a0a0;
+  color: var(--text-muted);
 }
 
 .beat-info-block {
@@ -138,27 +138,27 @@ function addToCart() {
 
 .song-title {
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 800;
   margin: 0;
-  color: #111;
+  color: var(--text-light);
 }
 
 .artist-name {
   font-size: 0.95rem;
-  color: #444;
+  color: var(--text-muted);
   margin: 0;
 }
 
 .price-display {
   font-size: 1.25rem;
   font-weight: 800;
-  color: #000;
+  color: var(--text-light);
   margin-top: 0.5rem;
 }
 
 .body-text {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-muted);
   margin-top: 0.25rem;
   line-height: 1.4;
 }
@@ -170,9 +170,9 @@ function addToCart() {
 }
 
 .section-label {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.95rem;
-  color: #222;
+  color: var(--text-light);
 }
 
 .license-buttons {
@@ -184,40 +184,59 @@ function addToCart() {
 .license-btn {
   width: 100%;
   padding: 0.85rem;
-  background-color: #2c2c2c;
-  color: #ffffff;
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.license-btn:hover {
-  background-color: #3a3a3a;
+/* Top Button (Non-Exclusive) -> Purple using --primary-wisteria */
+.license-btn-non-exclusive {
+  background-color: var(--primary-wisteria);
+  color: var(--text-dark-btn);
 }
 
-.license-btn.active {
-  background-color: #1a1a1a;
-  border-color: #6a5acd;
+.license-btn-non-exclusive:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.license-btn-non-exclusive.active {
+  border-color: var(--accent-plum);
+}
+
+/* Bottom Button (Exclusive) -> Blue using --secondary-frosted */
+.license-btn-exclusive {
+  background-color: var(--secondary-frosted);
+  color: var(--text-dark-btn);
+}
+
+.license-btn-exclusive:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.license-btn-exclusive.active {
+  border-color: var(--primary-wisteria);
 }
 
 .add-to-cart-btn {
   width: 100%;
   padding: 0.9rem;
-  background-color: #eeeeee;
-  color: #111111;
+  background-color: var(--accent-gold);
+  color: var(--text-dark-btn);
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   margin-top: 0.5rem;
-  transition: background-color 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .add-to-cart-btn:hover {
-  background-color: #e0e0e0;
+  opacity: 0.9;
 }
 </style>

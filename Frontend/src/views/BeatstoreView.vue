@@ -15,20 +15,21 @@
       </div>
     </header>
 
-    <!-- Genre filter pills -->
+    <!-- Genre filter pills with dynamic multi-color rotation -->
     <div class="genre-filters">
       <button
-        v-for="genre in genres"
+        v-for="(genre, index) in genres"
         :key="genre"
         class="genre-pill"
         :class="{ active: activeGenre === genre }"
+        :style="getFilterStyle(index, activeGenre === genre)"
         @click="activeGenre = genre"
       >
         {{ genre }}
       </button>
     </div>
 
-    <!-- Beat grid -->
+    <!-- Beat grid with uniform white cards -->
     <div class="beat-grid">
       <div
         v-for="beat in filteredBeats"
@@ -92,6 +93,27 @@ const selectedBeat = ref(null);
 
 // Cart State
 const cartItems = ref([]);
+
+// Colors for rotating filter pills matching the Discover page pattern
+const filterColors = [
+  "var(--accent-plum, #d4bcf0)",
+  "var(--accent-blue, #b8e5ff)",
+  "var(--accent-yellow, #fae184)",
+];
+
+function getFilterStyle(index, isActive) {
+  if (isActive) {
+    return {
+      backgroundColor: "var(--primary-wisteria, #b19cd9)",
+      color: "var(--text-dark-btn, #111)",
+      fontWeight: "800",
+    };
+  }
+  return {
+    backgroundColor: filterColors[index % filterColors.length],
+    color: "var(--text-dark-btn, #111)",
+  };
+}
 
 const beats = ref([
   {
@@ -234,6 +256,8 @@ function handleBeatUploaded(newBeat) {
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  background-color: var(--bg-main, #ffffff);
+  color: var(--text-main, #111111);
 }
 
 .beatstore-header {
@@ -241,6 +265,12 @@ function handleBeatUploaded(newBeat) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+}
+
+.beatstore-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--text-main, #111111);
 }
 
 .header-actions {
@@ -251,8 +281,9 @@ function handleBeatUploaded(newBeat) {
 
 .cart-trigger-btn {
   position: relative;
-  border: 1px solid #ccc;
-  background: #fff;
+  border: 1px solid var(--border-subtle, #ccc);
+  background: var(--bg-surface, #fff);
+  color: var(--text-main, #111);
   padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
@@ -264,7 +295,7 @@ function handleBeatUploaded(newBeat) {
 }
 
 .cart-badge {
-  background: #111;
+  background: var(--text-main, #111);
   color: #fff;
   font-size: 0.7rem;
   padding: 0.1rem 0.4rem;
@@ -273,33 +304,34 @@ function handleBeatUploaded(newBeat) {
 
 .upload-btn {
   border: none;
-  background: #333;
+  background: var(--text-main, #333);
   color: #fff;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .genre-filters {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .genre-pill {
-  border: 1px solid #ccc;
-  background: transparent;
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
+  border: none;
+  padding: 0.4rem 1.25rem;
+  border-radius: 18px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: opacity 0.2s ease, transform 0.1s ease;
 }
 
-.genre-pill.active {
-  border-color: #333;
-  font-weight: 600;
+.genre-pill:hover {
+  opacity: 0.85;
 }
 
 .beat-grid {
@@ -314,10 +346,12 @@ function handleBeatUploaded(newBeat) {
   cursor: pointer;
 }
 
+/* Uniform white background for all beat cover placeholders */
 .beat-cover-placeholder {
   width: 100%;
   aspect-ratio: 1;
-  background: #eee;
+  background-color: var(--bg-surface, #f9f9f9);
+  border: 1px solid var(--border-subtle, #eee);
   border-radius: 8px;
   margin-bottom: 0.5rem;
   display: flex;
@@ -334,11 +368,13 @@ function handleBeatUploaded(newBeat) {
   font-size: 0.85rem;
   font-weight: 600;
   margin: 0;
+  color: var(--text-main, #111);
 }
 
 .beat-producer {
   font-size: 0.75rem;
-  opacity: 0.7;
+  color: var(--text-muted, #666);
+  opacity: 0.8;
   margin: 0.15rem 0 0.5rem;
 }
 
@@ -352,23 +388,29 @@ function handleBeatUploaded(newBeat) {
 .beat-price {
   font-size: 0.85rem;
   font-weight: 600;
+  color: var(--text-main, #111);
 }
 
+/* Yellow Buy button styling */
 .beat-buy-btn {
-  border: 1px solid #ccc;
-  background: transparent;
-  padding: 0.25rem 0.75rem;
+  border: none;
+  background: var(--accent-yellow, #fae184);
+  color: var(--text-dark-btn, #111);
+  padding: 0.3rem 0.85rem;
   border-radius: 6px;
   font-size: 0.75rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
 .beat-buy-btn:hover {
-  background: #f0f0f0;
+  opacity: 0.85;
 }
 
 .empty-state {
-  opacity: 0.6;
+  color: var(--text-muted, #666);
+  opacity: 0.7;
   font-size: 0.9rem;
   text-align: center;
   margin-top: 2rem;

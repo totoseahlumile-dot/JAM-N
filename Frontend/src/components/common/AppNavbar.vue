@@ -2,7 +2,8 @@
   <header class="navbar">
     <div class="navbar-container">
       <RouterLink to="/" class="brand-logo">
-        JAM'N
+        <img src="@/assets/logo.png" alt="JAM'N Logo" class="brand-logo-img" />
+        <span>JAM'N</span>
       </RouterLink>
 
       <nav class="nav-links">
@@ -14,7 +15,7 @@
       </nav>
 
       <div class="user-action">
-        <!-- Settings gear - updated link to /settings -->
+        <!-- Settings gear -->
         <RouterLink to="/settings" class="settings-icon-btn" aria-label="Settings">
           <svg class="settings-icon" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.32-.02-.63-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.44.17-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.31-.09.63-.09.94s.02.63.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
@@ -50,8 +51,8 @@ const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
 <style scoped>
 .navbar {
   width: 100%;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e5e5;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 0.85rem 2rem;
 }
 
@@ -64,12 +65,21 @@ const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
 }
 
 .brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   font-size: 1.25rem;
-  font-weight: 800 !important;
-  color: #111111;
+  font-weight: 800;
+  color: var(--text-main);
   text-decoration: none;
   letter-spacing: 0.05em;
   -webkit-font-smoothing: antialiased;
+}
+
+.brand-logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 
 .nav-links {
@@ -81,15 +91,16 @@ const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
 .nav-item {
   font-size: 0.95rem;
   font-weight: 500;
-  color: #333333;
+  color: var(--text-muted);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 
 .nav-item:hover,
 .router-link-active {
-  color: #000000;
+  color: var(--text-main);
   font-weight: 600;
+  border-bottom: 3px solid var(--primary-wisteria);
 }
 
 .user-action {
@@ -98,33 +109,23 @@ const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
   gap: 1.25rem;
 }
 
-.settings-icon-btn {
+.settings-icon-btn,
+.profile-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #333333;
+  color: var(--text-muted);
   transition: color 0.15s ease;
 }
 
-.settings-icon-btn:hover {
-  color: #000000;
+.settings-icon-btn:hover,
+.profile-icon-btn:hover {
+  color: var(--text-main);
 }
 
 .settings-icon {
   width: 22px;
   height: 22px;
-}
-
-.profile-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #333333;
-  transition: color 0.15s ease;
-}
-
-.profile-icon-btn:hover {
-  color: #000000;
 }
 
 .user-avatar-icon {

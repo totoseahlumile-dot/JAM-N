@@ -5,9 +5,7 @@
       <p class="subtitle">Manage your account preferences and music profile settings.</p>
     </header>
 
-    <!-- Account & Profile Section - now just a summary + trigger for the
-         shared EditProfileModal, instead of its own separate form, so
-         there's only one place that actually edits profile data. -->
+    <!-- Account & Profile Section -->
     <section class="settings-card">
       <h2 class="card-title">Account &amp; Profile</h2>
 
@@ -107,7 +105,7 @@
       </div>
     </section>
 
-    <!-- Edit profile modal - shared component, also used from AccountView -->
+    <!-- Edit profile modal -->
     <EditProfileModal v-model="showEditModal" />
   </div>
 </template>
@@ -124,8 +122,6 @@ const router = useRouter()
 const user = computed(() => store.state.auth?.user)
 const isArtistOrProducer = computed(() => store.getters['auth/isArtistOrProducer'])
 
-// Profile editing now happens entirely inside EditProfileModal - just
-// need to toggle it open from here.
 const showEditModal = ref(false)
 
 const creatorSettings = reactive({
@@ -153,7 +149,7 @@ function handleLogout() {
 .settings-page {
   max-width: 640px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  padding: 2.5rem 1.5rem 4rem;
 }
 
 .settings-header {
@@ -161,34 +157,35 @@ function handleLogout() {
 }
 
 .settings-header h1 {
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   font-weight: 800;
   margin: 0 0 0.25rem;
+  color: var(--text-main);
   letter-spacing: -0.01em;
 }
 
 .subtitle {
-  font-size: 0.85rem;
-  color: #666;
+  font-size: 0.9rem;
+  color: var(--text-muted);
   margin: 0;
 }
 
 .settings-card {
-  background: #ffffff;
-  border: 1px solid #eaeaea;
-  border-radius: 12px;
-  padding: 1.25rem 1.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 1.5rem 1.75rem;
   margin-bottom: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .card-title {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.9rem;
+  font-weight: 800;
   margin: 0 0 1.25rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #333;
+  color: var(--text-muted);
 }
 
 .settings-group {
@@ -218,57 +215,64 @@ function handleLogout() {
 }
 
 .field-info label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #222;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
 }
 
 .field-desc {
-  font-size: 0.75rem;
-  color: #777;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .edit-btn {
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-subtle);
   background: transparent;
-  padding: 0.45rem 1rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  color: var(--text-main);
+  padding: 0.5rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  transition: border-color 0.2s ease;
 }
 
 .edit-btn:hover {
-  border-color: #999;
+  border-color: var(--primary-wisteria);
 }
 
 .toggle-checkbox {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
-  accent-color: #5b5370;
+  accent-color: var(--primary-wisteria);
   margin-top: 0.2rem;
 }
 
 .nav-row {
   align-items: center;
-  padding: 0.5rem 0;
-  color: #333;
+  padding: 0.75rem 0 0.25rem;
+  color: var(--text-main);
   text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border-top: 1px solid #f5f5f5;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.nav-row:hover {
+  opacity: 0.75;
 }
 
 .chevron {
-  opacity: 0.4;
-  font-size: 1.1rem;
+  opacity: 0.5;
+  font-size: 1.25rem;
+  font-weight: 800;
 }
 
 .danger-card {
-  border-color: #fecaca;
-  background-color: #fffafaf5;
+  border-color: rgba(220, 38, 38, 0.2);
+  background-color: rgba(220, 38, 38, 0.02);
 }
 
 .danger-row {
@@ -278,24 +282,25 @@ function handleLogout() {
 }
 
 .danger-title {
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 800;
   margin: 0 0 0.2rem;
-  color: #991b1b;
+  color: #dc2626;
 }
 
 .logout-btn {
   background: #dc2626;
   color: #fff;
   border: none;
-  padding: 0.55rem 1.1rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  padding: 0.6rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: opacity 0.2s ease;
 }
 
 .logout-btn:hover {
-  background: #b91c1c;
+  opacity: 0.9;
 }
 </style>

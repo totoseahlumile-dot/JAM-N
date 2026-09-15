@@ -67,15 +67,16 @@ const progressPercent = computed(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 1.5rem;
-  border-top: 1px solid #ccc;
-  background-color: #fff;
+  border-top: 1px solid var(--border-subtle, #ccc);
+  background-color: var(--bg-surface, #fff);
 }
 .audio-player-empty {
   justify-content: center;
 }
 .player-empty-text {
   font-size: 0.85rem;
-  opacity: 0.6;
+  color: var(--text-muted, #666);
+  opacity: 0.8;
 }
 .player-track-info {
   display: flex;
@@ -92,12 +93,13 @@ const progressPercent = computed(() => {
 .player-title {
   font-size: 0.85rem;
   font-weight: 600;
+  color: var(--text-main, #111);
   margin: 0;
 }
 .player-artist {
   font-size: 0.75rem;
+  color: var(--text-muted, #666);
   margin: 0;
-  opacity: 0.7;
 }
 .player-controls {
   display: flex;
@@ -105,12 +107,16 @@ const progressPercent = computed(() => {
 }
 .player-play-btn {
   border: none;
-  background: #333;
+  background: var(--text-main, #333);
   color: #fff;
   cursor: pointer;
   font-size: 0.85rem;
   padding: 0.4rem 0.9rem;
   border-radius: 999px;
+  transition: opacity 0.15s ease;
+}
+.player-play-btn:hover {
+  opacity: 0.9;
 }
 .player-progress {
   display: flex;
@@ -121,18 +127,18 @@ const progressPercent = computed(() => {
 }
 .player-time {
   font-size: 0.7rem;
-  opacity: 0.7;
+  color: var(--text-muted, #666);
   min-width: 32px;
 }
 .player-progress-track {
   flex: 1;
   height: 4px;
   border-radius: 2px;
-  background: #ddd;
+  background: var(--border-subtle, #ddd);
   overflow: hidden;
 }
 .player-progress-fill {
   height: 100%;
-  background: #999;
+  background: var(--primary-wisteria, #999);
 }
 </style>

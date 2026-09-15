@@ -1,7 +1,7 @@
 <template>
   <div class="discover-page">
     <header class="page-header">
-      <h1>DISCOVER MUSIC</h1>
+      <h1>Discover Music</h1>
       <div class="search-bar">
         <input
           type="text"
@@ -18,10 +18,11 @@
       <!-- Filter Tags -->
       <div class="filter-tags">
         <button
-          v-for="genre in genreOptions"
+          v-for="(genre, index) in genreOptions"
           :key="genre"
           class="tag"
           :class="{ active: activeGenre === genre }"
+          :style="getFilterStyle(index, activeGenre === genre)"
           @click="activeGenre = genre"
         >
           {{ genre }}
@@ -60,7 +61,7 @@
               :class="{ following: isFollowing(artist.id) }"
               @click="toggleFollow(artist)"
             >
-              {{ isFollowing(artist.id) ? "Following" : "Follow Artist" }}
+              {{ isFollowing(artist.id) ? "Following" : "Follow" }}
             </button>
           </div>
         </div>
@@ -180,6 +181,26 @@ const genreOptions = computed(() => {
   return ["All Genres", ...new Set(genres)];
 });
 
+const filterColors = [
+  "var(--accent-plum, #d4bcf0)",
+  "var(--accent-blue, #b8e5ff)",
+  "var(--accent-yellow, #fae184)",
+];
+
+function getFilterStyle(index, isActive) {
+  if (isActive) {
+    return {
+      backgroundColor: "var(--primary-wisteria, #b19cd9)",
+      color: "var(--text-dark-btn, #111)",
+      fontWeight: "700",
+    };
+  }
+  return {
+    backgroundColor: filterColors[index % filterColors.length],
+    color: "var(--text-dark-btn, #111)",
+  };
+}
+
 const filteredArtists = computed(() => {
   let result = allArtists.value;
 
@@ -221,7 +242,6 @@ function toggleFollow(artist) {
   });
 }
 
-// Synced Track Like Interactions (pointing to auth store)
 function isTrackLiked(trackId) {
   return store?.getters?.["auth/isLiked"]?.(trackId) ?? false;
 }
@@ -232,7 +252,7 @@ function toggleTrackLike(trackId) {
 
 function playTrack(track) {
   if (track.audioUrl) {
-    store.dispatch("player/playTrack", track);
+    store.dispatch("player/playTitle", track);
   } else {
     alert("Audio stream not available.");
   }
@@ -271,105 +291,122 @@ function shareTrack(track) {
 
 <style scoped>
 .discover-page {
-  max-width: 1280px;
-  margin: 0 auto;
   padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: var(--bg-main, #ffffff);
+  color: var(--text-main, #111111);
 }
 
+/* Page Header Typography Matched to Library View */
 .page-header h1 {
-  font-size: 1.75rem;
+  margin: 0 0 1.25rem 0;
+  font-size: 1.5rem; /* Matched precisely to Library view */
   font-weight: 800;
-  margin-bottom: 1.5rem;
-  letter-spacing: 0.03em;
+  color: var(--text-main, #111111);
+  letter-spacing: -0.02em;
 }
 
 .search-bar {
   position: relative;
   max-width: 100%;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .search-bar input {
   width: 100%;
-  padding: 0.85rem 1rem 0.85rem 2.75rem;
-  background-color: #f2f2f2;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  padding: 0.6rem 1rem 0.6rem 2.5rem;
+  background-color: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
+  border-radius: 6px;
+  font-size: 0.85rem;
   outline: none;
+  color: var(--text-main, #111);
+  transition: border-color 0.2s ease;
+}
+
+.search-bar input:focus {
+  border-color: var(--primary-wisteria, #b19cd9);
 }
 
 .search-icon {
   position: absolute;
-  left: 1rem;
+  left: 0.85rem;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  color: #888888;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted, #666);
 }
 
+/* Filter Tags Unified */
 .filter-tags {
   display: flex;
-  gap: 0.75rem;
-  margin-bottom: 2.5rem;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
   flex-wrap: wrap;
 }
 
 .tag {
   border: none;
-  background-color: #e8e8f0;
-  color: #333333;
-  padding: 0.4rem 1.25rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  padding: 0.4rem 1.1rem;
+  border-radius: 16px;
   cursor: pointer;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: opacity 0.2s ease, transform 0.1s ease;
 }
 
-.tag.active {
-  background-color: #5b5370;
-  color: #ffffff;
+.tag:hover {
+  opacity: 0.85;
 }
 
+/* Sections */
 .section {
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
 .section-header h2 {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 700;
+  color: var(--text-main, #111);
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .see-all {
-  font-size: 0.85rem;
-  color: #666666;
+  font-size: 0.8rem;
+  color: var(--text-muted, #666);
   text-decoration: none;
+  font-weight: 600;
 }
 
+.see-all:hover {
+  color: var(--text-main, #111);
+}
+
+/* Cards Grid */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
 }
 
 .artist-card {
-  background: #f9f9f9;
-  border: 1px solid #eeeeee;
-  border-radius: 10px;
-  padding: 1rem;
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
+  border-radius: 8px;
+  padding: 0.65rem;
   display: flex;
   flex-direction: column;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: background 0.15s ease;
 }
 
 .artist-card.clickable {
@@ -377,49 +414,54 @@ function shareTrack(track) {
 }
 
 .artist-card.clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: rgba(173, 235, 255, 0.15);
 }
 
 .image-wrapper {
   position: relative;
   width: 100%;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.5rem;
 }
 
 .placeholder-img {
   width: 100%;
-  height: 160px;
-  background-color: #e5e5e5;
+  aspect-ratio: 1;
+  background-color: var(--border-subtle, #eee);
   border-radius: 6px;
   object-fit: cover;
   display: block;
 }
 
 .artist-name {
-  font-weight: 700;
-  font-size: 0.9rem;
+  font-weight: 600;
+  font-size: 0.85rem;
   margin: 0;
+  color: var(--text-main, #111);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .artist-genre {
-  font-size: 0.8rem;
-  color: #777777;
-  margin: 0 0 1rem 0;
+  font-size: 0.75rem;
+  color: var(--text-muted, #666);
+  margin: 0.15rem 0 0.6rem 0;
+  text-align: left;
 }
 
 .card-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.35rem;
   margin-top: auto;
 }
 
 .card-actions .btn-outline,
 .card-actions .btn-primary {
   flex: 1;
-  padding: 0.4rem 0.2rem;
-  font-size: 0.725rem;
-  border-radius: 15px;
+  padding: 0.35rem 0.2rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
   text-align: center;
@@ -428,105 +470,120 @@ function shareTrack(track) {
 }
 
 .btn-outline {
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-subtle, #ccc);
   background: transparent;
-  color: #333;
+  color: var(--text-main, #111);
+}
+
+.btn-outline:hover {
+  border-color: var(--primary-wisteria, #b19cd9);
 }
 
 .btn-primary {
   border: none;
-  background: #6a5acd;
-  color: white;
+  background: var(--accent-blue, #b8e5ff);
+  color: var(--text-dark-btn, #111);
 }
 
 .btn-primary.following {
-  background: #e8e8f0;
-  color: #333;
+  background: var(--accent-yellow, #fae184);
+  color: var(--text-dark-btn, #111);
 }
 
+/* Compact Card Variant */
 .artist-card.compact {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  position: relative;
+  gap: 0.65rem;
+  padding: 0.5rem 0.65rem;
 }
 
 .artist-info {
   flex: 1;
+  min-width: 0;
 }
 
 .placeholder-img-sm {
-  width: 48px;
-  height: 48px;
-  background-color: #e5e5e5;
-  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  background-color: var(--border-subtle, #eee);
+  border-radius: 50%;
   flex-shrink: 0;
   object-fit: cover;
 }
 
-/* Popular Tracks Styles */
+/* Popular Tracks List */
 .tracks-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .track-row {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  background: #f9f9f9;
-  border: 1px solid #eeeeee;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
   border-radius: 8px;
-  transition: background 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
 .track-row:hover {
-  background: #f1f1f5;
+  background-color: rgba(173, 235, 255, 0.15);
 }
 
 .track-thumb {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   border-radius: 6px;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
 .track-details {
   flex: 1;
+  text-align: left;
+  min-width: 0;
 }
 
 .track-title {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   margin: 0;
+  color: var(--text-main, #111);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .track-artist {
-  font-size: 0.8rem;
-  color: #777777;
+  font-size: 0.75rem;
+  color: var(--text-muted, #666);
   margin: 0.1rem 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .track-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.4rem;
 }
 
 .like-btn-track {
   background: transparent;
   border: none;
   cursor: pointer;
-  color: #888888;
+  color: var(--text-muted, #666);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   transition: transform 0.2s ease;
 }
 
@@ -535,16 +592,16 @@ function shareTrack(track) {
 }
 
 .like-btn-track.liked {
-  color: #e63946;
+  color: var(--accent-plum, #d4bcf0);
 }
 
 .like-btn-track.liked .heart-icon {
-  fill: #e63946;
+  fill: var(--accent-plum, #d4bcf0);
 }
 
 .heart-icon {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -557,23 +614,23 @@ function shareTrack(track) {
 .more-btn {
   background: transparent;
   border: none;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   cursor: pointer;
-  color: #555555;
-  padding: 0 0.5rem;
+  color: var(--text-muted, #666);
+  padding: 0 0.2rem;
 }
 
 .dropdown-menu {
   position: absolute;
   right: 0;
   top: 100%;
-  background: #ffffff;
-  border: 1px solid #ddd;
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  min-width: 140px;
+  min-width: 130px;
   z-index: 10;
   overflow: hidden;
 }
@@ -581,18 +638,22 @@ function shareTrack(track) {
 .dropdown-menu button {
   background: transparent;
   border: none;
-  padding: 0.6rem 1rem;
+  padding: 0.45rem 0.75rem;
   text-align: left;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   cursor: pointer;
+  color: var(--text-main, #111);
 }
 
 .dropdown-menu button:hover {
-  background: #f0f0f5;
+  background-color: rgba(173, 235, 255, 0.25);
 }
 
 .empty-state {
-  opacity: 0.6;
   font-size: 0.85rem;
+  color: var(--text-muted, #666);
+  opacity: 0.7;
+  text-align: center;
+  padding: 1.5rem 0;
 }
 </style>

@@ -10,12 +10,14 @@
           </button>
         </div>
 
+        <!-- Filter pills with dynamic multi-color rotation -->
         <div class="library-tabs">
           <button
-            v-for="tab in tabs"
+            v-for="(tab, index) in tabs"
             :key="tab"
             class="library-tab"
             :class="{ active: activeTab === tab }"
+            :style="getFilterStyle(index, activeTab === tab)"
             @click="activeTab = tab"
           >
             {{ tab }}
@@ -453,6 +455,27 @@ const filteredPickerSongs = computed(() => {
   );
 });
 
+// Colors for rotating filter pills matching the project pattern
+const filterColors = [
+  "var(--accent-plum, #d4bcf0)",
+  "var(--accent-blue, #b8e5ff)",
+  "var(--accent-yellow, #fae184)",
+];
+
+function getFilterStyle(index, isActive) {
+  if (isActive) {
+    return {
+      backgroundColor: "var(--primary-wisteria, #b19cd9)",
+      color: "var(--text-dark-btn, #111)",
+      fontWeight: "800",
+    };
+  }
+  return {
+    backgroundColor: filterColors[index % filterColors.length],
+    color: "var(--text-dark-btn, #111)",
+  };
+}
+
 function openCreateModal() {
   newPlaylistName.value = "";
   songSearchQuery.value = "";
@@ -635,6 +658,8 @@ function openAddToPlaylistModal(song) {
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  background-color: var(--bg-main, #ffffff);
+  color: var(--text-main, #111111);
 }
 
 .header-top {
@@ -647,42 +672,45 @@ function openAddToPlaylistModal(song) {
 .library-header h1 {
   margin: 0;
   font-size: 1.5rem;
+  color: var(--text-main, #111111);
 }
 
+/* Styled same as the Upload Beat button */
 .create-playlist-btn {
-  background: #333;
-  color: #fff;
   border: none;
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  background: var(--text-main, #333);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: opacity 0.15s ease;
 }
 
 .create-playlist-btn:hover {
-  background: #444;
+  opacity: 0.9;
 }
 
 .library-tabs {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
 }
 
 .library-tab {
-  border: 1px solid #ccc;
-  background: transparent;
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
+  border: none;
+  padding: 0.4rem 1.25rem;
+  border-radius: 18px;
   cursor: pointer;
   font-size: 0.85rem;
+  font-weight: 700;
+  transition: opacity 0.2s ease, transform 0.1s ease;
 }
 
-.library-tab.active {
-  border-color: #333;
-  font-weight: 600;
-  background: #f5f5f5;
+.library-tab:hover {
+  opacity: 0.85;
 }
 
 .section-header-row {
@@ -695,6 +723,7 @@ function openAddToPlaylistModal(song) {
 .library-section h2 {
   font-size: 1rem;
   margin: 0;
+  color: var(--text-main, #111111);
 }
 
 .track-grid,
@@ -739,8 +768,8 @@ function openAddToPlaylistModal(song) {
   position: absolute;
   top: 38px;
   right: 6px;
-  background: white;
-  border: 1px solid #eee;
+  background: var(--bg-surface, white);
+  border: 1px solid var(--border-subtle, #eee);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 6px;
   display: flex;
@@ -757,10 +786,11 @@ function openAddToPlaylistModal(song) {
   text-align: left;
   font-size: 0.8rem;
   cursor: pointer;
+  color: var(--text-main, #111);
 }
 
 .dropdown-menu button:hover {
-  background: #f5f5f5;
+  background: var(--accent-yellow, #fae184);
 }
 
 .text-danger {
@@ -774,7 +804,7 @@ function openAddToPlaylistModal(song) {
 .track-cover-placeholder {
   width: 100%;
   aspect-ratio: 1;
-  background: #eee;
+  background: var(--border-subtle, #eee);
   border-radius: 6px;
   margin-bottom: 0.5rem;
   display: flex;
@@ -789,9 +819,11 @@ function openAddToPlaylistModal(song) {
   object-fit: cover;
 }
 
+/* Updated: Replaced yellow background with neutral surface/border */
 .playlist-placeholder {
   font-size: 1.5rem;
-  background: #e4e6eb;
+  background: var(--bg-surface, #f9f9f9);
+  border: 1px solid var(--border-subtle, #eee);
 }
 
 .play-indicator {
@@ -805,6 +837,7 @@ function openAddToPlaylistModal(song) {
   font-weight: 600;
   margin: 0;
   cursor: pointer;
+  color: var(--text-main, #111111);
 }
 
 .track-title:hover,
@@ -814,7 +847,8 @@ function openAddToPlaylistModal(song) {
 
 .track-artist {
   font-size: 0.75rem;
-  opacity: 0.7;
+  color: var(--text-muted, #666666);
+  opacity: 0.8;
   margin: 0;
   cursor: pointer;
 }
@@ -833,7 +867,8 @@ function openAddToPlaylistModal(song) {
 }
 
 .empty-state {
-  opacity: 0.6;
+  color: var(--text-muted, #666666);
+  opacity: 0.7;
   font-size: 0.9rem;
   text-align: center;
   padding: 1.5rem 0;
@@ -851,7 +886,7 @@ function openAddToPlaylistModal(song) {
   font-weight: 600;
   cursor: pointer;
   margin-bottom: 1.5rem;
-  color: #333;
+  color: var(--text-main, #333);
 }
 
 .playlist-hero {
@@ -860,13 +895,15 @@ function openAddToPlaylistModal(song) {
   gap: 1.5rem;
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-subtle, #eee);
 }
 
+/* Updated: Replaced yellow background with neutral surface/border */
 .playlist-hero-cover {
   width: 120px;
   height: 120px;
-  background: #e4e6eb;
+  background: var(--bg-surface, #f9f9f9);
+  border: 1px solid var(--border-subtle, #eee);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -880,7 +917,8 @@ function openAddToPlaylistModal(song) {
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.05em;
-  opacity: 0.6;
+  color: var(--text-muted, #666);
+  opacity: 0.8;
 }
 
 .title-row {
@@ -893,21 +931,22 @@ function openAddToPlaylistModal(song) {
 .title-row h2 {
   margin: 0;
   font-size: 1.8rem;
+  color: var(--text-main, #111);
 }
 
 .text-action-btn {
   background: transparent;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-subtle, #ccc);
   padding: 0.2rem 0.6rem;
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 500;
-  color: #333;
+  color: var(--text-main, #333);
 }
 
 .text-action-btn:hover {
-  background: #f5f5f5;
+  background: var(--accent-yellow, #fae184);
   border-color: #999;
 }
 
@@ -921,12 +960,14 @@ function openAddToPlaylistModal(song) {
 .inline-input {
   padding: 0.3rem 0.5rem;
   font-size: 1.1rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-subtle, #ccc);
   border-radius: 4px;
+  background: var(--bg-surface, #fff);
+  color: var(--text-main, #111);
 }
 
 .btn-sm {
-  background: #333;
+  background: var(--text-main, #333);
   color: white;
   border: none;
   padding: 0.3rem 0.6rem;
@@ -937,7 +978,8 @@ function openAddToPlaylistModal(song) {
 
 .btn-sm-cancel {
   background: transparent;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-subtle, #ccc);
+  color: var(--text-main, #333);
   padding: 0.3rem 0.6rem;
   border-radius: 4px;
   cursor: pointer;
@@ -946,7 +988,8 @@ function openAddToPlaylistModal(song) {
 
 .playlist-meta {
   font-size: 0.85rem;
-  opacity: 0.7;
+  color: var(--text-muted, #666);
+  opacity: 0.8;
   margin: 0;
 }
 
@@ -962,23 +1005,25 @@ function openAddToPlaylistModal(song) {
   padding: 0.6rem 0.5rem;
   align-items: center;
   font-size: 0.85rem;
-  border-bottom: 1px solid #f2f2f2;
+  border-bottom: 1px solid var(--border-subtle, #f2f2f2);
 }
 
 .table-header {
   font-weight: 600;
-  opacity: 0.6;
-  border-bottom: 2px solid #eee;
+  color: var(--text-muted, #666);
+  opacity: 0.8;
+  border-bottom: 2px solid var(--border-subtle, #eee);
 }
 
 .table-row:hover {
-  background: #f9f9f9;
+  background: var(--accent-yellow, rgba(250, 225, 132, 0.2));
   border-radius: 4px;
 }
 
 .track-col-title {
   font-weight: 600;
   cursor: pointer;
+  color: var(--text-main, #111);
 }
 
 .track-col-title:hover {
@@ -987,6 +1032,7 @@ function openAddToPlaylistModal(song) {
 
 .track-col-artist {
   cursor: pointer;
+  color: var(--text-muted, #666);
 }
 
 .track-col-artist:hover {
@@ -1008,7 +1054,8 @@ function openAddToPlaylistModal(song) {
 }
 
 .modal-card {
-  background: #fff;
+  background: var(--bg-surface, #fff);
+  color: var(--text-main, #111);
   padding: 1.5rem;
   border-radius: 12px;
   width: 90%;
@@ -1023,14 +1070,14 @@ function openAddToPlaylistModal(song) {
 
 .song-picker-section {
   margin-top: 1rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border-subtle, #eee);
   padding-top: 1rem;
 }
 
 .song-picker-section h4 {
   font-size: 0.85rem;
   margin: 0 0 0.5rem;
-  color: #444;
+  color: var(--text-main, #444);
 }
 
 .search-input {
@@ -1040,7 +1087,7 @@ function openAddToPlaylistModal(song) {
 .song-picker-list {
   max-height: 160px;
   overflow-y: auto;
-  border: 1px solid #eee;
+  border: 1px solid var(--border-subtle, #eee);
   border-radius: 6px;
   padding: 0.4rem;
   margin-bottom: 1rem;
@@ -1057,7 +1104,7 @@ function openAddToPlaylistModal(song) {
 }
 
 .song-picker-row:hover {
-  background: #f5f5f5;
+  background: var(--accent-yellow, #fae184);
 }
 
 .song-picker-info {
@@ -1067,17 +1114,19 @@ function openAddToPlaylistModal(song) {
 
 .picker-title {
   font-weight: 600;
+  color: var(--text-main, #111);
 }
 
 .picker-artist {
   font-size: 0.7rem;
-  color: #666;
+  color: var(--text-muted, #666);
 }
 
 .empty-state-sm {
   font-size: 0.8rem;
   text-align: center;
-  opacity: 0.6;
+  color: var(--text-muted, #666);
+  opacity: 0.7;
   padding: 0.5rem 0;
   margin: 0;
 }
@@ -1088,7 +1137,7 @@ function openAddToPlaylistModal(song) {
   margin: 0 auto 1rem;
   border-radius: 8px;
   overflow: hidden;
-  background: #eee;
+  background: var(--border-subtle, #eee);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1107,33 +1156,38 @@ function openAddToPlaylistModal(song) {
 .modal-card h3 {
   margin: 0 0 0.25rem;
   font-size: 1.1rem;
+  color: var(--text-main, #111);
 }
 
 .modal-subtitle {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-muted, #666);
   margin: 0 0 1rem;
 }
 
 .btn-secondary {
   width: 100%;
-  background: #333;
-  color: white;
+  background: var(--accent-yellow, #fae184);
+  color: var(--text-dark-btn, #111);
   border: none;
   padding: 0.5rem;
   border-radius: 6px;
   font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
   margin-top: 0.5rem;
 }
 
-.modal-input {
+.modal-input,
+.modal-select {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-subtle, #ccc);
   border-radius: 4px;
   font-size: 0.9rem;
   margin-bottom: 1rem;
+  background: var(--bg-surface, #fff);
+  color: var(--text-main, #111);
 }
 
 .modal-actions {
@@ -1144,14 +1198,15 @@ function openAddToPlaylistModal(song) {
 
 .modal-btn-cancel {
   background: transparent;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-subtle, #ccc);
+  color: var(--text-main, #333);
   padding: 0.4rem 0.8rem;
   border-radius: 4px;
   cursor: pointer;
 }
 
 .modal-btn-submit {
-  background: #333;
+  background: var(--text-main, #333);
   color: #fff;
   border: none;
   padding: 0.4rem 0.8rem;
@@ -1187,7 +1242,7 @@ function openAddToPlaylistModal(song) {
 
 .options-dots-btn-inline {
   background: transparent;
-  color: #666;
+  color: var(--text-muted, #666);
   border: none;
   border-radius: 50%;
   width: 24px;
@@ -1201,7 +1256,7 @@ function openAddToPlaylistModal(song) {
 
 .options-dots-btn-inline:hover {
   background: rgba(0, 0, 0, 0.05);
-  color: #000;
+  color: var(--text-main, #000);
 }
 
 .song-dropdown {
