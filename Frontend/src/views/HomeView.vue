@@ -182,7 +182,7 @@ const handleSignUp = () => {
       <!-- Trending Section -->
       <section class="trending-section">
         <div class="section-header">
-          <h2 class="section-title">Here's what's trending</h2>
+          <h2 class="section-title">Here's what's</h2>
           <span class="badge-trending">TRENDING</span>
         </div>
 
