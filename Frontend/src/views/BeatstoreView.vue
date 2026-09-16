@@ -29,21 +29,30 @@
       </button>
     </div>
 
-    <!-- Beat grid with uniform white cards -->
+    <!-- Beat grid with active playing state and image support -->
     <div class="beat-grid">
       <div
         v-for="beat in filteredBeats"
         :key="beat.id"
         class="beat-card clickable"
+        :class="{ 'active-card': isCurrentTrack(beat) }"
         @click="playBeatDirectly(beat)"
       >
-        <div class="beat-cover-placeholder">
-          <span class="play-icon">▶</span>
+        <div class="beat-cover-container">
+          <img 
+            v-if="beat.coverArt" 
+            :src="beat.coverArt" 
+            :alt="beat.title" 
+            class="beat-cover-img" 
+          />
+          <div v-else class="beat-cover-placeholder">
+            <span class="play-icon">▶</span>
+          </div>
         </div>
         <p class="beat-title">{{ beat.title }}</p>
-        <p class="beat-producer">{{ beat.producer }}</p>
+        <p class="beat-producer">{{ beat.artist || beat.producer }}</p>
         <div class="beat-footer">
-          <span class="beat-price">R{{ beat.price }}</span>
+          <span class="beat-price">R{{ beat.price || 100 }}</span>
           <button class="beat-buy-btn" @click.stop="openPurchaseModal(beat)">
             Buy
           </button>
@@ -115,104 +124,13 @@ function getFilterStyle(index, isActive) {
   };
 }
 
-const beats = ref([
-  {
-    id: "b1",
-    title: "Driving Soul",
-    producer: "Ketsa",
-    genre: "Hip-Hop",
-    price: 120,
-    audioUrl: "/audio/b1.mp3",
-  },
-  {
-    id: "b2",
-    title: "Crumbling",
-    producer: "Ketsa",
-    genre: "Hip-Hop",
-    price: 100,
-    audioUrl: "/audio/b2.mp3",
-  },
-  {
-    id: "b3",
-    title: "Hollow",
-    producer: "KaizanBlu",
-    genre: "Hip-Hop",
-    price: 110,
-    audioUrl: "/audio/b3.mp3",
-  },
-  {
-    id: "b4",
-    title: "Rest Assured Interlude",
-    producer: "Lutant Savage",
-    genre: "Hip-Hop",
-    price: 90,
-    audioUrl: "/audio/b4.mp3",
-  },
-  {
-    id: "b5",
-    title: "Rap Beat Beats",
-    producer: "SolarFLEX",
-    genre: "Trap",
-    price: 130,
-    audioUrl: "/audio/b5.mp3",
-  },
-  {
-    id: "b6",
-    title: "Melodic Type Beat",
-    producer: "zharovbeatz",
-    genre: "Trap",
-    price: 115,
-    audioUrl: "/audio/b6.mp3",
-  },
-  {
-    id: "b7",
-    title: "Back Home",
-    producer: "Pryces",
-    genre: "Hip-Hop",
-    price: 105,
-    audioUrl: "/audio/b7.mp3",
-  },
-  {
-    id: "b8",
-    title: "Sanctuary",
-    producer: "Torus",
-    genre: "Electronic",
-    price: 95,
-    audioUrl: "/audio/b8.mp3",
-  },
-  {
-    id: "b9",
-    title: "Jaipur",
-    producer: "ASHUTOSH",
-    genre: "Electronic",
-    price: 100,
-    audioUrl: "/audio/b9.mp3",
-  },
-  {
-    id: "b10",
-    title: "Game Over",
-    producer: "ASHUTOSH",
-    genre: "Electronic",
-    price: 100,
-    audioUrl: "/audio/b10.mp3",
-  },
-  {
-    id: "b11",
-    title: "South Africa",
-    producer: "EuGenius Music",
-    genre: "World",
-    price: 120,
-    audioUrl: "/audio/b11.mp3",
-  },
-  {
-    id: "b12",
-    title: "Inspiration",
-    producer: "Le Gang",
-    genre: "World",
-    price: 110,
-    audioUrl: "/audio/b12.mp3",
-  },
-]);
+// Pulls tracks and active track state from player.js
+const beats = computed(() => store.getters["player/trackQueue"]);
+const currentTrack = computed(() => store.getters["player/activeTrack"]);
+
+function isCurrentTrack(beat) {
+  return currentTrack.value && currentTrack.value.id === beat.id;
+}
 
 const genres = computed(() => {
   const uniqueGenres = [...new Set(beats.value.map((b) => b.genre))];
@@ -247,7 +165,7 @@ function removeCartItem(index) {
 }
 
 function handleBeatUploaded(newBeat) {
-  beats.value.unshift(newBeat);
+  store.dispatch("player/addToQueue", newBeat);
 }
 </script>
 
@@ -344,16 +262,38 @@ function handleBeatUploaded(newBeat) {
   display: flex;
   flex-direction: column;
   cursor: pointer;
+  padding: 8px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease;
 }
 
-/* Uniform white background for all beat cover placeholders */
-.beat-cover-placeholder {
+/* Active card styling with yellow pastel border */
+.beat-card.active-card {
+  border-color: var(--accent-yellow, #fae184);
+  background-color: var(--bg-surface, #fafafa);
+}
+
+/* Cover container supporting actual JPEGs/PNGs */
+.beat-cover-container {
   width: 100%;
   aspect-ratio: 1;
-  background-color: var(--bg-surface, #f9f9f9);
-  border: 1px solid var(--border-subtle, #eee);
   border-radius: 8px;
+  overflow: hidden;
   margin-bottom: 0.5rem;
+  border: 1px solid var(--border-subtle, #eee);
+  background-color: var(--bg-surface, #f9f9f9);
+}
+
+.beat-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.beat-cover-placeholder {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -369,6 +309,9 @@ function handleBeatUploaded(newBeat) {
   font-weight: 600;
   margin: 0;
   color: var(--text-main, #111);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .beat-producer {
