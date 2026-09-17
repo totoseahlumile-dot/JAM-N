@@ -5,25 +5,19 @@
       <div class="profile-details">
         <h1>{{ artist.name }}</h1>
         <p class="handle">@{{ artistHandle }}</p>
-        <p class="genre-tag">{{ artist.genre }}</p>
-        
+        <p class="genre-tag">
+          {{
+            Array.isArray(artist.genre) ? artist.genre.join(", ") : artist.genre
+          }}
+        </p>
+
         <div class="action-buttons">
-          <button 
-            class="btn-primary" 
+          <button
+            class="btn-primary"
             :class="{ following: isFollowing }"
             @click="toggleFollow"
           >
-            {{ isFollowing ? 'Following' : 'Follow Artist' }}
-          </button>
-          
-          <button 
-            class="like-btn" 
-            :class="{ liked: isLiked }"
-            @click="toggleLike"
-          >
-            <svg class="heart-icon" viewBox="0 0 24 24">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-            </svg>
+            {{ isFollowing ? "Following" : "Follow Artist" }}
           </button>
         </div>
       </div>
@@ -48,43 +42,40 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
-import { useStore } from 'vuex'
+import { computed } from "vue";
+import { useRoute, RouterLink } from "vue-router";
+import { useStore } from "vuex";
 
-const route = useRoute()
-const store = useStore()
+const route = useRoute();
+const store = useStore();
 
-const artistId = computed(() => route.params.id)
+const artistId = computed(() => route.params.id);
 
 // Fetch target artist from the artists Vuex module
 const artist = computed(() => {
-  const all = store.getters['artists/allArtists'] ?? []
-  return all.find((a) => String(a.id) === String(artistId.value))
-})
+  const all = store.getters["artists/allArtists"] ?? [];
+  return all.find((a) => String(a.id) === String(artistId.value));
+});
 
 const artistHandle = computed(() => {
-  return artist.value?.name ? artist.value.name.toLowerCase().replace(/\s+/g, '_') : ''
-})
+  return artist.value?.name
+    ? artist.value.name.toLowerCase().replace(/\s+/g, "_")
+    : "";
+});
 
-// Social status getters from auth module
-const isLiked = computed(() => store.getters['auth/isLiked']?.(artistId.value) ?? false)
-const isFollowing = computed(() => store.getters['auth/isFollowing']?.(artistId.value) ?? false)
-
-function toggleLike() {
-  if (artist.value) {
-    store.commit('auth/TOGGLE_LIKE', artist.value.id)
-  }
-}
+// Social status getter from auth module
+const isFollowing = computed(
+  () => store.getters["auth/isFollowing"]?.(artistId.value) ?? false,
+);
 
 function toggleFollow() {
   if (artist.value) {
-    store.commit('auth/TOGGLE_FOLLOW', {
+    store.commit("auth/TOGGLE_FOLLOW", {
       id: artist.value.id,
       name: artist.value.name,
       handle: artistHandle.value,
-      image: artist.value.image ?? null
-    })
+      image: artist.value.image ?? null,
+    });
   }
 }
 </script>
@@ -94,74 +85,108 @@ function toggleFollow() {
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
+  background-color: var(--bg-main, #ffffff);
+  color: var(--text-main, #111111);
 }
+
 .profile-header {
   display: flex;
   gap: 2rem;
   align-items: center;
   margin-bottom: 3rem;
 }
+
 .profile-avatar {
   width: 140px;
   height: 140px;
   border-radius: 50%;
   object-fit: cover;
-  background-color: #e5e5e5;
+  background-color: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
 }
+
+.profile-details h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 0.2rem;
+  color: var(--text-main, #111);
+}
+
 .handle {
-  color: #777;
-  margin-bottom: 0.5rem;
+  color: var(--text-muted, #666);
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem;
 }
+
 .genre-tag {
   display: inline-block;
-  background: #e8e8f0;
+  background-color: var(--accent-plum, #d4bcf0);
+  color: var(--text-dark-btn, #111);
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.85rem;
+  font-weight: 700;
   margin-bottom: 1rem;
 }
+
 .action-buttons {
   display: flex;
   gap: 1rem;
   align-items: center;
 }
+
+/* Light blue button state matching discover view cards */
 .btn-primary {
   padding: 0.5rem 1.5rem;
   border-radius: 20px;
   border: none;
-  background: #6a5acd;
-  color: #fff;
+  background-color: var(--accent-blue, #b8e5ff);
+  color: var(--text-dark-btn, #111);
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition:
+    opacity 0.2s ease,
+    transform 0.15s ease;
 }
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Switches to yellow/gold when following state is active */
 .btn-primary.following {
-  background: #e8e8f0;
-  color: #333;
+  background-color: var(--accent-gold, #fae184);
+  color: var(--text-dark-btn, #111);
 }
-.like-btn {
-  background: transparent;
-  border: 1px solid #ccc;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+
+.artist-content h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: var(--text-main, #111);
 }
-.like-btn.liked .heart-icon {
-  fill: #e63946;
-  stroke: #e63946;
+
+.track-card {
+  background-color: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
 }
-.heart-icon {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: #333;
-  stroke-width: 2;
+
+.track-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-main, #111);
+  font-size: 0.95rem;
 }
+
+.empty-msg,
 .not-found {
   text-align: center;
-  padding: 4rem;
+  padding: 3rem;
+  color: var(--text-muted, #666);
 }
 </style>

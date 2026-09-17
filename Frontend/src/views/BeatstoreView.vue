@@ -39,11 +39,11 @@
         @click="playBeatDirectly(beat)"
       >
         <div class="beat-cover-container">
-          <img 
-            v-if="beat.coverArt" 
-            :src="beat.coverArt" 
-            :alt="beat.title" 
-            class="beat-cover-img" 
+          <img
+            v-if="beat.coverArt"
+            :src="beat.coverArt"
+            :alt="beat.title"
+            class="beat-cover-img"
           />
           <div v-else class="beat-cover-placeholder">
             <span class="play-icon">▶</span>
@@ -245,7 +245,9 @@ function handleBeatUploaded(newBeat) {
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 700;
-  transition: opacity 0.2s ease, transform 0.1s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
 }
 
 .genre-pill:hover {
@@ -262,16 +264,38 @@ function handleBeatUploaded(newBeat) {
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 10px;
-  border: 2px solid transparent;
-  transition: border-color 0.2s ease;
+  padding: 10px;
+  border-radius: 12px;
+  background-color: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #eaeaea);
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Hover effect for unselected state */
+.beat-card:hover {
+  background-color: rgba(173, 235, 255, 0.08);
+  border-color: var(--accent-blue, #b8e5ff);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 /* Active card styling with yellow pastel border */
 .beat-card.active-card {
   border-color: var(--accent-yellow, #fae184);
+  border-width: 2px;
   background-color: var(--bg-surface, #fafafa);
+}
+
+/* Hover effect should persist/override even when the card is active */
+.beat-card.active-card:hover {
+  background-color: rgba(173, 235, 255, 0.12);
+  border-color: var(--accent-blue, #b8e5ff);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 /* Cover container supporting actual JPEGs/PNGs */

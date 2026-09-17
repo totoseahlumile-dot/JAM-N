@@ -1,23 +1,35 @@
 <template>
-  <footer class="audio-player" v-if="currentTrack">
+  <!-- Persistent Bottom Bar -->
+  <footer class="audio-player" v-if="currentTrack" @click="openExpandedPlayer">
     <div class="player-track-info">
-      <img :src="currentTrack.coverArt" :alt="currentTrack.title" class="player-cover" />
+      <img
+        :src="currentTrack.coverArt"
+        :alt="currentTrack.title"
+        class="player-cover"
+      />
       <div class="player-text">
         <p class="player-title">{{ currentTrack.title }}</p>
         <p class="player-artist">{{ currentTrack.artist }}</p>
       </div>
     </div>
-    <div class="player-controls">
+
+    <div class="player-controls" @click.stop>
       <button class="player-play-btn" @click="togglePlay">
-        {{ isPlaying ? 'Pause' : 'Play' }}
+        {{ isPlaying ? "Pause" : "Play" }}
       </button>
     </div>
-    <div class="player-progress">
+
+    <div class="player-progress" @click.stop>
       <span class="player-time">{{ formattedTime }}</span>
       <div class="player-progress-track">
-        <div class="player-progress-fill" :style="{ width: progressPercent + '%' }"></div>
+        <div
+          class="player-progress-fill"
+          :style="{ width: progressPercent + '%' }"
+        ></div>
       </div>
-      <span class="player-time" v-if="duration > 0">{{ formattedDuration }}</span>
+      <span class="player-time" v-if="duration > 0">{{
+        formattedDuration
+      }}</span>
     </div>
 
     <!-- Hidden native HTML5 audio element powering the playback -->
@@ -33,86 +45,136 @@
   <footer class="audio-player audio-player-empty" v-else>
     <p class="player-empty-text">Nothing playing</p>
   </footer>
+
+  <!-- Right-Side Slide-out Panel (Desktop Drawer Style) -->
+  <div class="expanded-player-overlay" v-if="isExpanded && currentTrack">
+    <div class="expanded-player-content">
+      <button class="close-expanded-btn" @click="closeExpandedPlayer">✕</button>
+
+      <div class="expanded-artwork-container">
+        <img
+          :src="currentTrack.coverArt"
+          :alt="currentTrack.title"
+          class="expanded-cover"
+        />
+      </div>
+
+      <div class="expanded-track-details">
+        <h2>{{ currentTrack.title }}</h2>
+        <p>{{ currentTrack.artist }}</p>
+      </div>
+
+      <!-- Expanded Progress Bar -->
+      <div class="expanded-progress-section">
+        <span class="player-time">{{ formattedTime }}</span>
+        <div class="player-progress-track">
+          <div
+            class="player-progress-fill"
+            :style="{ width: progressPercent + '%' }"
+          ></div>
+        </div>
+        <span class="player-time" v-if="duration > 0">{{
+          formattedDuration
+        }}</span>
+      </div>
+
+      <!-- Expanded Play/Pause Controls -->
+      <div class="expanded-controls">
+        <button class="expanded-play-btn" @click="togglePlay">
+          {{ isPlaying ? "Pause" : "Play" }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
-import { useStore } from 'vuex'
+import { ref, computed, watch, nextTick } from "vue";
+import { useStore } from "vuex";
 
-const store = useStore()
-const audioElement = ref(null)
+const store = useStore();
+const audioElement = ref(null);
 
-const currentTrack = computed(() => store.state.player.currentTrack)
-const isPlaying = computed(() => store.state.player.isPlaying)
-const currentTime = computed(() => store.state.player.currentTime || 0)
-const duration = ref(0)
+const currentTrack = computed(() => store.state.player.currentTrack);
+const isPlaying = computed(() => store.state.player.isPlaying);
+const currentTime = computed(() => store.state.player.currentTime || 0);
+const isExpanded = computed(() => store.state.player.isExpanded);
+const duration = ref(0);
 
 function togglePlay() {
-  store.dispatch('player/togglePlay')
+  store.dispatch("player/togglePlay");
+}
+
+function openExpandedPlayer() {
+  store.commit("player/SET_EXPANDED", true);
+}
+
+function closeExpandedPlayer() {
+  store.commit("player/SET_EXPANDED", false);
 }
 
 // Watch track changes, reload source, and automatically play if isPlaying is true
 watch(currentTrack, async (newTrack) => {
-  if (!newTrack) return
-  duration.value = newTrack.duration || 0
+  if (!newTrack) return;
+  duration.value = newTrack.duration || 0;
 
-  await nextTick()
+  await nextTick();
   if (audioElement.value) {
-    audioElement.value.load()
+    audioElement.value.load();
     if (isPlaying.value) {
       audioElement.value.play().catch((err) => {
-        console.error("Browser playback prevented:", err)
-      })
+        console.error("Browser playback prevented:", err);
+      });
     }
   }
-})
+});
 
 // Watch play/pause toggles
 watch(isPlaying, (newVal) => {
-  if (!audioElement.value) return
+  if (!audioElement.value) return;
   if (newVal) {
     audioElement.value.play().catch((err) => {
-      console.error("Browser playback prevented:", err)
-    })
+      console.error("Browser playback prevented:", err);
+    });
   } else {
-    audioElement.value.pause()
+    audioElement.value.pause();
   }
-})
+});
 
 function onTimeUpdate() {
-  if (!audioElement.value) return
-  store.commit('player/SET_CURRENT_TIME', audioElement.value.currentTime)
+  if (!audioElement.value) return;
+  store.commit("player/SET_CURRENT_TIME", audioElement.value.currentTime);
 }
 
 function onLoadedMetadata() {
-  if (!audioElement.value) return
-  duration.value = audioElement.value.duration
+  if (!audioElement.value) return;
+  duration.value = audioElement.value.duration;
 }
 
 function onEnded() {
-  store.dispatch('player/togglePlay')
+  store.dispatch("player/togglePlay");
 }
 
 // Real formatting based on actual playback time
 const formattedTime = computed(() => {
-  const totalSeconds = Math.floor(currentTime.value)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
-})
+  const totalSeconds = Math.floor(currentTime.value);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+});
 
 const formattedDuration = computed(() => {
-  const totalSeconds = Math.floor(duration.value)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
-})
+  const totalSeconds = Math.floor(duration.value);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+});
 
 // Real progress calculation based on live duration
 const progressPercent = computed(() => {
-  if (!duration.value || duration.value === 0) return 0
-  return Math.min((currentTime.value / duration.value) * 100, 100)
-})
+  if (!duration.value || duration.value === 0) return 0;
+  return Math.min((currentTime.value / duration.value) * 100, 100);
+});
 </script>
 
 <style scoped>
@@ -129,9 +191,11 @@ const progressPercent = computed(() => {
   border-top: 1px solid var(--border-subtle, #ccc);
   background-color: var(--bg-surface, #fff);
   z-index: 1000;
+  cursor: pointer;
 }
 .audio-player-empty {
   justify-content: center;
+  cursor: default;
 }
 .player-empty-text {
   font-size: 0.85rem;
@@ -200,5 +264,122 @@ const progressPercent = computed(() => {
 .player-progress-fill {
   height: 100%;
   background: var(--primary-wisteria, #999);
+}
+
+/* Right-Side Slide-out Panel Styles */
+.expanded-player-overlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  background: var(--bg-surface, #ffffff);
+  border-left: 1px solid var(--border-subtle, #e0e0e0);
+  box-shadow: -5px 0 25px rgba(0, 0, 0, 0.08);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  animation: slideInRight 0.25s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.expanded-player-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  justify-content: center;
+}
+
+.close-expanded-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--text-muted, #666);
+  padding: 0.5rem;
+}
+
+.close-expanded-btn:hover {
+  color: var(--text-main, #111);
+}
+
+.expanded-artwork-container {
+  width: 240px;
+  height: 240px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.expanded-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.expanded-track-details {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.expanded-track-details h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  color: var(--text-main, #111);
+}
+
+.expanded-track-details p {
+  font-size: 0.9rem;
+  color: var(--text-muted, #666);
+  margin: 0;
+}
+
+.expanded-progress-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.expanded-controls {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.expanded-play-btn {
+  border: none;
+  background: var(--text-main, #111);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.6rem 2rem;
+  border-radius: 999px;
+  transition: transform 0.15s ease;
+}
+
+.expanded-play-btn:hover {
+  transform: scale(1.03);
 }
 </style>

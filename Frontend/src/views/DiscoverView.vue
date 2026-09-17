@@ -15,17 +15,28 @@
         </svg>
       </div>
 
-      <!-- Filter Tags -->
-      <div class="filter-tags">
+      <!-- Filter Tags with Expand/Collapse for overflow -->
+      <div class="filter-container">
+        <div class="filter-tags" :class="{ expanded: showAllGenres }">
+          <button
+            v-for="(genre, index) in genreOptions"
+            :key="genre"
+            class="tag"
+            :class="{ active: activeGenre === genre }"
+            :style="getFilterStyle(index, activeGenre === genre)"
+            @click="activeGenre = genre"
+          >
+            {{ genre }}
+          </button>
+        </div>
         <button
-          v-for="(genre, index) in genreOptions"
-          :key="genre"
-          class="tag"
-          :class="{ active: activeGenre === genre }"
-          :style="getFilterStyle(index, activeGenre === genre)"
-          @click="activeGenre = genre"
+          v-if="genreOptions.length > 8"
+          class="genre-toggle-btn"
+          @click="showAllGenres = !showAllGenres"
         >
-          {{ genre }}
+          {{
+            showAllGenres ? "Show Less ▲" : `+${genreOptions.length - 8} More ▼`
+          }}
         </button>
       </div>
     </header>
@@ -51,7 +62,13 @@
             />
           </div>
           <p class="artist-name">{{ artist.name }}</p>
-          <p class="artist-genre">{{ artist.genre }}</p>
+          <p class="artist-genre">
+            {{
+              Array.isArray(artist.genre)
+                ? artist.genre.join(", ")
+                : artist.genre
+            }}
+          </p>
           <div class="card-actions" @click.stop>
             <button class="btn-outline" @click="goToArtistProfile(artist.id)">
               View Profile
@@ -71,15 +88,46 @@
       </p>
     </section>
 
-    <!-- Recommended Artists Section -->
+    <!-- Recommended Artists Section with Slide / See All functionality -->
     <section class="section">
       <div class="section-header">
         <h2>Recommended Artists</h2>
-        <a href="#" class="see-all">See All</a>
+        <div class="header-controls">
+          <div
+            v-if="!showAllRecommended && recommendedArtistsFull.length > 9"
+            class="slider-arrows"
+          >
+            <button
+              class="arrow-btn"
+              @click="scrollRecommended('left')"
+              aria-label="Scroll left"
+            >
+              ‹
+            </button>
+            <button
+              class="arrow-btn"
+              @click="scrollRecommended('right')"
+              aria-label="Scroll right"
+            >
+              ›
+            </button>
+          </div>
+          <button
+            class="see-all"
+            @click="showAllRecommended = !showAllRecommended"
+          >
+            {{ showAllRecommended ? "See Less" : "See All" }}
+          </button>
+        </div>
       </div>
-      <div class="card-grid">
+
+      <div
+        ref="recommendedScrollRef"
+        class="card-grid"
+        :class="{ 'scrollable-row': !showAllRecommended }"
+      >
         <div
-          v-for="artist in recommendedArtists"
+          v-for="artist in displayedRecommendedArtists"
           :key="artist.id"
           class="artist-card compact clickable"
           @click="goToArtistProfile(artist.id)"
@@ -91,11 +139,17 @@
           />
           <div class="artist-info">
             <p class="artist-name">{{ artist.name }}</p>
-            <p class="artist-genre">{{ artist.genre }}</p>
+            <p class="artist-genre">
+              {{
+                Array.isArray(artist.genre)
+                  ? artist.genre.join(", ")
+                  : artist.genre
+              }}
+            </p>
           </div>
         </div>
       </div>
-      <p v-if="recommendedArtists.length === 0" class="empty-state">
+      <p v-if="recommendedArtistsFull.length === 0" class="empty-state">
         No more artists to show.
       </p>
     </section>
@@ -171,14 +225,20 @@ const searchQuery = ref("");
 const activeGenre = ref("All Genres");
 const activeDropdownId = ref(null);
 
+const showAllGenres = ref(false);
+const showAllRecommended = ref(false);
+const recommendedScrollRef = ref(null);
+
 const allArtists = computed(() => store?.getters?.["artists/allArtists"] ?? []);
 const popularTracks = computed(
   () => store?.getters?.["tracks/popularTracks"] ?? [],
 );
 
 const genreOptions = computed(() => {
-  const genres = allArtists.value.map((a) => a.genre).filter(Boolean);
-  return ["All Genres", ...new Set(genres)];
+  const allGenres = allArtists.value
+    .flatMap((a) => a.genre || [])
+    .filter(Boolean);
+  return ["All Genres", ...new Set(allGenres)];
 });
 
 const filterColors = [
@@ -205,23 +265,45 @@ const filteredArtists = computed(() => {
   let result = allArtists.value;
 
   if (activeGenre.value !== "All Genres") {
-    result = result.filter((a) => a.genre === activeGenre.value);
+    result = result.filter(
+      (a) => Array.isArray(a.genre) && a.genre.includes(activeGenre.value),
+    );
   }
 
   if (searchQuery.value.trim() !== "") {
     const query = searchQuery.value.toLowerCase();
-    result = result.filter(
-      (a) =>
-        a.name?.toLowerCase().includes(query) ||
-        a.genre?.toLowerCase().includes(query),
-    );
+    result = result.filter((a) => {
+      const matchesName = a.name?.toLowerCase().includes(query);
+      const matchesGenre = Array.isArray(a.genre)
+        ? a.genre.some((g) => g.toLowerCase().includes(query))
+        : a.genre?.toLowerCase().includes(query);
+      return matchesName || matchesGenre;
+    });
   }
 
   return result;
 });
 
 const trendingArtists = computed(() => filteredArtists.value.slice(0, 5));
-const recommendedArtists = computed(() => filteredArtists.value.slice(5));
+
+const recommendedArtistsFull = computed(() => filteredArtists.value.slice(5));
+
+const displayedRecommendedArtists = computed(() => {
+  if (showAllRecommended.value) {
+    return recommendedArtistsFull.value;
+  }
+  return recommendedArtistsFull.value.slice(0, 9);
+});
+
+function scrollRecommended(direction) {
+  if (recommendedScrollRef.value) {
+    const scrollAmount = 300;
+    recommendedScrollRef.value.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  }
+}
 
 function goToArtistProfile(artistId) {
   router.push(`/artists/${artistId}`);
@@ -252,7 +334,7 @@ function toggleTrackLike(trackId) {
 
 function playTrack(track) {
   if (track.audioUrl) {
-    store.dispatch("player/playTitle", track);
+    store.dispatch("player/playTrack", track);
   } else {
     alert("Audio stream not available.");
   }
@@ -298,10 +380,10 @@ function shareTrack(track) {
   color: var(--text-main, #111111);
 }
 
-/* Page Header Typography Matched to Library View */
+/* Page Header Typography */
 .page-header h1 {
   margin: 0 0 1.25rem 0;
-  font-size: 1.5rem; /* Matched precisely to Library view */
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text-main, #111111);
   letter-spacing: -0.02em;
@@ -339,12 +421,33 @@ function shareTrack(track) {
   color: var(--text-muted, #666);
 }
 
-/* Filter Tags Unified */
+/* Filter Tags Collapse Container */
+.filter-container {
+  margin-bottom: 2rem;
+}
+
 .filter-tags {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 2rem;
   flex-wrap: wrap;
+  max-height: 40px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.filter-tags.expanded {
+  max-height: 250px;
+}
+
+.genre-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary-wisteria, #b19cd9);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  padding: 0;
 }
 
 .tag {
@@ -354,7 +457,10 @@ function shareTrack(track) {
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 600;
-  transition: opacity 0.2s ease, transform 0.1s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
+  height: 32px;
 }
 
 .tag:hover {
@@ -381,9 +487,43 @@ function shareTrack(track) {
   letter-spacing: -0.01em;
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.slider-arrows {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.arrow-btn {
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #ccc);
+  color: var(--text-main, #111);
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.arrow-btn:hover {
+  background: rgba(173, 235, 255, 0.25);
+}
+
 .see-all {
   font-size: 0.8rem;
   color: var(--text-muted, #666);
+  background: none;
+  border: none;
+  cursor: pointer;
   text-decoration: none;
   font-weight: 600;
 }
@@ -392,11 +532,31 @@ function shareTrack(track) {
   color: var(--text-main, #111);
 }
 
-/* Cards Grid */
+/* Cards Grid & Horizontal Scroll */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 1rem;
+}
+
+.card-grid.scrollable-row {
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.card-grid.scrollable-row::-webkit-scrollbar {
+  display: none;
+}
+
+.card-grid.scrollable-row .artist-card {
+  min-width: 220px;
+  flex-shrink: 0;
 }
 
 .artist-card {

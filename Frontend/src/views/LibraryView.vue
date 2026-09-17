@@ -1,164 +1,30 @@
 <template>
   <div class="library-view">
-    <!-- ==================== VIEW 1: MAIN LIBRARY ==================== -->
-    <div v-if="!selectedPlaylist">
-      <header class="library-header">
-        <div class="header-top">
-          <h1>Your Library</h1>
-          <button class="create-playlist-btn" @click="openCreateModal">
-            + New Playlist
-          </button>
-        </div>
+    <header class="library-header" v-if="!selectedPlaylist">
+      <div class="header-top">
+        <h1>Your Library</h1>
+        <button class="create-playlist-btn" @click="openCreateModal">
+          + New Playlist
+        </button>
+      </div>
 
-        <!-- Filter pills with dynamic multi-color rotation -->
-        <div class="library-tabs">
-          <button
-            v-for="(tab, index) in tabs"
-            :key="tab"
-            class="library-tab"
-            :class="{ active: activeTab === tab }"
-            :style="getFilterStyle(index, activeTab === tab)"
-            @click="activeTab = tab"
-          >
-            {{ tab }}
-          </button>
-        </div>
-      </header>
+      <!-- Filter pills with dynamic multi-color rotation -->
+      <div class="library-tabs">
+        <button
+          v-for="(tab, index) in tabs"
+          :key="tab"
+          class="library-tab"
+          :class="{ active: activeTab === tab }"
+          :style="getFilterStyle(index, activeTab === tab)"
+          @click="activeTab = tab"
+        >
+          {{ tab }}
+        </button>
+      </div>
+    </header>
 
-      <!-- Liked Songs -->
-      <section v-if="activeTab === 'Songs'" class="library-section">
-        <div class="section-header-row">
-          <h2>Liked Songs</h2>
-        </div>
-
-        <div class="track-grid">
-          <div
-            v-for="track in likedSongs"
-            :key="track.id"
-            class="playlist-card-wrapper"
-          >
-            <!-- Clicking the card directly plays the song -->
-            <div class="track-card clickable" @click="playSongDirectly(track)">
-              <div class="track-cover-placeholder">
-                <img
-                  v-if="track.image"
-                  :src="track.image"
-                  :alt="track.title"
-                  class="track-cover-img"
-                />
-                <span v-else class="play-indicator">▶</span>
-              </div>
-              <p class="track-title" @click.stop="goToTrackDetail(track)">
-                {{ track.title }}
-              </p>
-              <p class="track-artist" @click.stop="goToArtistByTrack(track)">
-                {{ track.artist }}
-              </p>
-            </div>
-
-            <!-- 3-Dots More Options Button for Liked Songs -->
-            <button
-              class="options-dots-btn"
-              @click.stop="toggleLikedSongMenu(track.id, $event)"
-              title="Song Options"
-            >
-              ⋮
-            </button>
-
-            <!-- Liked Song Dropdown Menu -->
-            <div
-              v-if="activeLikedSongMenuId === track.id"
-              class="dropdown-menu"
-            >
-              <button @click="toggleLikeFromLibrary(track)">
-                {{
-                  isLiked(track.id)
-                    ? "Remove from Liked Songs"
-                    : "Save to Liked Songs"
-                }}
-              </button>
-              <button @click="openAddToPlaylistModal(track)">
-                Add to playlist
-              </button>
-            </div>
-          </div>
-        </div>
-        <p v-if="likedSongs.length === 0" class="empty-state">
-          No liked songs yet.
-        </p>
-      </section>
-
-      <!-- Playlists Section -->
-      <section v-if="activeTab === 'Playlists'" class="library-section">
-        <h2>Your Playlists</h2>
-        <div v-if="playlists.length > 0" class="track-grid">
-          <div
-            v-for="playlist in playlists"
-            :key="playlist.id"
-            class="playlist-card-wrapper"
-          >
-            <!-- Clicking the main card opens the Playlist Detail Page View -->
-            <div
-              class="track-card clickable"
-              @click="openPlaylistDetail(playlist)"
-            >
-              <div class="track-cover-placeholder playlist-placeholder">
-                <span>🎵</span>
-              </div>
-              <p class="track-title">{{ playlist.title }}</p>
-              <p class="track-artist">
-                {{ (playlist.tracks || []).length }} songs
-              </p>
-            </div>
-
-            <!-- 3-Dots More Options Button -->
-            <button
-              class="options-dots-btn"
-              @click.stop="toggleMenu(playlist.id, $event)"
-              title="Playlist Options"
-            >
-              ⋮
-            </button>
-
-            <!-- Dropdown Menu -->
-            <div v-if="activeMenuId === playlist.id" class="dropdown-menu">
-              <button @click="startEditing(playlist)">Rename</button>
-              <button @click="openAddSongsToPlaylistModal(playlist)">
-                Add songs
-              </button>
-              <button class="text-danger" @click="deletePlaylist(playlist)">
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-        <p v-else class="empty-state">
-          No playlists yet. Click "+ New Playlist" above to create one!
-        </p>
-      </section>
-
-      <!-- Followed Artists -->
-      <section v-if="activeTab === 'Artists'" class="library-section">
-        <h2>Followed Artists</h2>
-        <div class="artist-grid">
-          <div
-            v-for="artist in followedArtists"
-            :key="artist.id"
-            class="artist-card clickable"
-            @click="goToArtist(artist.id)"
-          >
-            <img :src="artist.image" :alt="artist.name" class="artist-avatar" />
-            <p class="artist-name">{{ artist.name }}</p>
-          </div>
-        </div>
-        <p v-if="followedArtists.length === 0" class="empty-state">
-          You aren't following any artists yet.
-        </p>
-      </section>
-    </div>
-
-    <!-- ==================== VIEW 2: PLAYLIST DETAIL PAGE ==================== -->
-    <div v-else class="playlist-detail-page">
+    <!-- ==================== VIEW 5: PLAYLIST DETAIL PAGE ==================== -->
+    <div v-if="selectedPlaylist" class="playlist-detail-page">
       <button class="back-btn" @click="selectedPlaylist = null">
         ← Back to Library
       </button>
@@ -168,7 +34,6 @@
         <div class="playlist-hero-info">
           <span class="playlist-tag">Playlist</span>
 
-          <!-- Inline Name / Edit Header -->
           <div v-if="!isEditingName" class="title-row">
             <h2>{{ selectedPlaylist.title }}</h2>
             <button
@@ -199,7 +64,6 @@
         </div>
       </div>
 
-      <!-- Tracks Table -->
       <div class="playlist-table">
         <div class="table-header">
           <span>#</span>
@@ -220,7 +84,6 @@
             song.artist
           }}</span>
 
-          <!-- Song-level 3-Dots Menu Wrapper -->
           <div class="song-menu-wrapper">
             <button
               class="options-dots-btn-inline"
@@ -230,7 +93,6 @@
               ⋮
             </button>
 
-            <!-- Song Dropdown Menu -->
             <div
               v-if="activeSongMenuId === song.id"
               class="dropdown-menu song-dropdown"
@@ -261,14 +123,359 @@
           "
           class="empty-state"
         >
-          This playlist is empty. Go to your Liked Songs, click a track, and add
-          it here!
+          This playlist is empty. Add songs from your Liked Songs or Discover
+          feed!
         </p>
       </div>
     </div>
 
+    <!-- ==================== MAIN TABS CONTAINER ==================== -->
+    <div v-else>
+      <!-- ==================== VIEW 1: "ALL" DASHBOARD ==================== -->
+      <div v-if="activeTab === 'All'" class="library-dashboard">
+        <!-- Pinned Section -->
+        <section v-if="pinnedItems.length > 0" class="library-section">
+          <h2>Pinned</h2>
+          <div class="track-grid">
+            <div
+              v-for="item in pinnedItems"
+              :key="'pinned-' + item.id"
+              class="playlist-card-wrapper"
+            >
+              <div class="track-card clickable" @click="handleCardClick(item)">
+                <div class="track-cover-placeholder">
+                  <img
+                    v-if="item.image"
+                    :src="item.image"
+                    class="track-cover-img"
+                  />
+                  <span v-else>📌</span>
+                </div>
+                <p class="track-title">{{ item.title || item.name }}</p>
+                <p class="track-artist">{{ item.subtitle || "Pinned Item" }}</p>
+              </div>
+              <button
+                class="options-dots-btn"
+                @click.stop="togglePin(item)"
+                title="Unpin"
+              >
+                ★
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Recently Played Section -->
+        <section v-if="recentlyPlayed.length > 0" class="library-section">
+          <h2>Recently Played</h2>
+          <div class="track-grid">
+            <div
+              v-for="track in recentlyPlayed"
+              :key="'recent-' + track.id"
+              class="playlist-card-wrapper"
+            >
+              <div
+                class="track-card clickable"
+                @click="playSongDirectly(track)"
+              >
+                <div class="track-cover-placeholder">
+                  <img
+                    v-if="track.image"
+                    :src="track.image"
+                    class="track-cover-img"
+                  />
+                  <span v-else class="play-indicator">▶</span>
+                </div>
+                <p class="track-title">{{ track.title }}</p>
+                <p class="track-artist">{{ track.artist }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Most Played Section -->
+        <section v-if="mostPlayed.length > 0" class="library-section">
+          <h2>Most Played</h2>
+          <div class="track-grid">
+            <div
+              v-for="track in mostPlayed"
+              :key="'most-' + track.id"
+              class="playlist-card-wrapper"
+            >
+              <div
+                class="track-card clickable"
+                @click="playSongDirectly(track)"
+              >
+                <div class="track-cover-placeholder">
+                  <img
+                    v-if="track.image"
+                    :src="track.image"
+                    class="track-cover-img"
+                  />
+                  <span v-else class="play-indicator">▶</span>
+                </div>
+                <p class="track-title">{{ track.title }}</p>
+                <p class="track-artist">{{ track.artist }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Playlists Overview Row -->
+        <section class="library-section">
+          <div class="section-header-row">
+            <h2>Playlists</h2>
+            <button class="text-action-btn" @click="activeTab = 'Playlists'">
+              View All
+            </button>
+          </div>
+          <div v-if="playlists.length > 0" class="track-grid">
+            <div
+              v-for="playlist in playlists.slice(0, 4)"
+              :key="playlist.id"
+              class="playlist-card-wrapper"
+            >
+              <div
+                class="track-card clickable"
+                @click="openPlaylistDetail(playlist)"
+              >
+                <div class="track-cover-placeholder playlist-placeholder">
+                  <span>🎵</span>
+                </div>
+                <p class="track-title">{{ playlist.title }}</p>
+                <p class="track-artist">
+                  {{ (playlist.tracks || []).length }} songs
+                </p>
+              </div>
+
+              <button
+                class="options-dots-btn"
+                @click.stop="toggleMenu(playlist.id, $event)"
+                title="Playlist Options"
+              >
+                ⋮
+              </button>
+
+              <button
+                class="pin-badge-btn"
+                @click.stop="
+                  togglePin({
+                    id: playlist.id,
+                    title: playlist.title,
+                    type: 'playlist',
+                    image: null,
+                  })
+                "
+                :title="isPinned(playlist.id) ? 'Unpin' : 'Pin to top'"
+              >
+                {{ isPinned(playlist.id) ? "★" : "☆" }}
+              </button>
+
+              <div v-if="activeMenuId === playlist.id" class="dropdown-menu">
+                <button @click="startEditing(playlist)">Rename</button>
+                <button @click="openAddSongsToPlaylistModal(playlist)">
+                  Add songs
+                </button>
+                <button
+                  @click="
+                    togglePin({
+                      id: playlist.id,
+                      title: playlist.title,
+                      type: 'playlist',
+                    })
+                  "
+                >
+                  {{
+                    isPinned(playlist.id) ? "Unpin from top" : "Pin playlist"
+                  }}
+                </button>
+                <button class="text-danger" @click="deletePlaylist(playlist)">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+          <div v-else class="actionable-empty-card">
+            <p>You haven't created any playlists yet.</p>
+            <button class="btn-sm" @click="openCreateModal">
+              Create Playlist
+            </button>
+          </div>
+        </section>
+
+        <!-- Global Empty State if completely blank -->
+        <div v-if="isLibraryTotalEmpty" class="global-empty-state">
+          <div class="empty-hero-icon">🎧</div>
+          <h3>Your library is feeling a bit quiet</h3>
+          <p>
+            Explore new music on the Discover feed or save tracks to your
+            library.
+          </p>
+          <button class="modal-btn-submit" @click="router.push('/discover')">
+            Explore Discover
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== VIEW 2: SONGS / LIKED SONGS ==================== -->
+      <div v-if="activeTab === 'Songs'" class="library-section">
+        <div class="section-header-row">
+          <h2>Liked Songs</h2>
+        </div>
+
+        <div v-if="likedSongs.length > 0" class="track-grid">
+          <div
+            v-for="track in likedSongs"
+            :key="track.id"
+            class="playlist-card-wrapper"
+          >
+            <div class="track-card clickable" @click="playSongDirectly(track)">
+              <div class="track-cover-placeholder">
+                <img
+                  v-if="track.image"
+                  :src="track.image"
+                  :alt="track.title"
+                  class="track-cover-img"
+                />
+                <span v-else class="play-indicator">▶</span>
+              </div>
+              <p class="track-title" @click.stop="goToTrackDetail(track)">
+                {{ track.title }}
+              </p>
+              <p class="track-artist" @click.stop="goToArtistByTrack(track)">
+                {{ track.artist }}
+              </p>
+            </div>
+
+            <button
+              class="options-dots-btn"
+              @click.stop="toggleLikedSongMenu(track.id, $event)"
+              title="Song Options"
+            >
+              ⋮
+            </button>
+
+            <div
+              v-if="activeLikedSongMenuId === track.id"
+              class="dropdown-menu"
+            >
+              <button @click="toggleLikeFromLibrary(track)">
+                Remove from Liked Songs
+              </button>
+              <button @click="openAddToPlaylistModal(track)">
+                Add to playlist
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="actionable-empty-card">
+          <p>No liked songs yet. Start exploring to find music you love!</p>
+          <button class="btn-sm" @click="router.push('/discover')">
+            Discover Music
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== VIEW 3: PLAYLISTS ==================== -->
+      <div v-if="activeTab === 'Playlists'" class="library-section">
+        <h2>Your Playlists</h2>
+        <div v-if="playlists.length > 0" class="track-grid">
+          <div
+            v-for="playlist in playlists"
+            :key="playlist.id"
+            class="playlist-card-wrapper"
+          >
+            <div
+              class="track-card clickable"
+              @click="openPlaylistDetail(playlist)"
+            >
+              <div class="track-cover-placeholder playlist-placeholder">
+                <span>🎵</span>
+              </div>
+              <p class="track-title">{{ playlist.title }}</p>
+              <p class="track-artist">
+                {{ (playlist.tracks || []).length }} songs
+              </p>
+            </div>
+
+            <button
+              class="options-dots-btn"
+              @click.stop="toggleMenu(playlist.id, $event)"
+              title="Playlist Options"
+            >
+              ⋮
+            </button>
+
+            <button
+              class="pin-badge-btn"
+              @click.stop="
+                togglePin({
+                  id: playlist.id,
+                  title: playlist.title,
+                  type: 'playlist',
+                  image: null,
+                })
+              "
+              :title="isPinned(playlist.id) ? 'Unpin' : 'Pin to top'"
+            >
+              {{ isPinned(playlist.id) ? "★" : "☆" }}
+            </button>
+
+            <div v-if="activeMenuId === playlist.id" class="dropdown-menu">
+              <button @click="startEditing(playlist)">Rename</button>
+              <button @click="openAddSongsToPlaylistModal(playlist)">
+                Add songs
+              </button>
+              <button
+                @click="
+                  togglePin({
+                    id: playlist.id,
+                    title: playlist.title,
+                    type: 'playlist',
+                  })
+                "
+              >
+                {{ isPinned(playlist.id) ? "Unpin from top" : "Pin playlist" }}
+              </button>
+              <button class="text-danger" @click="deletePlaylist(playlist)">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+        <div v-else class="actionable-empty-card">
+          <p>No playlists yet. Click "+ New Playlist" to curate your sounds!</p>
+          <button class="btn-sm" @click="openCreateModal">
+            Create Playlist
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== VIEW 4: ARTISTS (Followed Artists) ==================== -->
+      <div v-if="activeTab === 'Artists'" class="library-section">
+        <h2>Followed Artists</h2>
+        <div v-if="followedArtists.length > 0" class="artist-grid">
+          <div
+            v-for="artist in followedArtists"
+            :key="artist.id"
+            class="artist-card clickable"
+            @click="goToArtist(artist.id)"
+          >
+            <img :src="artist.image" :alt="artist.name" class="artist-avatar" />
+            <p class="artist-name">{{ artist.name }}</p>
+          </div>
+        </div>
+        <div v-else class="actionable-empty-card">
+          <p>You aren't following any artists yet.</p>
+          <button class="btn-sm" @click="router.push('/discover')">
+            Explore Artists
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ==================== MODALS ==================== -->
-    <!-- 1. Song Action / Add Modal -->
     <div
       v-if="showSongModal"
       class="modal-overlay"
@@ -307,7 +514,6 @@
       </div>
     </div>
 
-    <!-- 2. Enhanced Create Playlist Modal with Song Search & Picker -->
     <div
       v-if="showCreateModal"
       class="modal-overlay"
@@ -379,8 +585,8 @@ import { useRouter } from "vue-router";
 const store = useStore();
 const router = useRouter();
 
-const tabs = ["Songs", "Playlists", "Artists"];
-const activeTab = ref("Songs");
+const tabs = ["All", "Songs", "Playlists", "Artists"];
+const activeTab = ref("All");
 
 // View states
 const selectedPlaylist = ref(null);
@@ -388,6 +594,45 @@ const activeMenuId = ref(null);
 const activeLikedSongMenuId = ref(null);
 const isEditingName = ref(false);
 const editedPlaylistName = ref("");
+
+// Pinned & History tracking
+const pinnedIds = ref(JSON.parse(localStorage.getItem("jamn_pinned") || "[]"));
+
+function isPinned(id) {
+  return pinnedIds.value.includes(id);
+}
+
+function togglePin(item) {
+  if (isPinned(item.id)) {
+    pinnedIds.value = pinnedIds.value.filter((i) => i !== item.id);
+  } else {
+    pinnedIds.value.push(item.id);
+  }
+  localStorage.setItem("jamn_pinned", JSON.stringify(pinnedIds.value));
+  activeMenuId.value = null;
+}
+
+const recentTrackIds = ref(
+  JSON.parse(localStorage.getItem("jamn_recent_tracks") || "[]"),
+);
+const playCounts = ref(
+  JSON.parse(localStorage.getItem("jamn_play_counts") || "{}"),
+);
+
+function recordTrackPlay(track) {
+  if (!track || !track.id) return;
+  recentTrackIds.value = [
+    track.id,
+    ...recentTrackIds.value.filter((id) => id !== track.id),
+  ].slice(0, 10);
+  localStorage.setItem(
+    "jamn_recent_tracks",
+    JSON.stringify(recentTrackIds.value),
+  );
+
+  playCounts.value[track.id] = (playCounts.value[track.id] || 0) + 1;
+  localStorage.setItem("jamn_play_counts", JSON.stringify(playCounts.value));
+}
 
 // Modals state
 const showCreateModal = ref(false);
@@ -398,8 +643,6 @@ const selectedSongIds = ref([]);
 const showSongModal = ref(false);
 const selectedSong = ref(null);
 const targetPlaylistId = ref("");
-
-// Song-level dropdown state (for playlist tracks view)
 const activeSongMenuId = ref(null);
 
 // Data mappings
@@ -408,11 +651,10 @@ const followedArtists = computed(
   () => store.getters["auth/currentUser"]?.followingList || [],
 );
 const playlists = computed(() => store.getters["auth/userPlaylists"] || []);
-
 const likedSongIds = computed(() => store.getters["auth/likedSongIds"] || []);
 
-const likedSongs = computed(() => {
-  const allTracks = allArtists.value
+const allAvailableTracks = computed(() => {
+  return allArtists.value
     .filter((artist) => artist.tracks && artist.tracks.length > 0)
     .flatMap((artist) =>
       artist.tracks.map((t) => ({
@@ -424,38 +666,72 @@ const likedSongs = computed(() => {
         image: artist.image || null,
       })),
     );
-
-  return allTracks.filter((track) => likedSongIds.value.includes(track.id));
 });
+
+const likedSongs = computed(() => {
+  return allAvailableTracks.value.filter((track) =>
+    likedSongIds.value.includes(track.id),
+  );
+});
+
+const recentlyPlayed = computed(() => {
+  return recentTrackIds.value
+    .map((id) => allAvailableTracks.value.find((t) => t.id === id))
+    .filter(Boolean)
+    .slice(0, 4);
+});
+
+const mostPlayed = computed(() => {
+  return [...allAvailableTracks.value]
+    .filter((track) => (playCounts.value[track.id] || 0) > 0)
+    .sort(
+      (a, b) => (playCounts.value[b.id] || 0) - (playCounts.value[a.id] || 0),
+    )
+    .slice(0, 4);
+});
+
+const pinnedItems = computed(() => {
+  const matchingPlaylists = playlists.value.filter((p) =>
+    pinnedIds.value.includes(p.id),
+  );
+  return matchingPlaylists.map((p) => ({
+    id: p.id,
+    title: p.title,
+    subtitle: `${(p.tracks || []).length} songs`,
+    type: "playlist",
+    playlistObj: p,
+  }));
+});
+
+const isLibraryTotalEmpty = computed(() => {
+  return (
+    likedSongs.value.length === 0 &&
+    playlists.value.length === 0 &&
+    followedArtists.value.length === 0 &&
+    recentlyPlayed.value.length === 0
+  );
+});
+
+function handleCardClick(item) {
+  if (item.type === "playlist" || item.playlistObj) {
+    openPlaylistDetail(item.playlistObj || item);
+  }
+}
 
 function isLiked(songId) {
   return likedSongIds.value.includes(songId);
 }
 
 const filteredPickerSongs = computed(() => {
-  const allTracks = allArtists.value
-    .filter((artist) => artist.tracks && artist.tracks.length > 0)
-    .flatMap((artist) =>
-      artist.tracks.map((t) => ({
-        id: `${artist.id}-${t.id}`,
-        artistId: artist.id,
-        title: t.title,
-        artist: artist.name,
-        audioUrl: t.audioUrl || artist.audioUrl || null,
-        image: artist.image || null,
-      })),
-    );
-
-  if (!songSearchQuery.value.trim()) return allTracks;
+  if (!songSearchQuery.value.trim()) return allAvailableTracks.value;
   const query = songSearchQuery.value.toLowerCase();
-  return allTracks.filter(
+  return allAvailableTracks.value.filter(
     (song) =>
       song.title.toLowerCase().includes(query) ||
       song.artist.toLowerCase().includes(query),
   );
 });
 
-// Colors for rotating filter pills matching the project pattern
 const filterColors = [
   "var(--accent-plum, #d4bcf0)",
   "var(--accent-blue, #b8e5ff)",
@@ -523,9 +799,9 @@ function handleClickOutside(e) {
 onMounted(() => window.addEventListener("click", handleClickOutside));
 onUnmounted(() => window.removeEventListener("click", handleClickOutside));
 
-// Direct playback function for Liked Songs cards
 function playSongDirectly(track) {
   if (track.audioUrl) {
+    recordTrackPlay(track);
     store.dispatch("player/playTrack", track);
   } else {
     alert("Audio stream not available for this track.");
@@ -615,13 +891,13 @@ function deletePlaylist(playlist) {
 
 function playTrackFromPlaylist(track) {
   if (track.audioUrl) {
+    recordTrackPlay(track);
     store.dispatch("player/playTrack", track);
   } else {
     alert("Audio stream not available for this track.");
   }
 }
 
-// Navigation mapping handlers
 function goToTrackDetail(track) {
   router.push(`/track/${track.id}`);
 }
@@ -675,7 +951,6 @@ function openAddToPlaylistModal(song) {
   color: var(--text-main, #111111);
 }
 
-/* Styled same as the Upload Beat button */
 .create-playlist-btn {
   border: none;
   background: var(--text-main, #333);
@@ -706,7 +981,9 @@ function openAddToPlaylistModal(song) {
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 700;
-  transition: opacity 0.2s ease, transform 0.1s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
 }
 
 .library-tab:hover {
@@ -720,9 +997,13 @@ function openAddToPlaylistModal(song) {
   margin-bottom: 1rem;
 }
 
+.library-section {
+  margin-bottom: 2.5rem;
+}
+
 .library-section h2 {
-  font-size: 1rem;
-  margin: 0;
+  font-size: 1.1rem;
+  margin: 0 0 1rem 0;
   color: var(--text-main, #111111);
 }
 
@@ -760,8 +1041,27 @@ function openAddToPlaylistModal(song) {
   opacity: 1;
 }
 
-.options-dots-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
+.pin-badge-btn {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fae184;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.playlist-card-wrapper:hover .pin-badge-btn {
+  opacity: 1;
 }
 
 .dropdown-menu {
@@ -819,7 +1119,6 @@ function openAddToPlaylistModal(song) {
   object-fit: cover;
 }
 
-/* Updated: Replaced yellow background with neutral surface/border */
 .playlist-placeholder {
   font-size: 1.5rem;
   background: var(--bg-surface, #f9f9f9);
@@ -874,6 +1173,42 @@ function openAddToPlaylistModal(song) {
   padding: 1.5rem 0;
 }
 
+.actionable-empty-card {
+  border: 1px dashed var(--border-subtle, #ccc);
+  padding: 2rem;
+  text-align: center;
+  border-radius: 8px;
+  background: var(--bg-surface, #fafafa);
+  color: var(--text-muted, #666);
+}
+
+.actionable-empty-card p {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.global-empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.empty-hero-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.global-empty-state h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.3rem;
+  color: var(--text-main, #111);
+}
+
+.global-empty-state p {
+  color: var(--text-muted, #666);
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
 /* Playlist Detail Page Styles */
 .playlist-detail-page {
   animation: fadeIn 0.2s ease-in-out;
@@ -898,7 +1233,6 @@ function openAddToPlaylistModal(song) {
   border-bottom: 1px solid var(--border-subtle, #eee);
 }
 
-/* Updated: Replaced yellow background with neutral surface/border */
 .playlist-hero-cover {
   width: 120px;
   height: 120px;
