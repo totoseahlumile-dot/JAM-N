@@ -1,41 +1,27 @@
 <script setup>
 import { RouterView } from "vue-router";
 import AppNavbar from "@/components/common/AppNavbar.vue";
+import AppFooter from "@/components/common/AppFooter.vue";
 </script>
 
 <template>
-  <div id="app">
+  <div id="app-layout">
     <AppNavbar />
-
     <main class="main-content">
       <RouterView />
     </main>
-
-    <footer class="app-footer">
-      <div class="footer-content">
-        <div class="brand-info">
-          <span class="footer-brand">JAM'N</span>
-          <p class="footer-tagline">
-            Promoting local South African music talent.
-          </p>
-        </div>
-      </div>
-
-      <div class="footer-bottom">
-        <p>&copy; 2026 JAM'N. All rights reserved.</p>
-      </div>
-    </footer>
+    <AppFooter />
   </div>
 </template>
 
-<style scoped>
-#app {
+<style>
+#app-layout {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
 }
 
 .main-content {
-  flex: 1;
+  flex: 1 0 auto;
 }
 </style>

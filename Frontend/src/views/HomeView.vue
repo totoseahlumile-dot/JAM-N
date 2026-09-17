@@ -4,7 +4,6 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 
-// Audio state
 const currentAudio = ref(null);
 const playingSongId = ref(null);
 
@@ -101,7 +100,6 @@ const handleSignUp = () => {
 <template>
   <div class="landing-page">
     <main class="landing-main">
-      <!-- Carousel Hero Section -->
       <section class="carousel-hero">
         <div
           v-for="(slide, index) in slides"
@@ -165,7 +163,6 @@ const handleSignUp = () => {
         </div>
       </section>
 
-      <!-- Action Buttons -->
       <div class="hero-actions">
         <button type="button" class="btn-primary" @click="handleSignUp">
           Sign up
@@ -179,7 +176,6 @@ const handleSignUp = () => {
         </button>
       </div>
 
-      <!-- Trending Section -->
       <section class="trending-section">
         <div class="section-header">
           <h2 class="section-title">Here's what's</h2>
@@ -213,7 +209,7 @@ const handleSignUp = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: #cbcbcf;
+  background-color: var(--bg-main);
   min-height: 100vh;
 }
 
@@ -235,7 +231,7 @@ const handleSignUp = () => {
   border-radius: 28px;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  background-color: #0a0908;
+  background-color: var(--bg-dark-overlay);
 }
 
 .carousel-slide {
@@ -264,18 +260,18 @@ const handleSignUp = () => {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-  color: #ffffff;
+  color: var(--text-light);
 }
 
 .hero-title {
   font-size: 1.85rem;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text-light);
   line-height: 1.25;
 }
 
 .hero-subtitle {
-  color: #adebff;
+  color: var(--secondary-frosted);
   font-weight: 600;
   font-size: 0.95rem;
 }
@@ -286,7 +282,7 @@ const handleSignUp = () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  color: #fafafd;
+  color: var(--text-light);
   font-weight: 500;
   font-size: 0.9rem;
 }
@@ -299,41 +295,12 @@ const handleSignUp = () => {
   margin-top: 0.5rem;
 }
 
-.btn-primary {
-  background-color: #ba93dc;
-  color: #1d1e18;
-  font-weight: 700;
-  border: none;
-  padding: 0.8rem 2.5rem;
-  border-radius: 24px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: opacity 0.2s ease;
-}
-
-.btn-secondary-pill {
-  background-color: #adebff;
-  color: #1d1e18;
-  font-weight: 700;
-  border: none;
-  padding: 0.8rem 2.5rem;
-  border-radius: 24px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: opacity 0.2s ease;
-}
-
-.btn-primary:hover,
-.btn-secondary-pill:hover {
-  opacity: 0.9;
-}
-
 .carousel-arrow {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   background: rgba(0, 0, 0, 0.4);
-  color: #ffffff;
+  color: var(--text-light);
   border: 1px solid rgba(255, 255, 255, 0.2);
   width: 38px;
   height: 38px;
@@ -354,6 +321,7 @@ const handleSignUp = () => {
 .carousel-arrow.prev {
   left: 1.25rem;
 }
+
 .carousel-arrow.next {
   right: 1.25rem;
 }
@@ -378,12 +346,11 @@ const handleSignUp = () => {
 }
 
 .dot.active {
-  background-color: #ba93dc;
+  background-color: var(--primary-wisteria);
   width: 20px;
   border-radius: 10px;
 }
 
-/* --- Trending Section --- */
 .trending-section {
   width: 100%;
   display: flex;
@@ -403,50 +370,8 @@ const handleSignUp = () => {
 .section-title {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1d1e18;
+  color: var(--text-main);
   margin: 0;
-}
-
-/* Simplified SA Flag Color Cycle Badge */
-.badge-trending {
-  font-size: 0.68rem;
-  font-weight: 800;
-  padding: 0.35rem 0.85rem;
-  border-radius: 12px;
-  letter-spacing: 0.6px;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  animation: saSimpleColorCycle 6s ease-in-out infinite;
-}
-
-@keyframes saSimpleColorCycle {
-  0% {
-    background-color: #007a3d; /* SA Green */
-    color: #ffffff;
-  }
-  16.6% {
-    background-color: #fdb813; /* SA Gold/Yellow */
-    color: #1d1e18;
-  }
-  33.3% {
-    background-color: #ffffff; /* SA White */
-    color: #1d1e18;
-  }
-  50% {
-    background-color: #000000; /* SA Black */
-    color: #ffffff;
-  }
-  66.6% {
-    background-color: #e03c31; /* SA Red */
-    color: #ffffff;
-  }
-  83.3% {
-    background-color: #002395; /* SA Blue */
-    color: #ffffff;
-  }
-  100% {
-    background-color: #007a3d; /* SA Green */
-    color: #ffffff;
-  }
 }
 
 .trending-grid {
@@ -457,74 +382,13 @@ const handleSignUp = () => {
   align-items: stretch;
 }
 
-.media-card {
-  background-color: #ffffff;
-  border-radius: 18px;
-  overflow: hidden;
-  border: 1px solid #e0e0e6;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-  transition:
-    transform 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.media-card:hover {
-  border-color: #ba93dc;
-  transform: translateY(-2px);
-}
-
-.media-thumbnail {
-  aspect-ratio: 4 / 5;
-  background-color: #f0f0f4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
-}
-
-.album-cover-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.media-details {
-  background-color: #ffffff;
-  padding: 1rem 1.1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  min-height: 64px;
-}
-
 .song-name {
   font-size: 0.88rem;
   font-weight: 800;
-  color: #1d1e18;
+  color: var(--text-main);
   line-height: 1.25;
   white-space: normal;
   word-break: break-word;
-}
-
-.btn-play {
-  background-color: #ba93dc;
-  color: #1d1e18;
-  border: none;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 0.45rem 1.15rem;
-  border-radius: 16px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: opacity 0.2s ease;
-}
-
-.btn-play:hover {
-  opacity: 0.9;
 }
 
 @media (max-width: 900px) {

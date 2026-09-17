@@ -1,72 +1,100 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter, RouterLink } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
+import { useAuth } from "../composables/useAuth";
 
 const router = useRouter();
-const authStore = useAuthStore();
+const { login } = useAuth();
 
+const selectedRoles = ref([]);
+const username = ref("");
 const email = ref("");
 const password = ref("");
-const confirmPassword = ref("");
-const errorMessage = ref("");
 
-const handleRegister = async () => {
-  if (password.value !== confirmPassword.value) {
-    errorMessage.value = "Passwords do not match.";
+const roles = ["Listener", "Artist", "Producer"];
+
+const toggleRole = (role) => {
+  if (selectedRoles.value.includes(role)) {
+    selectedRoles.value = selectedRoles.value.filter((r) => r !== role);
+  } else {
+    selectedRoles.value.push(role);
+  }
+};
+
+const handleRegister = () => {
+  if (!username.value || !email.value || !password.value) {
+    alert("Please fill out all fields.");
     return;
   }
 
-  try {
-    errorMessage.value = "";
-    if (authStore?.register) {
-      await authStore.register({
-        email: email.value,
-        password: password.value,
-      });
-    }
-    router.push("/discover");
-  } catch (error) {
-    errorMessage.value =
-      error?.message || "Failed to create account. Please try again.";
-  }
+  // Set local state to authenticated
+  login();
+  router.push("/discover");
 };
 
-const goToSignIn = () => {
-  router.push("/login");
-};
-
-const closeCard = () => {
-  router.push("/");
+const handleClose = () => {
+  router.push("/discover");
 };
 </script>
 
 <template>
-  <div class="auth-page">
-    <div class="auth-card">
-      <button class="close-btn" aria-label="Close" @click="closeCard">✕</button>
+  <div class="modal-overlay">
+    <div class="modal-card">
+      <button class="close-btn" aria-label="Close" @click="handleClose">
+        ✕
+      </button>
 
-      <h2 class="auth-title">Welcome to JAM'N</h2>
-      <p class="auth-subtitle">Sign in or create an account to continue</p>
-
-      <!-- Segmented Pill Toggle -->
-      <div class="tab-toggle">
-        <div class="tab-pill sign-up-active"></div>
-        <button type="button" class="tab-btn" @click="goToSignIn">
-          Sign in
-        </button>
-        <button type="button" class="tab-btn active">Sign up</button>
+      <div class="modal-header">
+        <h1 class="modal-title">Join JAM’N</h1>
+        <p class="modal-subtitle">Create your account to get started</p>
       </div>
 
+      <!-- Segmented Tab Bar -->
+      <div class="segment-toggle">
+        <RouterLink to="/login" class="segment-btn inactive"
+          >Sign in</RouterLink
+        >
+        <button class="segment-btn active">Sign up</button>
+      </div>
+
+      <!-- Roles Selection Cards -->
+      <div class="role-selection">
+        <label class="role-label"
+          >I am a...
+          <span class="role-sub">(select all that apply)</span></label
+        >
+        <div class="role-cards-grid">
+          <button
+            v-for="role in roles"
+            :key="role"
+            type="button"
+            class="role-card"
+            :class="[
+              role.toLowerCase(),
+              { selected: selectedRoles.includes(role) },
+            ]"
+            @click="toggleRole(role)"
+          >
+            {{ role }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Form -->
       <form class="auth-form" @submit.prevent="handleRegister">
-        <div v-if="errorMessage" class="error-banner">
-          {{ errorMessage }}
+        <div class="form-group">
+          <label>Username</label>
+          <input
+            v-model="username"
+            type="text"
+            placeholder="Enter Your Username"
+            required
+          />
         </div>
 
         <div class="form-group">
-          <label for="reg-email">Email</label>
+          <label>Email</label>
           <input
-            id="reg-email"
             v-model="email"
             type="email"
             placeholder="Enter Your Email"
@@ -75,9 +103,8 @@ const closeCard = () => {
         </div>
 
         <div class="form-group">
-          <label for="reg-password">Password</label>
+          <label>Password</label>
           <input
-            id="reg-password"
             v-model="password"
             type="password"
             placeholder="Enter Your Password"
@@ -85,131 +112,176 @@ const closeCard = () => {
           />
         </div>
 
-        <div class="form-group">
-          <label for="confirm-password">Confirm Password</label>
-          <input
-            id="confirm-password"
-            v-model="confirmPassword"
-            type="password"
-            placeholder="Verify Your Password"
-            required
-          />
-        </div>
-
-        <button type="submit" class="btn-submit">Sign up</button>
+        <button type="submit" class="btn-primary">Create Account</button>
       </form>
 
-      <p class="auth-switch">
-        Already have an account?
-        <RouterLink to="/login" class="auth-link">Sign in</RouterLink>
-      </p>
+      <!-- Footer -->
+      <div class="modal-footer">
+        <p>
+          Already have an account?
+          <RouterLink to="/login" class="footer-link">Sign in</RouterLink>
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.auth-page {
-  min-height: calc(100vh - 70px);
+.modal-overlay {
+  min-height: 100vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #cbcae0;
-  padding: 2rem 1rem;
+  background-color: var(--bg-main);
+  padding: 1.5rem;
+  box-sizing: border-box;
 }
 
-.auth-card {
+.modal-card {
   position: relative;
-  background-color: #e0e0e0;
+  background-color: var(--border-subtle);
+  border-radius: 20px;
+  padding: 2.5rem;
   width: 100%;
-  max-width: 440px;
-  border-radius: 16px;
-  padding: 2.5rem 2.2rem 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  max-width: 480px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
 .close-btn {
   position: absolute;
   top: 1.25rem;
-  right: 1.25rem;
+  right: 1.5rem;
   background: none;
   border: none;
   font-size: 1.25rem;
-  font-weight: 800;
-  color: #1d1e18;
+  font-weight: 500;
+  color: var(--text-main);
   cursor: pointer;
-  line-height: 1;
+  opacity: 0.7;
 }
 
-.auth-title {
+.close-btn:hover {
+  opacity: 1;
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-title {
   font-size: 1.6rem;
-  font-weight: 800;
-  color: #1d1e18;
-  margin-bottom: 0.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.35rem;
 }
 
-.auth-subtitle {
+.modal-subtitle {
   font-size: 0.88rem;
-  color: #333333;
-  margin-bottom: 1.4rem;
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
-.tab-toggle {
-  position: relative;
+/* Segmented Pill Toggle */
+.segment-toggle {
   display: flex;
-  background-color: #6c52a1;
+  background-color: #5c4ca8;
   border-radius: 30px;
-  padding: 4px;
-  margin-bottom: 2rem;
+  padding: 3px;
+  margin-bottom: 1.5rem;
 }
 
-.tab-pill {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  width: calc(50% - 4px);
-  background-color: #e8dcfc;
-  border-radius: 26px;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1;
-}
-
-.tab-pill.sign-up-active {
-  transform: translateX(100%);
-}
-
-.tab-btn {
-  position: relative;
-  z-index: 2;
+.segment-btn {
   flex: 1;
   text-align: center;
-  padding: 0.65rem 0;
-  font-size: 0.9rem;
-  font-weight: 700;
+  padding: 0.6rem 0;
+  border-radius: 25px;
+  font-size: 0.88rem;
+  font-weight: 500;
   border: none;
-  background: transparent;
-  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.segment-btn.active {
+  background-color: #ede4f8;
+  color: var(--text-main);
+}
+
+.segment-btn.inactive {
+  background-color: transparent;
   color: #ffffff;
-  transition: color 0.3s ease;
 }
 
-.tab-btn.active {
-  color: #523e85;
+/* Role Selector */
+.role-selection {
+  margin-bottom: 1.25rem;
 }
 
+.role-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.6rem;
+}
+
+.role-sub {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.role-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.role-card {
+  background-color: #d0d0d8;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.role-card:hover {
+  background-color: #c4c4cc;
+}
+
+/* Default Selected State (Listener) */
+.role-card.selected {
+  background-color: var(--secondary-frosted, #c7c6eb);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+/* Custom Selected Colors */
+.role-card.artist.selected {
+  background-color: #eaa0d2;
+  border-color: #eaa0d2;
+  color: #1d1e18;
+}
+
+.role-card.producer.selected {
+  background-color: #f7e88a;
+  border-color: #f7e88a;
+  color: #1d1e18;
+}
+
+/* Form Styles */
 .auth-form {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-}
-
-.error-banner {
-  background-color: #ffe5e5;
-  color: #d32f2f;
-  padding: 0.65rem 0.9rem;
-  border-radius: 10px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  text-align: center;
 }
 
 .form-group {
@@ -219,54 +291,39 @@ const closeCard = () => {
 }
 
 .form-group label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #1d1e18;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
 }
 
 .form-group input {
-  padding: 0.75rem 1rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  border: 1px solid #ffffff;
-  background-color: #ffffff;
+  padding: 0.65rem 0.85rem;
   font-size: 0.88rem;
-  color: #1d1e18;
+  color: var(--text-main);
   outline: none;
 }
 
 .form-group input::placeholder {
-  color: #999999;
+  color: var(--text-muted);
 }
 
-.btn-submit {
-  margin-top: 0.6rem;
-  width: 100%;
-  background-color: #e8dcfc;
-  color: #453472;
-  font-weight: 700;
+.btn-primary {
+  background-color: #ede4f8;
+  color: var(--text-main);
+  padding: 0.75rem;
+  border-radius: 25px;
+  font-size: 0.92rem;
+  font-weight: 600;
   border: none;
-  padding: 0.85rem;
-  border-radius: 24px;
   cursor: pointer;
-  font-size: 0.95rem;
-  transition: opacity 0.2s ease;
+  margin-top: 0.5rem;
+  transition: background-color 0.2s ease;
 }
 
-.btn-submit:hover {
-  opacity: 0.9;
-}
-
-.auth-switch {
-  margin-top: 1.5rem;
-  font-size: 0.85rem;
-  color: #1d1e18;
-  text-align: center;
-}
-
-.auth-link {
-  color: #1d1e18;
-  font-weight: 700;
-  text-decoration: underline;
-  margin-left: 0.2rem;
+.btn-primary:hover {
+  background-color: var(--primary-wisteria);
 }
 </style>

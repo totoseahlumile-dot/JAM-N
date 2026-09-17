@@ -1,14 +1,6 @@
-<script setup></script>
-
 <template>
-  <div class="discover-container">
-    <h1>Discover Music & Artists</h1>
+  <div>
+    <!-- DiscoverView.vue, placeholder thing so that the other pages don't crash cause PostCard.vue was edited -->
+    <h1>Discover Page</h1>
   </div>
 </template>
-
-<style scoped>
-.discover-container {
-  padding: 2rem;
-  color: #1d1e18;
-}
-</style>

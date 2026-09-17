@@ -1,110 +1,162 @@
 <script setup>
+import { computed } from "vue";
 import { RouterLink, useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
-import logoImg from "@/assets/logo.png";
+import { useStore } from "vuex";
 
-const authStore = useAuthStore();
+const store = useStore();
 const router = useRouter();
 
+const isLoggedIn = computed(() => {
+  if (!store) return false;
+  return (
+    store.getters["auth/isLoggedIn"] ?? store.getters["isLoggedIn"] ?? false
+  );
+});
+
 const handleLogout = () => {
-  authStore.setGuestMode();
+  if (store) {
+    store.dispatch("auth/setGuestMode").catch(() => {
+      store.dispatch("setGuestMode");
+    });
+  }
   router.push("/login");
 };
 </script>
 
 <template>
   <header class="navbar">
-    <RouterLink to="/" class="brand-container">
-      <img :src="logoImg" alt="JAM'N Logo" class="navbar-logo" />
-      <span class="brand-title">JAM'N</span>
-    </RouterLink>
+    <div class="navbar-container">
+      <RouterLink to="/" class="brand-logo">
+        <img src="@/assets/logo.png" alt="JAM'N Logo" class="brand-logo-img" />
+        <span>JAM'N</span>
+      </RouterLink>
 
-    <nav class="nav-links">
-      <template v-if="authStore.isAuthenticated.value">
-        <span class="user-greeting"
-          >Hi, {{ authStore.user.value?.name || "User" }}</span
+      <nav class="nav-links">
+        <RouterLink to="/discover" class="nav-item">Discover</RouterLink>
+        <RouterLink to="/feed" class="nav-item">Feed</RouterLink>
+        <RouterLink to="/library" class="nav-item">Library</RouterLink>
+        <RouterLink to="/beat-store" class="nav-item">Beat Store</RouterLink>
+        <RouterLink to="/events" class="nav-item">Events</RouterLink>
+      </nav>
+
+      <div class="user-action">
+        <!-- Settings icon -->
+        <RouterLink
+          to="/settings"
+          class="settings-icon-btn"
+          aria-label="Settings"
         >
-        <button class="btn-nav btn-logout" @click="handleLogout">Logout</button>
-      </template>
+          <svg class="settings-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.32-.02-.63-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.44.17-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.31-.09.63-.09.94s.02.63.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+            />
+          </svg>
+        </RouterLink>
 
-      <template v-else>
-        <RouterLink to="/login" class="btn-nav btn-primary">Sign in</RouterLink>
-      </template>
-    </nav>
+        <!-- Dynamic Auth Link -->
+        <RouterLink v-if="!isLoggedIn" to="/login" class="nav-item">
+          Login
+        </RouterLink>
+
+        <RouterLink
+          v-else
+          to="/account"
+          class="profile-icon-btn"
+          aria-label="Account"
+        >
+          <svg class="user-avatar-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-3.8-1.04-4.83-2.61.03-1.6 3.23-2.49 4.83-2.49s4.8 1.89 4.83 2.49C15.8 18.96 14.03 20 12 20z"
+            />
+          </svg>
+        </RouterLink>
+      </div>
+    </div>
   </header>
 </template>
 
 <style scoped>
 .navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 2rem;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e3e8;
+  width: 100%;
+  background-color: var(--bg-surface, #ffffff);
+  border-bottom: 1px solid #e2e2e8;
+  padding: 0.85rem 2rem;
+  box-sizing: border-box;
 }
 
-.brand-container {
+.navbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.brand-logo {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1d1e18;
   text-decoration: none;
 }
 
-.navbar-logo {
-  width: 32px;
-  height: 32px;
+.brand-logo-img {
+  width: 28px;
+  height: 28px;
   object-fit: contain;
-}
-
-.brand-title {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: #6b52a1;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 2rem;
 }
 
-.user-greeting {
-  font-size: 0.85rem;
+.nav-item {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #666;
+  text-decoration: none;
+  padding-bottom: 4px;
+  border-bottom: 3px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.nav-item:hover,
+.nav-item.router-link-active {
+  color: #1d1e18;
   font-weight: 600;
-  color: #6b52a1;
+  border-bottom-color: #ba93dc;
 }
 
-.btn-nav {
+.user-action {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.settings-icon-btn,
+.profile-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.8rem 2.5rem;
-  border-radius: 24px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  text-decoration: none !important;
-  transition: opacity 0.2s ease;
+  color: #666;
 }
 
-.btn-nav:hover {
-  opacity: 0.9;
+.settings-icon-btn:hover,
+.profile-icon-btn:hover {
+  color: #1d1e18;
 }
 
-.btn-primary {
-  background-color: #ba93dc;
-  color: #1d1e18 !important;
-  border: none;
+.settings-icon {
+  width: 22px;
+  height: 22px;
 }
 
-.btn-logout {
-  background-color: transparent;
-  border: 1px solid #d0d0d8;
-  color: #333 !important;
-  padding: 0.45rem 1.2rem;
-  border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.85rem;
+.user-avatar-icon {
+  width: 28px;
+  height: 28px;
 }
 </style>

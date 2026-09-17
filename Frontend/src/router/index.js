@@ -1,39 +1,62 @@
 import { createRouter, createWebHistory } from "vue-router";
+import HomeView from "@/views/HomeView.vue";
+import FeedView from "@/views/FeedView.vue";
+import DiscoverView from "@/views/DiscoverView.vue";
 import LoginView from "@/views/LoginView.vue";
 import RegisterView from "@/views/RegisterView.vue";
-import HomeView from "@/views/HomeView.vue";
-
-const routes = [
-  {
-    path: "/",
-    name: "home",
-    component: HomeView,
-  },
-  {
-    path: "/login",
-    name: "login",
-    component: LoginView,
-  },
-  {
-    path: "/signup",
-    name: "signup",
-    component: RegisterView,
-  },
-  {
-    path: "/forgot-password",
-    name: "forgot-password",
-    component: () => import("@/views/ForgotPasswordView.vue"),
-  },
-  {
-    path: "/discover",
-    name: "discover",
-    component: HomeView,
-  },
-];
+import ForgotPasswordView from "@/views/ForgotPasswordView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
+  routes: [
+    {
+      path: "/",
+      name: "home",
+      component: HomeView,
+    },
+    {
+      path: "/feed",
+      name: "feed",
+      component: FeedView,
+    },
+    {
+      path: "/Feed",
+      redirect: "/feed",
+    },
+    {
+      path: "/discover",
+      name: "discover",
+      component: DiscoverView,
+    },
+    {
+      path: "/Discover",
+      redirect: "/discover",
+    },
+    {
+      path: "/login",
+      name: "login",
+      component: LoginView,
+    },
+    {
+      path: "/register",
+      name: "register",
+      component: RegisterView,
+    },
+    {
+      path: "/signup",
+      redirect: "/register",
+    },
+    {
+      path: "/forgot-password",
+      name: "forgot-password",
+      component: ForgotPasswordView,
+    },
+    /* Catch-all route to prevent blank screens on broken or unhandled URLs */
+    {
+      path: "/:pathMatch(.*)*",
+      redirect: "/",
+    },
+  ],
 });
 
 export default router;
