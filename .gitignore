@@ -1,0 +1,73 @@
+/node_modules
+.env
+get-pip.py
+
+# ==============================
+# PayFast Payment Initiation
+# ==============================
+
+# Your PayFast merchant credentials (Sandbox for testing)
+$merchantId = "10054436"   # Sandbox merchant ID
+$merchantKey = "je9erjz64lcsq" # Sandbox merchant key
+$returnUrl = "https://yourdomain.com/return"
+$cancelUrl = "https://yourdomain.com/cancel"
+$notifyUrl = "https://yourdomain.com/notify"
+
+# Payment details
+$paymentData = @{
+    merchant_id   = $merchantId
+    merchant_key  = $merchantKey
+    return_url    = $returnUrl
+    cancel_url    = $cancelUrl
+    notify_url    = $notifyUrl
+    name_first    = "John"
+    name_last     = "Doe"
+    email_address = "john.doe@example.com"
+    m_payment_id  = "INV1001"   # Your internal invoice/order ID
+    amount        = "100.00"
+    item_name     = "Test Product"
+    item_description = "A sample product"
+}
+
+# Function to generate PayFast signature
+function Get-PayFastSignature {
+    param (
+        [hashtable]$Data,
+        [string]$Passphrase = ""
+    )
+
+    # Sort parameters alphabetically
+    $sorted = $Data.GetEnumerator() | Sort-Object Name
+
+    # Build query string
+    $queryString = ($sorted | ForEach-Object {
+        "$($_.Name)=$([uri]::EscapeDataString($_.Value))"
+    }) -join "&"
+
+    # Append passphrase if provided
+    if ($Passphrase -ne "") {
+        $queryString += "&passphrase=$([uri]::EscapeDataString($Passphrase))"
+    }
+
+    # MD5 hash
+    $md5 = [System.Security.Cryptography.MD5]::Create()
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($queryString)
+    $hashBytes = $md5.ComputeHash($bytes)
+    $hashString = -join ($hashBytes | ForEach-Object { $_.ToString("x2") })
+
+    return $hashString
+}
+
+# Generate signature
+$signature = Get-PayFastSignature -Data $paymentData
+$paymentData.signature = $signature
+
+# Build payment URL
+$paymentUrl = "https://sandbox.payfast.co.za/eng/process?" + (
+    $paymentData.GetEnumerator() | Sort-Object Name | ForEach-Object {
+        "$($_.Name)=$([uri]::EscapeDataString($_.Value))"
+    } -join "&"
+)
+
+Write-Host "Redirect user to this URL to pay:" -ForegroundColor Green
+Write-Host $paymentUrl

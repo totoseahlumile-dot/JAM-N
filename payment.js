@@ -1,0 +1,1 @@
+import payfast from payfast_client

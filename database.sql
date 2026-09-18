@@ -1,3 +1,6 @@
+-- NORMALISE TO 3RD FORM
+-- remove various id columns and make new tables ie. remove account_type table and make a table for each type of account
+
 CREATE DATABASE IF NOT EXISTS jamn
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
@@ -143,6 +146,14 @@ media_type INT,
 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (user_id) REFERENCES users(user_id),
 FOREIGN KEY (media_type) REFERENCES media(type)
+);
+
+CREATE TABLE uploads(
+upload_id INT PRIMARY KEY AUTO_INCREMENT,
+user_id INT NOT NULL,
+title VARCHAR(50) NOT NULL,
+type INT NOT NULL,
+
 );
 
 CREATE TABLE albums(
