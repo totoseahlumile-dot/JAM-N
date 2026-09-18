@@ -2,6 +2,7 @@
 import { RouterView } from "vue-router";
 import AppNavbar from "@/components/common/AppNavbar.vue";
 import AppFooter from "@/components/common/AppFooter.vue";
+import AuthModal from "@/components/AuthModal.vue";
 </script>
 
 <template>
@@ -11,6 +12,9 @@ import AppFooter from "@/components/common/AppFooter.vue";
       <RouterView />
     </main>
     <AppFooter />
+
+    <!-- Global Auth Modal mounted at root level -->
+    <AuthModal />
   </div>
 </template>
 

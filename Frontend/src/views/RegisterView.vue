@@ -4,7 +4,7 @@ import { useRouter, RouterLink } from "vue-router";
 import { useAuth } from "../composables/useAuth";
 
 const router = useRouter();
-const { login } = useAuth();
+const { setAuth } = useAuth();
 
 const selectedRoles = ref([]);
 const username = ref("");
@@ -21,14 +21,25 @@ const toggleRole = (role) => {
   }
 };
 
-const handleRegister = () => {
+const handleRegister = (e) => {
+  if (e) e.preventDefault();
+
   if (!username.value || !email.value || !password.value) {
     alert("Please fill out all fields.");
     return;
   }
 
-  // Set local state to authenticated
-  login();
+  // Create user object and update auth state with setAuth
+  const userData = {
+    username: username.value,
+    email: email.value,
+    roles: selectedRoles.value,
+  };
+
+  // setAuth updates user, sets token, turns off guest mode, and runs pending actions
+  setAuth(userData, "mock-jwt-token-12345");
+
+  // Redirect to Discover page
   router.push("/discover");
 };
 
@@ -38,9 +49,14 @@ const handleClose = () => {
 </script>
 
 <template>
-  <div class="modal-overlay">
+  <div class="auth-page-wrapper">
     <div class="modal-card">
-      <button class="close-btn" aria-label="Close" @click="handleClose">
+      <button
+        class="close-btn"
+        aria-label="Close"
+        type="button"
+        @click="handleClose"
+      >
         ✕
       </button>
 
@@ -54,7 +70,7 @@ const handleClose = () => {
         <RouterLink to="/login" class="segment-btn inactive"
           >Sign in</RouterLink
         >
-        <button class="segment-btn active">Sign up</button>
+        <button class="segment-btn active" type="button">Sign up</button>
       </div>
 
       <!-- Roles Selection Cards -->
@@ -127,20 +143,18 @@ const handleClose = () => {
 </template>
 
 <style scoped>
-.modal-overlay {
-  min-height: 100vh;
-  width: 100vw;
+.auth-page-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-main);
-  padding: 1.5rem;
+  padding: 3rem 1.5rem;
   box-sizing: border-box;
+  width: 100%;
 }
 
 .modal-card {
   position: relative;
-  background-color: var(--border-subtle);
+  background-color: var(--border-subtle, #f0f0f5);
   border-radius: 20px;
   padding: 2.5rem;
   width: 100%;
@@ -257,14 +271,13 @@ const handleClose = () => {
   background-color: #c4c4cc;
 }
 
-/* Default Selected State (Listener) */
+/* Selected States */
 .role-card.selected {
   background-color: var(--secondary-frosted, #c7c6eb);
   border-color: transparent;
   font-weight: 700;
 }
 
-/* Custom Selected Colors */
 .role-card.artist.selected {
   background-color: #eaa0d2;
   border-color: #eaa0d2;
@@ -297,8 +310,8 @@ const handleClose = () => {
 }
 
 .form-group input {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #ccc);
   border-radius: 8px;
   padding: 0.65rem 0.85rem;
   font-size: 0.88rem;
@@ -324,6 +337,18 @@ const handleClose = () => {
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-wisteria);
+  background-color: var(--primary-wisteria, #d1bce3);
+}
+
+.modal-footer {
+  text-align: center;
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+}
+
+.footer-link {
+  color: #5c4ca8;
+  font-weight: 600;
+  text-decoration: none;
 }
 </style>

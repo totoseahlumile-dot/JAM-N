@@ -1,8 +1,10 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useAuth } from "@/composables/useAuth";
+import PostCard from "@/components/posts/PostCard.vue";
+import AuthModal from "@/components/AuthModal.vue";
+import CreatePostModal from "@/components/posts/CreatePost.vue";
 
-// Access global auth guard helper
 const { requireAuth } = useAuth();
 
 const showConnections = ref(true);
@@ -17,7 +19,7 @@ const searchQuery = ref("");
 // Modals State
 const showUploadModal = ref(false);
 const showSeeAllModal = ref(false);
-const seeAllType = ref(""); // 'connections' or 'suggestions'
+const seeAllType = ref("");
 
 const posts = ref([
   {
@@ -25,35 +27,40 @@ const posts = ref([
     artist: "Jamali",
     genre: "R&B, Afropop, and Pop",
     title: "Ohema",
-    subtitle: "Single Release",
-    content:
+    type: "Single Release",
+    description:
       "Hey listeners! Our new single 'Ohema' is coming to JAM'N really SOON! Get ready to vibe with us.",
-    type: "Songs",
-    badge: "TRENDING",
+    category: "Songs",
+    status: "TRENDING",
+    isTrending: true,
     liked: false,
+    image: "/images/Ohema.jpg",
   },
   {
     id: 2,
     artist: "Ketsa",
     genre: "Lo-Fi & R&B, Soul",
     title: "Driving Soul",
-    subtitle: "Free License Beat",
-    content:
+    type: "Free License Beat",
+    description:
       "Purchase this beat on the JAM'N Beat Store for your next project!",
-    type: "Beats",
-    badge: "EXCLUSIVE",
+    category: "Beats",
+    status: "EXCLUSIVE",
+    isExclusive: true,
     liked: false,
+    image: "/images/DrivingSoul.png",
   },
   {
     id: 3,
     artist: "Studio Session Updates",
     genre: "Behind The Scenes",
     title: "Album Production Progress",
-    subtitle: "Update #4",
-    content: "Just finished mixing vocals for the final track on the EP!",
-    type: "Posts",
-    badge: null,
+    type: "Update #4",
+    description: "Just finished mixing vocals for the final track on the EP!",
+    category: "Posts",
+    status: null,
     liked: false,
+    image: "/images/Studio-thing.jpg",
   },
 ]);
 
@@ -73,27 +80,20 @@ const suggestions = ref([
 const filteredPosts = computed(() => {
   return posts.value.filter((post) => {
     const matchesFilter =
-      activeFilter.value === "All" || post.type === activeFilter.value;
+      activeFilter.value === "All" || post.category === activeFilter.value;
     const query = searchQuery.value.toLowerCase().trim();
     const matchesSearch =
       !query ||
       post.title.toLowerCase().includes(query) ||
       post.artist.toLowerCase().includes(query) ||
       post.genre.toLowerCase().includes(query) ||
-      post.content.toLowerCase().includes(query);
+      (post.description && post.description.toLowerCase().includes(query));
 
     return matchesFilter && matchesSearch;
   });
 });
 
-// Gated Action: Toggle Like
-const toggleLike = (post) => {
-  requireAuth(() => {
-    post.liked = !post.liked;
-  });
-};
-
-// Gated Action: Toggle Follow
+// Gated Action: Enforce auth check on connection toggle
 const toggleFollow = (suggestion) => {
   requireAuth(() => {
     suggestion.followed = !suggestion.followed;
@@ -124,49 +124,29 @@ const openSeeAll = (type) => {
   showSeeAllModal.value = true;
 };
 
-const newPost = ref({
-  artist: "",
-  title: "",
-  genre: "",
-  type: "Songs",
-  content: "",
-  badge: "",
-});
+// Handle post submission emitted from CreatePostModal
+const handleCreatePost = (postData) => {
+  const badgeVal =
+    postData.badge && postData.badge !== "None"
+      ? postData.badge.toUpperCase()
+      : null;
 
-// Gated Action: Uploading new content
-const handleUploadPost = () => {
-  requireAuth(() => {
-    if (!newPost.value.title || !newPost.value.artist) {
-      alert("Please enter an Artist name and Title.");
-      return;
-    }
-
-    posts.value.unshift({
-      id: Date.now(),
-      artist: newPost.value.artist,
-      genre: newPost.value.genre || "General",
-      title: newPost.value.title,
-      subtitle: `${newPost.value.type}`,
-      content: newPost.value.content || "New uploaded item content.",
-      type: newPost.value.type,
-      badge: newPost.value.badge ? newPost.value.badge.toUpperCase() : null,
-      liked: false,
-    });
-
-    newPost.value = {
-      artist: "",
-      title: "",
-      genre: "",
-      type: "Songs",
-      content: "",
-      badge: "",
-    };
-    showUploadModal.value = false;
+  posts.value.unshift({
+    id: Date.now(),
+    artist: postData.artistName || "Anonymous Artist",
+    genre: postData.genre || "General",
+    title: postData.title,
+    type: `${postData.type} Release`,
+    category: postData.type,
+    description: postData.description || "New uploaded item content.",
+    status: badgeVal,
+    isTrending: badgeVal === "TRENDING" || badgeVal === "NEW RELEASE",
+    isExclusive: badgeVal === "EXCLUSIVE" || badgeVal === "FEATURED",
+    liked: false,
+    image: postData.coverFile ? URL.createObjectURL(postData.coverFile) : null,
   });
-};
 
-const handlePostOptions = (post) => {
-  alert(`Options menu for post by ${post.artist}`);
+  showUploadModal.value = false;
 };
 </script>
 
@@ -226,51 +206,10 @@ const handlePostOptions = (post) => {
           <p>No matching feed posts found.</p>
         </div>
 
-        <article v-for="post in filteredPosts" :key="post.id" class="post-card">
-          <div class="post-header">
-            <div class="artist-info">
-              <div class="avatar-placeholder">{{ post.artist.charAt(0) }}</div>
-              <div>
-                <h3 class="artist-name">{{ post.artist }}</h3>
-                <p class="artist-genre">{{ post.genre }}</p>
-              </div>
-            </div>
-
-            <div class="header-right">
-              <span v-if="post.badge" class="badge-gold">{{ post.badge }}</span>
-              <button class="btn-more" @click="handlePostOptions(post)">
-                ⋮
-              </button>
-            </div>
-          </div>
-
-          <div class="media-container">
-            <div class="placeholder-graphic">
-              <span>:p</span>
-            </div>
-          </div>
-
-          <div class="post-body">
-            <div class="post-title-row">
-              <div>
-                <h2 class="post-title">{{ post.title }}</h2>
-                <h4 class="post-subtitle">{{ post.subtitle }}</h4>
-              </div>
-
-              <button
-                class="btn-like"
-                :class="{ liked: post.liked }"
-                @click="toggleLike(post)"
-              >
-                {{ post.liked ? "💗" : "🤍" }}
-              </button>
-            </div>
-
-            <p class="post-text">{{ post.content }}</p>
-          </div>
-        </article>
+        <PostCard v-for="post in filteredPosts" :key="post.id" :post="post" />
       </div>
 
+      <!-- Connections Sidebar -->
       <aside v-if="showConnections" class="connections-sidebar">
         <div class="sidebar-section">
           <div class="section-header">
@@ -327,78 +266,12 @@ const handlePostOptions = (post) => {
       </aside>
     </main>
 
-    <!-- Upload Modal -->
-    <div
+    <!-- Modal Component -->
+    <CreatePostModal
       v-if="showUploadModal"
-      class="modal-overlay"
-      @click.self="showUploadModal = false"
-    >
-      <div class="modal-card">
-        <h2 class="modal-title">Create A New Post</h2>
-
-        <div class="form-group">
-          <label>Artist Name</label>
-          <input
-            v-model="newPost.artist"
-            type="text"
-            placeholder="Enter Your Name"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Title</label>
-          <input
-            v-model="newPost.title"
-            type="text"
-            placeholder="Track or Post Title"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Type</label>
-          <select v-model="newPost.type">
-            <option value="Songs">Songs</option>
-            <option value="Beats">Beats</option>
-            <option value="Posts">Posts</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Badge Callout (Optional)</label>
-          <select v-model="newPost.badge">
-            <option value="">None</option>
-            <option value="TRENDING">TRENDING</option>
-            <option value="EXCLUSIVE">EXCLUSIVE</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Genre (Optional)</label>
-          <input v-model="newPost.genre" type="text" placeholder="e.g. R&B" />
-        </div>
-
-        <div class="form-group">
-          <label>Description</label>
-          <textarea
-            v-model="newPost.content"
-            rows="3"
-            placeholder="Write your details..."
-          ></textarea>
-        </div>
-
-        <div class="modal-actions">
-          <button
-            class="btn-secondary-container"
-            @click="showUploadModal = false"
-          >
-            Cancel
-          </button>
-          <button class="btn-primary-brand" @click="handleUploadPost">
-            Publish
-          </button>
-        </div>
-      </div>
-    </div>
+      @close="showUploadModal = false"
+      @submit="handleCreatePost"
+    />
 
     <!-- See All Modal -->
     <div
@@ -462,6 +335,9 @@ const handlePostOptions = (post) => {
         </div>
       </div>
     </div>
+
+    <!-- Global Auth Modal -->
+    <AuthModal />
   </div>
 </template>
 
@@ -472,7 +348,6 @@ const handlePostOptions = (post) => {
   min-height: 100vh;
 }
 
-/* Sub-header Controls Bar */
 .feed-controls-bar {
   background-color: var(--bg-surface);
   padding: 1.25rem 2rem;
@@ -499,38 +374,11 @@ const handlePostOptions = (post) => {
   margin-right: 0.25rem;
 }
 
-/* Search Input */
-.search-wrapper {
-  flex: 1;
-  position: relative;
-  min-width: 260px;
-}
-
-.search-input {
-  width: 100%;
-  background-color: #f0f0f5;
-  border: none;
-  padding: 0.6rem 2.5rem 0.6rem 1rem;
-  border-radius: 20px;
-  font-size: 0.88rem;
-  color: var(--text-main);
-  outline: none;
-}
-
-.search-icon {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.9rem;
-}
-
 .action-buttons {
   display: flex;
   gap: 0.75rem;
 }
 
-/* Layout Grid */
 .feed-layout {
   max-width: 1400px;
   margin: 2rem auto;
@@ -560,126 +408,6 @@ const handlePostOptions = (post) => {
   border: 1px dashed #d0d0d8;
 }
 
-.post-card {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-card);
-  border-radius: 16px;
-  overflow: hidden;
-  transition: background-color 0.2s ease;
-}
-
-.post-card:hover {
-  background-color: var(--bg-card-hover);
-}
-
-.post-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.25rem;
-}
-
-.artist-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.avatar-placeholder {
-  width: 38px;
-  height: 38px;
-  background-color: var(--primary-wisteria);
-  color: var(--text-dark-btn);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.artist-name {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.artist-genre {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  font-weight: 400;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.btn-more {
-  font-size: 1.2rem;
-  color: var(--text-main);
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.media-container {
-  height: 200px;
-  background-color: var(--secondary-frosted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.placeholder-graphic span {
-  font-size: 3rem;
-  opacity: 0.6;
-}
-
-.post-body {
-  padding: 1.25rem;
-}
-
-.post-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.post-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.post-subtitle {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  font-weight: 400;
-  margin-bottom: 0.75rem;
-}
-
-.btn-like {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  cursor: pointer;
-  padding: 0.2rem;
-  transition: transform 0.15s ease;
-}
-
-.btn-like:hover {
-  transform: scale(1.15);
-}
-
-.post-text {
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: var(--text-main);
-}
-
-/* Sidebar Specifics */
 .connections-sidebar {
   display: flex;
   flex-direction: column;
@@ -699,16 +427,6 @@ const handlePostOptions = (post) => {
   font-size: 1.05rem;
   font-weight: 600;
   color: var(--text-main);
-}
-
-.btn-see-all {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--text-main);
-  opacity: 0.7;
-  background: none;
-  border: none;
-  cursor: pointer;
 }
 
 .connection-cards {
@@ -752,6 +470,24 @@ const handlePostOptions = (post) => {
   font-size: 0.75rem;
   font-weight: 400;
   color: var(--text-muted);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-card {
+  background: var(--bg-surface);
+  padding: 1.5rem;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
 }
 
 .overflow-list {
