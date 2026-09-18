@@ -65,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 
@@ -74,17 +74,7 @@ const router = useRouter();
 
 const searchQuery = ref("");
 const selectedGenre = ref("All");
-
-// Mock genres list + 'All' option
-const genres = [
-  "All",
-  "Hip Hop",
-  "Amapiano",
-  "R&B",
-  "Electronic",
-  "Soul",
-  "Indie",
-];
+onMounted(() => store.dispatch("artists/fetchArtists").catch(() => {}));
 
 // Pull artists from Vuex store (with a safe fallback array if store module isn't populated yet)
 const artists = computed(() => {
@@ -122,16 +112,24 @@ const artists = computed(() => {
   );
 });
 
+const genres = computed(() => [
+  "All",
+  ...new Set(artists.value.flatMap((artist) => Array.isArray(artist.genre) ? artist.genre : [artist.genre]).filter(Boolean))
+]);
+
 // Filter artists based on search query and genre chip
 const filteredArtists = computed(() => {
   return artists.value.filter((artist) => {
     const matchesSearch =
       artist.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (artist.genre &&
-        artist.genre.toLowerCase().includes(searchQuery.value.toLowerCase()));
+      (Array.isArray(artist.genre)
+        ? artist.genre.some((genre) => genre.toLowerCase().includes(searchQuery.value.toLowerCase()))
+        : artist.genre?.toLowerCase().includes(searchQuery.value.toLowerCase()));
 
     const matchesGenre =
-      selectedGenre.value === "All" || artist.genre === selectedGenre.value;
+      selectedGenre.value === "All" || (Array.isArray(artist.genre)
+        ? artist.genre.includes(selectedGenre.value)
+        : artist.genre === selectedGenre.value);
 
     return matchesSearch && matchesGenre;
   });

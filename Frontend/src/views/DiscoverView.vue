@@ -231,7 +231,7 @@ const recommendedScrollRef = ref(null);
 
 const allArtists = computed(() => store?.getters?.["artists/allArtists"] ?? []);
 const popularTracks = computed(
-  () => store?.getters?.["tracks/popularTracks"] ?? [],
+  () => store?.getters?.["content/popularTracks"] ?? [],
 );
 
 const genreOptions = computed(() => {
@@ -351,7 +351,10 @@ function handleClickOutside(e) {
   }
 }
 
-onMounted(() => window.addEventListener("click", handleClickOutside));
+onMounted(() => {
+  window.addEventListener("click", handleClickOutside);
+  Promise.allSettled([store.dispatch("artists/fetchArtists"), store.dispatch("content/fetchTracks")]);
+});
 onUnmounted(() => window.removeEventListener("click", handleClickOutside));
 
 function addToPlaylist(track) {

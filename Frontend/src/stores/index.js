@@ -2,6 +2,7 @@ import { createStore } from 'vuex'
 import artists from './artists'
 import auth from './auth'
 import player from './player'
+import content from './content'
 
 const store = createStore({
   state: {
@@ -16,7 +17,8 @@ const store = createStore({
   modules: {
     artists,
     auth,
-    player
+    player,
+    content
   }
 })
 

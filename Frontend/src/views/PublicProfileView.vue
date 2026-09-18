@@ -42,7 +42,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { useStore } from "vuex";
 
@@ -50,6 +50,7 @@ const route = useRoute();
 const store = useStore();
 
 const artistId = computed(() => route.params.id);
+onMounted(() => store.dispatch("artists/fetchArtist", artistId.value).catch(() => {}));
 
 // Fetch target artist from the artists Vuex module
 const artist = computed(() => {
