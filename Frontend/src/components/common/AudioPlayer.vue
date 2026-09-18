@@ -213,6 +213,7 @@ const progressPercent = computed(() => {
   height: 44px;
   border-radius: 4px;
   object-fit: cover;
+  image-rendering: -webkit-optimize-contrast;
 }
 .player-title {
   font-size: 0.85rem;
@@ -322,16 +323,21 @@ const progressPercent = computed(() => {
 .expanded-artwork-container {
   width: 240px;
   height: 240px;
+  min-width: 240px;
+  min-height: 240px;
   margin-bottom: 1.5rem;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   border-radius: 8px;
   overflow: hidden;
+  /* Prevent flex container squishing */
+  flex-shrink: 0; 
 }
 
 .expanded-cover {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .expanded-track-details {

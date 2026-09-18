@@ -4,8 +4,8 @@
       <!-- Beat Artwork Header -->
       <div class="artwork-container">
         <img
-          v-if="selectedBeat.image"
-          :src="selectedBeat.image"
+          v-if="selectedBeat.coverArt"
+          :src="selectedBeat.coverArt"
           :alt="selectedBeat.title"
           class="artwork-img"
         />
@@ -21,7 +21,7 @@
       <!-- Beat Details -->
       <div class="beat-info-block">
         <h3 class="song-title">{{ selectedBeat.title }}</h3>
-        <p class="artist-name">{{ selectedBeat.producer }}</p>
+        <p class="artist-name">{{ selectedBeat.artist }}</p>
         <div class="price-display">R{{ calculatedPrice }}</div>
         <p class="body-text">{{ selectedBeat.description || 'Includes high-quality MP3/WAV file format along with usage rights.' }}</p>
       </div>
@@ -108,8 +108,9 @@ function addToCart() {
 }
 
 .artwork-container {
-  width: 100%;
-  aspect-ratio: 16 / 9;
+  width: 200px;         /* Or 100% with max-width */
+  height: 200px;
+  margin: 0 auto;       /* Centers it nicely */
   background-color: var(--border-subtle);
   border-radius: 8px;
   overflow: hidden;
@@ -122,6 +123,7 @@ function addToCart() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  image-rendering: -webkit-optimize-contrast; /* Keeps high-res rendering crisp */
 }
 
 .placeholder-icon {
@@ -192,7 +194,6 @@ function addToCart() {
   transition: all 0.2s ease;
 }
 
-/* Top Button (Non-Exclusive) -> Purple using --primary-wisteria */
 .license-btn-non-exclusive {
   background-color: var(--primary-wisteria);
   color: var(--text-dark-btn);
@@ -207,7 +208,6 @@ function addToCart() {
   border-color: var(--accent-plum);
 }
 
-/* Bottom Button (Exclusive) -> Blue using --secondary-frosted */
 .license-btn-exclusive {
   background-color: var(--secondary-frosted);
   color: var(--text-dark-btn);

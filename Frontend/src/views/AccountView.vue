@@ -2,7 +2,10 @@
   <div class="profile-page">
     <!-- Profile header -->
     <header class="profile-header">
-      <div class="profile-avatar-large"></div>
+      <div class="profile-avatar-large">
+        <img v-if="user?.image" :src="user.image" :alt="user?.name" class="avatar-img" />
+        <span v-else class="avatar-fallback">🎵</span>
+      </div>
 
       <div class="profile-details">
         <p class="profile-name">{{ user?.name ?? "Guest" }}</p>
@@ -16,20 +19,20 @@
           <!-- Clickable Followers Stat -->
           <div class="stat clickable" @click="openUserList('followers')">
             <span class="stat-count">{{ followers.length }}</span>
-            <span class="stat-label">followers</span>
+            <span class="stat-label">Followers</span>
           </div>
 
           <!-- Clickable Following Stat -->
           <div class="stat clickable" @click="openUserList('following')">
             <span class="stat-count">{{ following.length }}</span>
-            <span class="stat-label">following</span>
+            <span class="stat-label">Following</span>
           </div>
         </div>
 
         <p class="profile-bio">{{ roleLabel }}</p>
 
-        <button class="edit-profile-btn" @click="showEditModal = true">
-          Edit profile
+        <button class="btn-primary edit-profile-btn" @click="showEditModal = true">
+          Edit Profile
         </button>
       </div>
     </header>
@@ -59,7 +62,7 @@
         <div
           v-for="item in activeItems"
           :key="item.id"
-          class="content-tile"
+          class="content-tile clickable"
           @click="openItem(item)"
         >
           <div class="tile-placeholder">
@@ -84,7 +87,7 @@
         <div
           v-for="post in textPosts"
           :key="post.id"
-          class="post-card"
+          class="post-card clickable"
           @click="openItem(post)"
         >
           <div class="post-header">
@@ -105,7 +108,7 @@
           <div
             v-for="artist in following"
             :key="artist.id"
-            class="followed-artist-card"
+            class="followed-artist-card clickable"
             @click="goToArtist(artist.id)"
           >
             <div class="artist-avatar-sm">
@@ -121,7 +124,7 @@
               </p>
             </div>
             <button
-              class="unfollow-action-btn"
+              class="btn-primary following-state"
               @click.stop="unfollowArtist(artist)"
             >
               Following
@@ -130,7 +133,7 @@
         </div>
         <p v-else class="empty-state">
           You aren't following any artists yet. Discover independent talent in
-          the Artists tab!
+          the Discover tab!
         </p>
       </div>
 
@@ -140,7 +143,7 @@
       </p>
     </section>
 
-    <!-- Floating upload button (Empty body, styled via CSS pseudo-elements) -->
+    <!-- Floating upload button -->
     <button
       v-if="
         isArtistOrProducer && (activeTab === 'uploads' || activeTab === 'posts')
@@ -150,7 +153,7 @@
       aria-label="Upload"
     ></button>
 
-    <!-- Detail Modal (With Audio Player/Interactions) -->
+    <!-- Detail Modal (Connected to player.js) -->
     <div
       v-if="showDetailModal"
       class="modal-overlay"
@@ -180,14 +183,14 @@
           "{{ selectedItem.caption }}"
         </p>
 
-        <!-- Player Controls & Likes (Hidden for text posts) -->
+        <!-- Player Controls & Interactions -->
         <div class="interaction-bar">
           <button
             v-if="selectedItem?.type !== 'text' && selectedItem?.audioUrl"
-            class="play-btn"
-            @click="togglePlay"
+            class="btn-primary play-track-btn"
+            @click="handlePlayTrack"
           >
-            {{ isPlaying ? "⏸ Pause" : "▶ Play Track" }}
+            {{ isCurrentTrackPlaying ? "⏸ Pause Track" : "▶ Play Track" }}
           </button>
           <span v-else class="text-post-badge">💬 Text Update</span>
 
@@ -225,7 +228,7 @@
               placeholder="Add a comment..."
               @keyup.enter="submitComment(selectedItem.id)"
             />
-            <button @click="submitComment(selectedItem.id)">Send</button>
+            <button class="btn-primary comment-send-btn" @click="submitComment(selectedItem.id)">Send</button>
           </div>
         </div>
 
@@ -269,7 +272,7 @@
           </div>
         </div>
         <p v-else class="empty-state">No {{ userListType }} yet.</p>
-        <button class="close-btn" @click="showUserListModal = false">
+        <button class="btn-outline close-btn" @click="showUserListModal = false">
           Close
         </button>
       </div>
@@ -322,7 +325,6 @@ const tabs = [
 ];
 const activeTab = ref("uploads");
 
-// Split all user submissions into Audio/Media Uploads vs. Text Posts
 const allUserUploads = computed(() => store.getters["auth/userUploads"] ?? []);
 
 const uploads = computed(() =>
@@ -333,7 +335,6 @@ const textPosts = computed(() =>
 );
 const reposts = ref([]);
 
-// Updated Liked computed property to match actual liked songs across artists
 const liked = computed(() => {
   const likedSongIds =
     store?.getters?.["auth/likedSongIds"] ||
@@ -405,23 +406,35 @@ function unfollowArtist(artist) {
   store.commit("auth/TOGGLE_FOLLOW", artist);
 }
 
-// --- Detail Card & Playback Handler ---
+// --- Detail Card & Playback Handler (Connected to player.js) ---
 const showDetailModal = ref(false);
 const selectedItem = ref(null);
-const isPlaying = ref(false);
 const newCommentText = ref("");
+
+const currentPlayingTrack = computed(() => store?.state?.player?.currentTrack || null);
+const isPlayingState = computed(() => store?.state?.player?.isPlaying || false);
+
+const isCurrentTrackPlaying = computed(() => {
+  if (!selectedItem.value || !currentPlayingTrack.value) return false;
+  return currentPlayingTrack.value.id === selectedItem.value.id && isPlayingState.value;
+});
 
 function openItem(item) {
   selectedItem.value = item;
-  isPlaying.value = false;
   newCommentText.value = "";
   showDetailModal.value = true;
 }
 
-function togglePlay() {
-  isPlaying.value = !isPlaying.value;
-  if (store && selectedItem.value) {
-    store.dispatch("player/playTrack", selectedItem.value);
+function handlePlayTrack() {
+  if (!selectedItem.value) return;
+  if (selectedItem.value.audioUrl) {
+    if (isCurrentTrackPlaying.value) {
+      store.dispatch("player/pauseTrack");
+    } else {
+      store.dispatch("player/playTrack", selectedItem.value);
+    }
+  } else {
+    alert("Audio stream not available.");
   }
 }
 
@@ -455,10 +468,12 @@ function handlePostCreated(postData) {
 
 <style scoped>
 .profile-page {
-  max-width: 720px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 4rem;
   position: relative;
+  background-color: var(--bg-main, #fafafd);
+  color: var(--text-main, #1d1e18);
 }
 
 .profile-header {
@@ -466,7 +481,7 @@ function handlePostCreated(postData) {
   gap: 2rem;
   align-items: flex-start;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle, #e2e2e8);
   margin-bottom: 1.5rem;
 }
 
@@ -474,8 +489,22 @@ function handlePostCreated(postData) {
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  background: var(--border-subtle);
+  background: var(--border-subtle, #e2e2e8);
   flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-fallback {
+  font-size: 2rem;
 }
 
 .profile-details {
@@ -486,7 +515,7 @@ function handlePostCreated(postData) {
   font-size: 1.25rem;
   font-weight: 800;
   margin: 0 0 0.75rem;
-  color: var(--text-main);
+  color: var(--text-main, #1d1e18);
 }
 
 .profile-stats {
@@ -515,40 +544,30 @@ function handlePostCreated(postData) {
 
 .stat-count {
   font-weight: 800;
-  color: var(--text-main);
+  color: var(--text-main, #1d1e18);
 }
 
 .stat-label {
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
   font-size: 0.75rem;
 }
 
 .profile-bio {
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
   margin: 0 0 0.75rem;
 }
 
 .edit-profile-btn {
-  border: 1px solid var(--border-subtle);
-  background: transparent;
-  color: var(--text-main);
   padding: 0.5rem 1.25rem;
-  border-radius: 12px;
   font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: border-color 0.2s ease;
-}
-
-.edit-profile-btn:hover {
-  border-color: var(--primary-wisteria);
+  border-radius: 12px;
 }
 
 .content-tabs {
   display: flex;
   gap: 1.5rem;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border-subtle, #e2e2e8);
   padding-top: 0.75rem;
   margin-bottom: 1rem;
 }
@@ -558,15 +577,15 @@ function handlePostCreated(postData) {
   background: transparent;
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
   cursor: pointer;
   padding: 0.3rem 0;
   transition: color 0.2s ease;
 }
 
 .content-tab.active {
-  color: var(--text-main);
-  border-bottom: 3px solid var(--primary-wisteria);
+  color: var(--text-main, #1d1e18);
+  border-bottom: 3px solid var(--primary-wisteria, #ba93dc);
 }
 
 .content-grid {
@@ -582,7 +601,7 @@ function handlePostCreated(postData) {
 .tile-placeholder {
   width: 100%;
   aspect-ratio: 1;
-  background: var(--border-subtle);
+  background: var(--border-subtle, #e2e2e8);
   border-radius: 12px;
   margin-bottom: 0.4rem;
   display: flex;
@@ -599,23 +618,23 @@ function handlePostCreated(postData) {
 
 .play-icon {
   font-size: 1.25rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
 }
 
 .tile-title {
   font-size: 0.85rem;
   font-weight: 700;
   margin: 0;
-  color: var(--text-main);
+  color: var(--text-main, #1d1e18);
 }
 
 .tile-subtitle {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
   margin: 0.2rem 0 0;
 }
 
-/* Following Tab Styles */
+/* Following Section Styles */
 .following-section {
   margin-top: 1.5rem;
 }
@@ -631,8 +650,8 @@ function handlePostCreated(postData) {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e2e8);
   border-radius: 12px;
   cursor: pointer;
   transition: background 0.15s ease;
@@ -646,7 +665,7 @@ function handlePostCreated(postData) {
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  background: var(--border-subtle);
+  background: var(--border-subtle, #e2e2e8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -670,31 +689,29 @@ function handlePostCreated(postData) {
   font-size: 0.95rem;
   font-weight: 700;
   margin: 0 0 0.1rem;
-  color: var(--text-main);
+  color: var(--text-main, #1d1e18);
 }
 
 .followed-info p {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
   margin: 0;
 }
 
-.unfollow-action-btn {
-  background: transparent;
-  color: var(--text-main);
-  border: 1px solid var(--border-subtle);
+.following-state {
+  background: var(--accent-yellow, #f7e88a);
+  color: var(--text-dark-btn, #1d1e18);
+  border: none;
   padding: 0.4rem 1rem;
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
-.unfollow-action-btn:hover {
+.following-state:hover {
   background: rgba(220, 38, 38, 0.1);
   color: #dc2626;
-  border-color: rgba(220, 38, 38, 0.3);
 }
 
 /* Posts Feed Styles */
@@ -705,8 +722,8 @@ function handlePostCreated(postData) {
 }
 
 .post-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e2e8);
   border-radius: 12px;
   padding: 1.25rem;
   cursor: pointer;
@@ -728,18 +745,18 @@ function handlePostCreated(postData) {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--border-subtle);
+  background: var(--border-subtle, #e2e2e8);
 }
 
 .post-author {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-main);
+  color: var(--text-main, #1d1e18);
 }
 
 .post-text {
   font-size: 0.9rem;
-  color: var(--text-main);
+  color: var(--text-main, #1d1e18);
   margin: 0 0 0.75rem;
   line-height: 1.4;
   text-align: left;
@@ -749,25 +766,25 @@ function handlePostCreated(postData) {
   display: flex;
   gap: 1rem;
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
 }
 
 .post-modal-text {
   font-size: 0.95rem;
   font-style: italic;
-  color: var(--text-light);
+  color: var(--text-light, #fafafd);
   margin: 0 0 1rem;
   line-height: 1.4;
 }
 
 .empty-state {
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
   font-size: 0.85rem;
   text-align: center;
   padding: 2rem 0;
 }
 
-/* Perfect Centered FAB using Pseudo-elements */
+/* Floating Action Button */
 .upload-fab {
   position: fixed;
   bottom: 100px;
@@ -776,7 +793,7 @@ function handlePostCreated(postData) {
   height: 52px;
   border-radius: 50%;
   border: none;
-  background: var(--primary-wisteria);
+  background: var(--primary-wisteria, #ba93dc);
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   transition: transform 0.15s ease;
@@ -790,7 +807,7 @@ function handlePostCreated(postData) {
   position: absolute;
   width: 3px;
   height: 22px;
-  background-color: var(--text-dark-btn, #000);
+  background-color: var(--text-dark-btn, #1d1e18);
   border-radius: 2px;
 }
 
@@ -799,7 +816,7 @@ function handlePostCreated(postData) {
   position: absolute;
   width: 22px;
   height: 3px;
-  background-color: var(--text-dark-btn, #000);
+  background-color: var(--text-dark-btn, #1d1e18);
   border-radius: 2px;
 }
 
@@ -807,6 +824,7 @@ function handlePostCreated(postData) {
   transform: translateY(-2px);
 }
 
+/* Modal Overlay Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -826,6 +844,8 @@ function handlePostCreated(postData) {
   width: 90%;
   max-width: 400px;
   text-align: center;
+  background-color: var(--bg-dark-overlay, #0a0908);
+  color: var(--text-light, #fafafd);
 }
 
 .modal-cover {
@@ -834,7 +854,7 @@ function handlePostCreated(postData) {
   margin: 0 auto 1rem;
   border-radius: 12px;
   overflow: hidden;
-  background: var(--border-subtle);
+  background: var(--border-subtle, #e2e2e8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -848,18 +868,18 @@ function handlePostCreated(postData) {
 
 .modal-cover-placeholder {
   font-size: 2rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
 }
 
 .modal-card h3 {
   margin: 0 0 0.25rem;
   font-size: 1.15rem;
-  color: var(--text-light);
+  color: var(--text-light, #fafafd);
 }
 
 .modal-subtitle {
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
   margin: 0 0 0.75rem;
 }
 
@@ -871,21 +891,16 @@ function handlePostCreated(postData) {
   gap: 0.5rem;
 }
 
-.play-btn {
-  background: var(--primary-wisteria);
-  color: var(--text-dark-btn);
-  border: none;
+.play-track-btn {
+  flex: 1;
   padding: 0.6rem 1.25rem;
   border-radius: 20px;
-  font-weight: 700;
-  cursor: pointer;
-  flex: 1;
 }
 
 .text-post-badge {
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-light);
+  color: var(--text-light, #fafafd);
   background: rgba(255, 255, 255, 0.1);
   padding: 0.4rem 0.8rem;
   border-radius: 20px;
@@ -893,8 +908,8 @@ function handlePostCreated(postData) {
 
 .like-btn {
   background: transparent;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-light);
+  border: 1px solid var(--border-subtle, #e2e2e8);
+  color: var(--text-light, #fafafd);
   padding: 0.5rem 0.85rem;
   border-radius: 20px;
   cursor: pointer;
@@ -903,7 +918,7 @@ function handlePostCreated(postData) {
 
 .comments-section {
   text-align: left;
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border-subtle, #e2e2e8);
   padding-top: 1rem;
   margin-bottom: 1rem;
 }
@@ -911,7 +926,7 @@ function handlePostCreated(postData) {
 .comments-section h4 {
   font-size: 0.85rem;
   margin: 0 0 0.5rem;
-  color: var(--text-light);
+  color: var(--text-light, #fafafd);
 }
 
 .comments-list {
@@ -926,7 +941,7 @@ function handlePostCreated(postData) {
 .comment-item {
   font-size: 0.75rem;
   background: rgba(255, 255, 255, 0.05);
-  color: var(--text-light);
+  color: var(--text-light, #fafafd);
   padding: 0.4rem 0.6rem;
   border-radius: 8px;
   display: flex;
@@ -935,14 +950,14 @@ function handlePostCreated(postData) {
 }
 
 .comment-time {
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
   font-size: 0.65rem;
   margin-left: 0.5rem;
 }
 
 .no-comments {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
   margin: 0;
 }
 
@@ -956,25 +971,20 @@ function handlePostCreated(postData) {
   padding: 0.5rem;
   font-size: 0.8rem;
   background: transparent;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-subtle, #e2e2e8);
   border-radius: 8px;
-  color: var(--text-light);
+  color: var(--text-light, #fafafd);
 }
 
 .comment-input-row input:focus {
   outline: none;
-  border-color: var(--primary-wisteria);
+  border-color: var(--primary-wisteria, #ba93dc);
 }
 
-.comment-input-row button {
+.comment-send-btn {
   padding: 0.5rem 1rem;
   font-size: 0.8rem;
-  background: var(--primary-wisteria);
-  color: var(--text-dark-btn);
-  border: none;
   border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
 }
 
 .modal-actions {
@@ -996,9 +1006,9 @@ function handlePostCreated(postData) {
 }
 
 .close-btn-secondary {
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-subtle, #e2e2e8);
   background: transparent;
-  color: var(--text-light);
+  color: var(--text-light, #fafafd);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   cursor: pointer;
@@ -1010,9 +1020,6 @@ function handlePostCreated(postData) {
   margin-top: 1rem;
   width: 100%;
   padding: 0.6rem;
-  border: 1px solid var(--border-subtle);
-  background: transparent;
-  color: var(--text-light);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 700;
@@ -1023,18 +1030,14 @@ function handlePostCreated(postData) {
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 0;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.user-row.clickable {
-  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle, #e2e2e8);
 }
 
 .user-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--border-subtle);
+  background: var(--border-subtle, #e2e2e8);
 }
 
 .user-name {
@@ -1042,12 +1045,12 @@ function handlePostCreated(postData) {
   font-weight: 700;
   margin: 0;
   text-align: left;
-  color: var(--text-light);
+  color: var(--text-light, #fafafd);
 }
 
 .user-handle {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #66666e);
   margin: 0;
   text-align: left;
 }
