@@ -3,7 +3,12 @@
     <!-- Profile header -->
     <header class="profile-header">
       <div class="profile-avatar-large">
-        <img v-if="user?.image" :src="user.image" :alt="user?.name" class="avatar-img" />
+        <img
+          v-if="user?.image"
+          :src="user.image"
+          :alt="user?.name"
+          class="avatar-img"
+        />
         <span v-else class="avatar-fallback">🎵</span>
       </div>
 
@@ -31,7 +36,10 @@
 
         <p class="profile-bio">{{ roleLabel }}</p>
 
-        <button class="btn-primary edit-profile-btn" @click="showEditModal = true">
+        <button
+          class="btn-primary edit-profile-btn"
+          @click="showEditModal = true"
+        >
           Edit Profile
         </button>
       </div>
@@ -228,7 +236,12 @@
               placeholder="Add a comment..."
               @keyup.enter="submitComment(selectedItem.id)"
             />
-            <button class="btn-primary comment-send-btn" @click="submitComment(selectedItem.id)">Send</button>
+            <button
+              class="btn-primary comment-send-btn"
+              @click="submitComment(selectedItem.id)"
+            >
+              Send
+            </button>
           </div>
         </div>
 
@@ -272,7 +285,10 @@
           </div>
         </div>
         <p v-else class="empty-state">No {{ userListType }} yet.</p>
-        <button class="btn-outline close-btn" @click="showUserListModal = false">
+        <button
+          class="btn-outline close-btn"
+          @click="showUserListModal = false"
+        >
           Close
         </button>
       </div>
@@ -336,27 +352,62 @@ const textPosts = computed(() =>
 const reposts = ref([]);
 
 const liked = computed(() => {
-  const likedSongIds =
-    store?.getters?.["auth/likedSongIds"] ||
-    store?.state?.auth?.likedTrackIds ||
-    [];
+  const likedSongIds = store?.getters?.["auth/likedSongIds"] || [];
+  const playerQueue = store?.state?.player?.queue || [];
   const allArtists = store?.getters?.["artists/allArtists"] || [];
 
-  const allTracks = allArtists
-    .filter((artist) => artist.tracks && artist.tracks.length > 0)
-    .flatMap((artist) =>
-      artist.tracks.map((t) => ({
-        id: `${artist.id}-${t.id}`,
-        artistId: artist.id,
-        title: t.title,
-        artist: artist.name,
-        audioUrl: t.audioUrl || artist.audioUrl || null,
-        image: artist.image || null,
-        type: "track",
-      })),
-    );
+  const masterTrackMap = {};
 
-  return allTracks.filter((track) => likedSongIds.includes(track.id));
+  // 1. Map player queue tracks
+  playerQueue.forEach((track) => {
+    if (track && track.id) {
+      const trackData = {
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        audioUrl: track.audioUrl,
+        image: track.image || track.coverArt || null,
+        type: "track",
+      };
+      masterTrackMap[String(track.id)] = trackData;
+    }
+  });
+
+  // 2. Map artist tracks (supports compound IDs & flat IDs)
+  allArtists.forEach((artist) => {
+    if (artist.tracks && artist.tracks.length > 0) {
+      artist.tracks.forEach((t) => {
+        const compoundId = `${artist.id}-${t.id}`;
+        const trackData = {
+          id: compoundId,
+          artistId: artist.id,
+          title: t.title,
+          artist: artist.name,
+          audioUrl: t.audioUrl || artist.audioUrl || null,
+          image:
+            t.image || t.coverArt || artist.image || artist.coverArt || null,
+          type: "track",
+        };
+
+        masterTrackMap[String(compoundId)] = trackData;
+        masterTrackMap[String(t.id)] = trackData; // Fallback for flat IDs
+      });
+    }
+  });
+
+  // Map user's liked IDs with flexible lookup fallbacks
+  return likedSongIds
+    .map((likedId) => {
+      const stringId = String(likedId);
+      if (masterTrackMap[stringId]) return masterTrackMap[stringId];
+
+      // Fallback search: check if any master map key ends with or matches the liked ID
+      const matchingKey = Object.keys(masterTrackMap).find(
+        (key) => key.endsWith(`-${stringId}`) || key === stringId,
+      );
+      return matchingKey ? masterTrackMap[matchingKey] : null;
+    })
+    .filter((track) => track !== null);
 });
 
 const activeItems = computed(() => {
@@ -411,12 +462,17 @@ const showDetailModal = ref(false);
 const selectedItem = ref(null);
 const newCommentText = ref("");
 
-const currentPlayingTrack = computed(() => store?.state?.player?.currentTrack || null);
+const currentPlayingTrack = computed(
+  () => store?.state?.player?.currentTrack || null,
+);
 const isPlayingState = computed(() => store?.state?.player?.isPlaying || false);
 
 const isCurrentTrackPlaying = computed(() => {
   if (!selectedItem.value || !currentPlayingTrack.value) return false;
-  return currentPlayingTrack.value.id === selectedItem.value.id && isPlayingState.value;
+  return (
+    currentPlayingTrack.value.id === selectedItem.value.id &&
+    isPlayingState.value
+  );
 });
 
 function openItem(item) {
@@ -429,7 +485,7 @@ function handlePlayTrack() {
   if (!selectedItem.value) return;
   if (selectedItem.value.audioUrl) {
     if (isCurrentTrackPlaying.value) {
-      store.dispatch("player/pauseTrack");
+      store.dispatch("player/togglePlay");
     } else {
       store.dispatch("player/playTrack", selectedItem.value);
     }
@@ -803,7 +859,7 @@ function handlePostCreated(postData) {
 }
 
 .upload-fab::before {
-  content: '';
+  content: "";
   position: absolute;
   width: 3px;
   height: 22px;
@@ -812,7 +868,7 @@ function handlePostCreated(postData) {
 }
 
 .upload-fab::after {
-  content: '';
+  content: "";
   position: absolute;
   width: 22px;
   height: 3px;

@@ -165,6 +165,71 @@
           </div>
         </section>
 
+        <!-- Liked Songs Section -->
+        <section v-if="likedSongs.length > 0" class="library-section">
+          <div class="section-header-row">
+            <h2>Liked Songs</h2>
+            <button class="text-action-btn" @click="activeTab = 'Songs'">
+              View All
+            </button>
+          </div>
+          <div class="track-grid">
+            <div
+              v-for="track in likedSongs.slice(0, 4)"
+              :key="'all-liked-' + track.id"
+              class="playlist-card-wrapper"
+            >
+              <div
+                class="track-card clickable"
+                @click="playSongDirectly(track)"
+              >
+                <div class="track-cover-placeholder">
+                  <img
+                    v-if="track.image"
+                    :src="track.image"
+                    :alt="track.title"
+                    class="track-cover-img"
+                  />
+                  <span v-else class="play-indicator">▶</span>
+                </div>
+                <p class="track-title">{{ track.title }}</p>
+                <p class="track-artist">{{ track.artist }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Liked Beats Section -->
+        <section v-if="likedBeats.length > 0" class="library-section">
+          <div class="section-header-row">
+            <h2>Liked Beats</h2>
+            <button class="text-action-btn" @click="activeTab = 'Beats'">
+              View All
+            </button>
+          </div>
+          <div class="track-grid">
+            <div
+              v-for="beat in likedBeats.slice(0, 4)"
+              :key="'all-beat-' + beat.id"
+              class="playlist-card-wrapper"
+            >
+              <div class="track-card clickable" @click="playBeatDirectly(beat)">
+                <div class="track-cover-placeholder">
+                  <img
+                    v-if="beat.coverArt"
+                    :src="beat.coverArt"
+                    :alt="beat.title"
+                    class="track-cover-img"
+                  />
+                  <span v-else class="play-indicator">▶</span>
+                </div>
+                <p class="track-title">{{ beat.title }}</p>
+                <p class="track-artist">{{ beat.producer || beat.artist }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- Recently Played Section -->
         <section v-if="recentlyPlayed.length > 0" class="library-section">
           <h2>Recently Played</h2>
@@ -377,7 +442,51 @@
         </div>
       </div>
 
-      <!-- ==================== VIEW 3: PLAYLISTS ==================== -->
+      <!-- ==================== VIEW 3: BEATS / LIKED BEATS ==================== -->
+      <div v-if="activeTab === 'Beats'" class="library-section">
+        <div class="section-header-row">
+          <h2>Liked Beats</h2>
+        </div>
+
+        <div v-if="likedBeats.length > 0" class="track-grid">
+          <div
+            v-for="beat in likedBeats"
+            :key="beat.id"
+            class="playlist-card-wrapper"
+          >
+            <div class="track-card clickable" @click="playBeatDirectly(beat)">
+              <div class="track-cover-placeholder">
+                <img
+                  v-if="beat.coverArt"
+                  :src="beat.coverArt"
+                  :alt="beat.title"
+                  class="track-cover-img"
+                />
+                <span v-else class="play-indicator">▶</span>
+              </div>
+              <p class="track-title">{{ beat.title }}</p>
+              <p class="track-artist">{{ beat.producer || beat.artist }}</p>
+            </div>
+
+            <button
+              class="options-dots-btn"
+              @click.stop="toggleBeatLike(beat.id)"
+              title="Unlike Beat"
+            >
+              ♥
+            </button>
+          </div>
+        </div>
+
+        <div v-else class="actionable-empty-card">
+          <p>No liked beats yet. Browse the Beat Store to find beats!</p>
+          <button class="btn-sm" @click="router.push('/beatstore')">
+            Visit Beat Store
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== VIEW 4: PLAYLISTS ==================== -->
       <div v-if="activeTab === 'Playlists'" class="library-section">
         <h2>Your Playlists</h2>
         <div v-if="playlists.length > 0" class="track-grid">
@@ -452,7 +561,7 @@
         </div>
       </div>
 
-      <!-- ==================== VIEW 4: ARTISTS (Followed Artists) ==================== -->
+      <!-- ==================== VIEW 5: ARTISTS (Followed Artists) ==================== -->
       <div v-if="activeTab === 'Artists'" class="library-section">
         <h2>Followed Artists</h2>
         <div v-if="followedArtists.length > 0" class="artist-grid">
@@ -585,7 +694,7 @@ import { useRouter } from "vue-router";
 const store = useStore();
 const router = useRouter();
 
-const tabs = ["All", "Songs", "Playlists", "Artists"];
+const tabs = ["All", "Songs", "Beats", "Playlists", "Artists"];
 const activeTab = ref("All");
 
 // View states
@@ -674,6 +783,26 @@ const likedSongs = computed(() => {
   );
 });
 
+// Pull all store beats and filter based on user likes
+const allBeats = computed(() => store.getters["beats/allBeats"] || []);
+const likedBeats = computed(() => {
+  return allBeats.value.filter((beat) => {
+    return store?.getters?.["auth/isLiked"]?.(beat.id) ?? false;
+  });
+});
+
+function toggleBeatLike(beatId) {
+  store?.commit("auth/TOGGLE_LIKE", beatId);
+}
+
+function playBeatDirectly(beat) {
+  if (beat.audioUrl) {
+    store.dispatch("player/playTrack", beat);
+  } else {
+    alert("Audio stream not available for this beat.");
+  }
+}
+
 const recentlyPlayed = computed(() => {
   return recentTrackIds.value
     .map((id) => allAvailableTracks.value.find((t) => t.id === id))
@@ -706,6 +835,7 @@ const pinnedItems = computed(() => {
 const isLibraryTotalEmpty = computed(() => {
   return (
     likedSongs.value.length === 0 &&
+    likedBeats.value.length === 0 &&
     playlists.value.length === 0 &&
     followedArtists.value.length === 0 &&
     recentlyPlayed.value.length === 0

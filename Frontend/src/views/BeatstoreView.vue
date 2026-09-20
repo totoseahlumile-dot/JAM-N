@@ -13,23 +13,46 @@
           + Upload beat
         </button>
       </div>
+
+      <!-- Search Bar matching Discover Page -->
+      <div class="search-bar">
+        <input
+          type="text"
+          placeholder="Search beats, producers..."
+          v-model="searchQuery"
+        />
+        <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+          />
+        </svg>
+      </div>
+
+      <!-- Expandable Filter Tags Container matching Discover Page -->
+      <div class="filter-container">
+        <div class="filter-tags" :class="{ expanded: showAllGenres }">
+          <button
+            v-for="(genre, index) in genres"
+            :key="genre"
+            class="tag"
+            :class="{ active: activeGenre === genre }"
+            :style="getFilterStyle(index, activeGenre === genre)"
+            @click="activeGenre = genre"
+          >
+            {{ genre }}
+          </button>
+        </div>
+        <button
+          v-if="genres.length > 8"
+          class="genre-toggle-btn"
+          @click="showAllGenres = !showAllGenres"
+        >
+          {{ showAllGenres ? "Show Less ▲" : `+${genres.length - 8} More ▼` }}
+        </button>
+      </div>
     </header>
 
-    <!-- Genre filter pills with dynamic multi-color rotation -->
-    <div class="genre-filters">
-      <button
-        v-for="(genre, index) in genres"
-        :key="genre"
-        class="genre-pill"
-        :class="{ active: activeGenre === genre }"
-        :style="getFilterStyle(index, activeGenre === genre)"
-        @click="activeGenre = genre"
-      >
-        {{ genre }}
-      </button>
-    </div>
-
-    <!-- Beat grid with active playing state and image support -->
+    <!-- Beat grid with Discover-style card layout -->
     <div class="beat-grid">
       <div
         v-for="beat in filteredBeats"
@@ -38,30 +61,45 @@
         :class="{ 'active-card': isCurrentTrack(beat) }"
         @click="playBeatDirectly(beat)"
       >
-        <div class="beat-cover-container">
+        <div class="image-wrapper">
           <img
             v-if="beat.coverArt"
             :src="beat.coverArt"
             :alt="beat.title"
-            class="beat-cover-img"
+            class="placeholder-img"
           />
-          <div v-else class="beat-cover-placeholder">
+          <div v-else class="placeholder-img placeholder-fallback">
             <span class="play-icon">▶</span>
           </div>
         </div>
         <p class="beat-title">{{ beat.title }}</p>
         <p class="beat-producer">{{ beat.artist || beat.producer }}</p>
+
         <div class="beat-footer">
           <span class="beat-price">R{{ beat.price || 100 }}</span>
-          <button class="beat-buy-btn" @click.stop="openPurchaseModal(beat)">
-            Buy
-          </button>
+          <div class="footer-actions" @click.stop>
+            <button
+              class="like-btn-footer"
+              :class="{ liked: isBeatLiked(beat.id) }"
+              @click="toggleBeatLike(beat.id)"
+              aria-label="Like beat"
+            >
+              <svg class="heart-icon" viewBox="0 0 24 24">
+                <path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                />
+              </svg>
+            </button>
+            <button class="beat-buy-btn" @click="openPurchaseModal(beat)">
+              Buy
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
     <p v-if="filteredBeats.length === 0" class="empty-state">
-      No beats in this genre yet.
+      No beats match this filter yet.
     </p>
 
     <!-- Modals & Drawers -->
@@ -92,7 +130,9 @@ import PurchaseBeatModal from "@/components/beats/PurchaseBeatModal.vue";
 import CartDrawer from "@/components/cart/CartDrawer.vue";
 
 const store = useStore();
-const activeGenre = ref("All");
+const activeGenre = ref("All Genres");
+const searchQuery = ref("");
+const showAllGenres = ref(false);
 
 // Modal and drawer state
 const showUploadModal = ref(false);
@@ -115,7 +155,7 @@ function getFilterStyle(index, isActive) {
     return {
       backgroundColor: "var(--primary-wisteria, #b19cd9)",
       color: "var(--text-dark-btn, #111)",
-      fontWeight: "800",
+      fontWeight: "700",
     };
   }
   return {
@@ -124,22 +164,49 @@ function getFilterStyle(index, isActive) {
   };
 }
 
-// Pulls tracks and active track state from player.js
-const beats = computed(() => store.getters["player/trackQueue"]);
+// Pulls beats from the dedicated beats.js store module
+const beats = computed(() => store.getters["beats/allBeats"]);
 const currentTrack = computed(() => store.getters["player/activeTrack"]);
 
 function isCurrentTrack(beat) {
   return currentTrack.value && currentTrack.value.id === beat.id;
 }
 
+// Like functionality leveraging auth state store module
+function isBeatLiked(beatId) {
+  return store?.getters?.["auth/isLiked"]?.(beatId) ?? false;
+}
+
+function toggleBeatLike(beatId) {
+  store?.commit("auth/TOGGLE_LIKE", beatId);
+}
+
 const genres = computed(() => {
-  const uniqueGenres = [...new Set(beats.value.map((b) => b.genre))];
-  return ["All", ...uniqueGenres];
+  const uniqueGenres = [
+    ...new Set(beats.value.map((b) => b.genre).filter(Boolean)),
+  ];
+  return ["All Genres", ...uniqueGenres];
 });
 
 const filteredBeats = computed(() => {
-  if (activeGenre.value === "All") return beats.value;
-  return beats.value.filter((b) => b.genre === activeGenre.value);
+  let result = beats.value;
+
+  if (activeGenre.value !== "All Genres") {
+    result = result.filter((b) => b.genre === activeGenre.value);
+  }
+
+  if (searchQuery.value.trim() !== "") {
+    const query = searchQuery.value.toLowerCase();
+    result = result.filter(
+      (b) =>
+        b.title?.toLowerCase().includes(query) ||
+        b.artist?.toLowerCase().includes(query) ||
+        b.producer?.toLowerCase().includes(query) ||
+        b.genre?.toLowerCase().includes(query),
+    );
+  }
+
+  return result;
 });
 
 function playBeatDirectly(beat) {
@@ -165,7 +232,7 @@ function removeCartItem(index) {
 }
 
 function handleBeatUploaded(newBeat) {
-  store.dispatch("player/addToQueue", newBeat);
+  store.dispatch("beats/addBeat", newBeat);
 }
 </script>
 
@@ -179,22 +246,23 @@ function handleBeatUploaded(newBeat) {
 }
 
 .beatstore-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 1.5rem;
 }
 
 .beatstore-header h1 {
-  margin: 0;
+  margin: 0 0 1.25rem 0;
   font-size: 1.5rem;
+  font-weight: 800;
   color: var(--text-main, #111111);
+  letter-spacing: -0.02em;
 }
 
 .header-actions {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  float: right;
+  margin-top: -3.2rem;
 }
 
 .cart-trigger-btn {
@@ -231,93 +299,131 @@ function handleBeatUploaded(newBeat) {
   font-weight: 600;
 }
 
-.genre-filters {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+/* Search Bar matching Discover Page */
+.search-bar {
+  position: relative;
+  max-width: 100%;
+  margin-bottom: 1rem;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.6rem 1rem 0.6rem 2.5rem;
+  background-color: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+  color: var(--text-main, #111);
+  transition: border-color 0.2s ease;
+}
+
+.search-bar input:focus {
+  border-color: var(--primary-wisteria, #b19cd9);
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted, #666);
+}
+
+/* Filter Tags Collapse Container matching Discover Page */
+.filter-container {
   margin-bottom: 2rem;
 }
 
-.genre-pill {
+.filter-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  max-height: 40px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.filter-tags.expanded {
+  max-height: 250px;
+}
+
+.genre-toggle-btn {
+  background: transparent;
   border: none;
-  padding: 0.4rem 1.25rem;
-  border-radius: 18px;
+  color: var(--primary-wisteria, #b19cd9);
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 700;
+  margin-top: 0.5rem;
+  padding: 0;
+}
+
+.tag {
+  border: none;
+  padding: 0.4rem 1.1rem;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
   transition:
     opacity 0.2s ease,
     transform 0.1s ease;
+  height: 32px;
 }
 
-.genre-pill:hover {
+.tag:hover {
   opacity: 0.85;
 }
 
+/* Grid & Cards matching Discover Page */
 .beat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .beat-card {
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
+  border-radius: 8px;
+  padding: 0.65rem;
   display: flex;
   flex-direction: column;
+  transition: background 0.15s ease;
+}
+
+.beat-card.clickable {
   cursor: pointer;
-  padding: 10px;
-  border-radius: 12px;
-  background-color: var(--bg-surface, #ffffff);
-  border: 1px solid var(--border-subtle, #eaeaea);
-  transition:
-    transform 0.15s ease,
-    background-color 0.15s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
 }
 
-/* Hover effect for unselected state */
-.beat-card:hover {
-  background-color: rgba(173, 235, 255, 0.08);
-  border-color: var(--accent-blue, #b8e5ff);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+.beat-card.clickable:hover {
+  background: rgba(173, 235, 255, 0.15);
 }
 
-/* Active card styling with yellow pastel border */
 .beat-card.active-card {
   border-color: var(--accent-yellow, #fae184);
   border-width: 2px;
-  background-color: var(--bg-surface, #fafafa);
 }
 
-/* Hover effect should persist/override even when the card is active */
-.beat-card.active-card:hover {
-  background-color: rgba(173, 235, 255, 0.12);
-  border-color: var(--accent-blue, #b8e5ff);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+.image-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.5rem;
 }
 
-/* Cover container supporting actual JPEGs/PNGs */
-.beat-cover-container {
+.placeholder-img {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-  border: 1px solid var(--border-subtle, #eee);
-  background-color: var(--bg-surface, #f9f9f9);
-}
-
-.beat-cover-img {
-  width: 100%;
-  height: 100%;
+  background-color: var(--border-subtle, #eee);
+  border-radius: 6px;
   object-fit: cover;
+  display: block;
 }
 
-.beat-cover-placeholder {
-  width: 100%;
-  height: 100%;
+.placeholder-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -329,10 +435,11 @@ function handleBeatUploaded(newBeat) {
 }
 
 .beat-title {
-  font-size: 0.85rem;
   font-weight: 600;
+  font-size: 0.85rem;
   margin: 0;
   color: var(--text-main, #111);
+  text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -341,8 +448,11 @@ function handleBeatUploaded(newBeat) {
 .beat-producer {
   font-size: 0.75rem;
   color: var(--text-muted, #666);
-  opacity: 0.8;
-  margin: 0.15rem 0 0.5rem;
+  margin: 0.15rem 0 0.6rem 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .beat-footer {
@@ -358,7 +468,45 @@ function handleBeatUploaded(newBeat) {
   color: var(--text-main, #111);
 }
 
-/* Yellow Buy button styling */
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.like-btn-footer {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #666);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  transition: transform 0.2s ease;
+}
+
+.like-btn-footer:hover {
+  transform: scale(1.1);
+}
+
+.like-btn-footer.liked {
+  color: var(--accent-plum, #d4bcf0);
+}
+
+.like-btn-footer.liked .heart-icon {
+  fill: var(--accent-plum, #d4bcf0);
+}
+
+.heart-icon {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
 .beat-buy-btn {
   border: none;
   background: var(--accent-yellow, #fae184);
@@ -376,10 +524,10 @@ function handleBeatUploaded(newBeat) {
 }
 
 .empty-state {
+  font-size: 0.85rem;
   color: var(--text-muted, #666);
   opacity: 0.7;
-  font-size: 0.9rem;
   text-align: center;
-  margin-top: 2rem;
+  padding: 1.5rem 0;
 }
 </style>

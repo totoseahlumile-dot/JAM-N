@@ -1,7 +1,8 @@
-import { createStore } from 'vuex'
-import artists from './artists'
-import auth from './auth'
-import player from './player'
+import { createStore } from "vuex";
+import artists from "./artists";
+import auth from "./auth";
+import player from "./player";
+import beats from "./beats"; // 1. Import your new beats module
 
 const store = createStore({
   state: {
@@ -16,8 +17,9 @@ const store = createStore({
   modules: {
     artists,
     auth,
-    player
-  }
-})
+    player,
+    beats, // 2. Register it here under modules
+  },
+});
 
-export default store
+export default store;

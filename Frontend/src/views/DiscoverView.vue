@@ -154,10 +154,10 @@
       </p>
     </section>
 
-    <!-- Popular Tracks Section -->
+    <!-- Trending / Recent Songs Section -->
     <section class="section">
       <div class="section-header">
-        <h2>Popular Tracks</h2>
+        <h2>Trending Songs</h2>
         <a href="#" class="see-all">See All</a>
       </div>
       <div class="tracks-list">
@@ -174,7 +174,6 @@
           </div>
 
           <div class="track-actions" @click.stop>
-            <!-- Like Button -->
             <button
               class="like-btn-track"
               :class="{ liked: isTrackLiked(track.id) }"
@@ -187,8 +186,6 @@
                 />
               </svg>
             </button>
-
-            <!-- More Options Dropdown -->
             <div class="dropdown-wrapper">
               <button
                 class="more-btn"
@@ -207,9 +204,72 @@
         </div>
       </div>
       <p v-if="popularTracks.length === 0" class="empty-state">
-        No popular tracks available.
+        No trending songs available.
       </p>
     </section>
+
+    <!-- Trending / Recent Beats Section -->
+    <section class="section">
+      <div class="section-header">
+        <h2>Trending Beats</h2>
+        <router-link to="/beat-store" class="see-all">Browse Store</router-link>
+      </div>
+      <div class="tracks-list">
+        <div
+          v-for="beat in trendingBeats"
+          :key="beat.id"
+          class="track-row clickable"
+          @click="playBeat(beat)"
+        >
+          <img :src="beat.coverArt" :alt="beat.title" class="track-thumb" />
+          <div class="track-details">
+            <p class="track-title">{{ beat.title }}</p>
+            <p class="track-artist">{{ beat.artist }} • R{{ beat.price }}</p>
+          </div>
+
+          <div class="track-actions" @click.stop>
+            <button
+              class="like-btn-track"
+              :class="{ liked: isTrackLiked(beat.id) }"
+              @click="toggleTrackLike(beat.id)"
+              aria-label="Like beat"
+            >
+              <svg class="heart-icon" viewBox="0 0 24 24">
+                <path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                />
+              </svg>
+            </button>
+            <div class="dropdown-wrapper">
+              <button
+                class="more-btn"
+                @click="toggleDropdown(beat.id, $event)"
+                aria-label="More options"
+              >
+                ⋮
+              </button>
+              <div v-if="activeDropdownId === beat.id" class="dropdown-menu">
+                <button @click="addToQueue(beat)">Add to Queue</button>
+                <button @click="openPurchaseModal(beat)">Buy License</button>
+                <button @click="navigateToStore">Browse Beat Store</button>
+                <button @click="shareTrack(beat)">Share</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p v-if="trendingBeats.length === 0" class="empty-state">
+        No trending beats available.
+      </p>
+    </section>
+
+    <!-- Purchase Beat Modal Integration -->
+    <PurchaseBeatModal
+      :is-open="isPurchaseModalOpen"
+      :selected-beat="selectedBeatForPurchase"
+      @update:is-open="isPurchaseModalOpen = $event"
+      @add-to-cart="handleAddToCart"
+    />
   </div>
 </template>
 
@@ -217,6 +277,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
+import PurchaseBeatModal from "@/components/beats/PurchaseBeatModal.vue";
 
 const store = useStore();
 const router = useRouter();
@@ -229,9 +290,16 @@ const showAllGenres = ref(false);
 const showAllRecommended = ref(false);
 const recommendedScrollRef = ref(null);
 
+// Modal state for purchasing beats
+const isPurchaseModalOpen = ref(false);
+const selectedBeatForPurchase = ref(null);
+
 const allArtists = computed(() => store?.getters?.["artists/allArtists"] ?? []);
 const popularTracks = computed(
   () => store?.getters?.["tracks/popularTracks"] ?? [],
+);
+const trendingBeats = computed(
+  () => store?.getters?.["beats/allBeats"]?.slice(0, 5) ?? [],
 );
 
 const genreOptions = computed(() => {
@@ -285,7 +353,6 @@ const filteredArtists = computed(() => {
 });
 
 const trendingArtists = computed(() => filteredArtists.value.slice(0, 5));
-
 const recommendedArtistsFull = computed(() => filteredArtists.value.slice(5));
 
 const displayedRecommendedArtists = computed(() => {
@@ -340,6 +407,36 @@ function playTrack(track) {
   }
 }
 
+function playBeat(beat) {
+  if (beat.audioUrl) {
+    store.dispatch("player/playTrack", {
+      id: beat.id,
+      title: beat.title,
+      artist: beat.artist,
+      image: beat.coverArt,
+      audioUrl: beat.audioUrl,
+    });
+  } else {
+    alert("Beat audio stream not available.");
+  }
+}
+
+function openPurchaseModal(beat) {
+  activeDropdownId.value = null;
+  selectedBeatForPurchase.value = beat;
+  isPurchaseModalOpen.value = true;
+}
+
+function navigateToStore() {
+  activeDropdownId.value = null;
+  router.push("/beat-store");
+}
+
+function handleAddToCart(payload) {
+  store.dispatch("cart/addItem", payload);
+  alert(`Added "${payload.beat.title}" (${payload.licenseType}) to cart!`);
+}
+
 function toggleDropdown(trackId, event) {
   event.stopPropagation();
   activeDropdownId.value = activeDropdownId.value === trackId ? null : trackId;
@@ -359,14 +456,22 @@ function addToPlaylist(track) {
   console.log("Add to playlist:", track.title);
 }
 
-function addToQueue(track) {
+function addToQueue(item) {
   activeDropdownId.value = null;
-  store.dispatch("player/addToQueue", track);
+  store.dispatch("player/addToQueue", {
+    id: item.id,
+    title: item.title,
+    artist: item.artist,
+    image: item.image || item.coverArt,
+    audioUrl: item.audioUrl,
+  });
 }
 
 function shareTrack(track) {
   activeDropdownId.value = null;
-  navigator.clipboard.writeText(window.location.origin + track.audioUrl);
+  navigator.clipboard.writeText(
+    window.location.origin + (track.audioUrl || ""),
+  );
   alert("Link copied to clipboard!");
 }
 </script>
@@ -673,7 +778,7 @@ function shareTrack(track) {
   object-fit: cover;
 }
 
-/* Popular Tracks List */
+/* Tracks / Beats List */
 .tracks-list {
   display: flex;
   flex-direction: column;

@@ -23,12 +23,97 @@
       </div>
     </header>
 
-    <!-- Content Tabs / Track List -->
+    <!-- Track List Styled Like Trending Beats -->
     <section class="artist-content">
       <h2>Tracks & Beats</h2>
       <div v-if="artist.tracks && artist.tracks.length" class="track-list">
-        <div v-for="track in artist.tracks" :key="track.id" class="track-card">
-          <p class="track-title">{{ track.title }}</p>
+        <div
+          v-for="track in artist.tracks"
+          :key="track.id"
+          class="trending-track-card"
+          @click="playTrack(track)"
+        >
+          <div class="track-cover-wrapper">
+            <img
+              v-if="artist.image"
+              :src="artist.image"
+              :alt="track.title"
+              class="track-cover-img"
+            />
+            <span v-else class="track-cover-icon">🎵</span>
+            <div class="play-overlay">
+              <span class="play-icon">▶</span>
+            </div>
+          </div>
+
+          <div class="track-info">
+            <p class="track-title">{{ track.title }}</p>
+            <p class="track-artist">{{ artist.name }}</p>
+          </div>
+
+          <!-- Like Button -->
+          <button
+            class="like-btn"
+            @click.stop="handleLike(track)"
+            :title="
+              isLiked(track.id)
+                ? 'Remove from Liked Songs'
+                : 'Save to Liked Songs'
+            "
+          >
+            {{ isLiked(track.id) ? "♥" : "♡" }}
+          </button>
+
+          <!-- Three Dots Menu -->
+          <div class="track-menu-wrapper" @click.stop>
+            <button
+              class="menu-btn"
+              @click="toggleMenu(track.id)"
+              aria-label="More options"
+            >
+              ⋮
+            </button>
+
+            <div v-if="openMenuId === track.id" class="track-menu">
+              <button class="menu-item" @click="handleLike(track)">
+                {{
+                  isLiked(track.id)
+                    ? "Remove from Liked Songs"
+                    : "Save to Liked Songs"
+                }}
+              </button>
+
+              <!-- Add to Playlist dropdown trigger -->
+              <div class="submenu-container">
+                <button
+                  class="menu-item has-submenu"
+                  @click="togglePlaylistSubmenu(track.id)"
+                >
+                  Add to playlist ▶
+                </button>
+
+                <!-- Nested list of user playlists -->
+                <div
+                  v-if="activePlaylistSubmenuId === track.id"
+                  class="playlist-submenu"
+                >
+                  <div v-if="userPlaylists.length > 0">
+                    <button
+                      v-for="playlist in userPlaylists"
+                      :key="playlist.id"
+                      class="menu-item playlist-option"
+                      @click="addSongToPlaylist(track, playlist.id)"
+                    >
+                      {{ playlist.title }}
+                    </button>
+                  </div>
+                  <div v-else class="menu-item empty-playlists" disabled>
+                    No playlists created yet
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <p v-else class="empty-msg">No tracks uploaded yet.</p>
@@ -42,7 +127,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { useStore } from "vuex";
 
@@ -50,6 +135,8 @@ const route = useRoute();
 const store = useStore();
 
 const artistId = computed(() => route.params.id);
+const openMenuId = ref(null);
+const activePlaylistSubmenuId = ref(null);
 
 // Fetch target artist from the artists Vuex module
 const artist = computed(() => {
@@ -58,15 +145,38 @@ const artist = computed(() => {
 });
 
 const artistHandle = computed(() => {
-  return artist.value?.name
-    ? artist.value.name.toLowerCase().replace(/\s+/g, "_")
-    : "";
+  return (
+    artist.value?.handle ||
+    (artist.value?.name
+      ? artist.value.name.toLowerCase().replace(/\s+/g, "_")
+      : "")
+  );
 });
 
 // Social status getter from auth module
 const isFollowing = computed(
   () => store.getters["auth/isFollowing"]?.(artistId.value) ?? false,
 );
+
+const likedSongIds = computed(() => store.getters["auth/likedSongIds"] || []);
+
+const userPlaylists = computed(() => store.getters["auth/userPlaylists"] || []);
+
+function formatSongId(trackId) {
+  return `${artist.value.id}-${trackId}`;
+}
+
+function isLiked(trackId) {
+  const formattedId = formatSongId(trackId);
+  return likedSongIds.value.includes(formattedId);
+}
+
+function handleLike(track) {
+  const formattedId = formatSongId(track.id);
+  store.dispatch("auth/toggleLike", formattedId);
+  openMenuId.value = null;
+  activePlaylistSubmenuId.value = null;
+}
 
 function toggleFollow() {
   if (artist.value) {
@@ -78,6 +188,73 @@ function toggleFollow() {
     });
   }
 }
+
+function playTrack(track) {
+  const trackPayload = {
+    id: formatSongId(track.id),
+    artistId: artist.value.id,
+    title: track.title,
+    artist: artist.value.name,
+    audioUrl: track.audioUrl,
+    image: artist.value.image || null,
+  };
+
+  if (track.audioUrl) {
+    store.dispatch("player/playTrack", trackPayload);
+  } else {
+    alert("Audio stream not available for this track.");
+  }
+}
+
+function toggleMenu(trackId) {
+  if (openMenuId.value === trackId) {
+    openMenuId.value = null;
+    activePlaylistSubmenuId.value = null;
+  } else {
+    openMenuId.value = trackId;
+    activePlaylistSubmenuId.value = null;
+  }
+}
+
+function togglePlaylistSubmenu(trackId) {
+  activePlaylistSubmenuId.value =
+    activePlaylistSubmenuId.value === trackId ? null : trackId;
+}
+
+function addSongToPlaylist(track, playlistId) {
+  const songPayload = {
+    id: formatSongId(track.id),
+    title: track.title,
+    artist: artist.value.name,
+    artistId: artist.value.id,
+    audioUrl: track.audioUrl,
+  };
+
+  store.dispatch("auth/addTrackToPlaylist", {
+    playlistId,
+    track: songPayload,
+  });
+
+  alert(`Added "${track.title}" to playlist!`);
+  openMenuId.value = null;
+  activePlaylistSubmenuId.value = null;
+}
+
+// Close dropdown if clicking anywhere outside
+function handleClickOutside(e) {
+  if (!e.target.closest(".track-menu-wrapper")) {
+    openMenuId.value = null;
+    activePlaylistSubmenuId.value = null;
+  }
+}
+
+onMounted(() => {
+  window.addEventListener("click", handleClickOutside);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("click", handleClickOutside);
+});
 </script>
 
 <style scoped>
@@ -135,7 +312,6 @@ function toggleFollow() {
   align-items: center;
 }
 
-/* Light blue button state matching discover view cards */
 .btn-primary {
   padding: 0.5rem 1.5rem;
   border-radius: 20px;
@@ -155,7 +331,6 @@ function toggleFollow() {
   transform: translateY(-1px);
 }
 
-/* Switches to yellow/gold when following state is active */
 .btn-primary.following {
   background-color: var(--accent-gold, #fae184);
   color: var(--text-dark-btn, #111);
@@ -168,19 +343,192 @@ function toggleFollow() {
   color: var(--text-main, #111);
 }
 
-.track-card {
+/* Trending Beat-style Track Cards */
+.track-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.trending-track-card {
+  display: flex;
+  align-items: center;
   background-color: var(--bg-surface, #fff);
   border: 1px solid var(--border-subtle, #e0e0e0);
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.trending-track-card:hover {
+  background-color: var(--accent-yellow, rgba(250, 225, 132, 0.15));
+}
+
+.track-cover-wrapper {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: var(--border-subtle, #eee);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.track-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.track-cover-icon {
+  font-size: 1.2rem;
+}
+
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.trending-track-card:hover .play-overlay {
+  opacity: 1;
+}
+
+.play-icon {
+  color: white;
+  font-size: 0.9rem;
+}
+
+.track-info {
+  flex-grow: 1;
 }
 
 .track-title {
-  margin: 0;
-  font-weight: 600;
+  margin: 0 0 0.15rem 0;
+  font-weight: 700;
   color: var(--text-main, #111);
   font-size: 0.95rem;
+}
+
+.track-artist {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, #666);
+}
+
+.like-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--text-muted, #888);
+  padding: 0.5rem;
+  margin-right: 0.25rem;
+  transition: transform 0.1s ease;
+}
+
+.like-btn:hover {
+  transform: scale(1.15);
+  color: #ff4d4d;
+}
+
+/* Three Dots Menu & Playlist Submenu */
+.track-menu-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.menu-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--text-muted, #666);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.menu-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-main, #111);
+}
+
+.track-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #eee);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  min-width: 180px;
+  overflow: visible;
+}
+
+.menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.9rem;
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text-main, #111);
+}
+
+.menu-item:hover {
+  background: var(--accent-yellow, #fae184);
+}
+
+.submenu-container {
+  position: relative;
+}
+
+.playlist-submenu {
+  position: absolute;
+  right: 100%;
+  top: 0;
+  background: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #eee);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+  z-index: 25;
+}
+
+.playlist-option {
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty-playlists {
+  color: var(--text-muted, #888);
+  font-style: italic;
+  cursor: default;
+}
+
+.empty-playlists:hover {
+  background: transparent;
 }
 
 .empty-msg,
