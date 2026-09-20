@@ -75,8 +75,8 @@
         >
           <div class="tile-placeholder">
             <img
-              v-if="item.image"
-              :src="item.image"
+              v-if="item.image || item.coverArt"
+              :src="item.image || item.coverArt"
               class="tile-img"
               :alt="item.title"
             />
@@ -170,8 +170,8 @@
       <div class="modal-card detail-card modal-container">
         <div v-if="selectedItem?.type !== 'text'" class="modal-cover">
           <img
-            v-if="selectedItem?.image"
-            :src="selectedItem.image"
+            v-if="selectedItem?.image || selectedItem?.coverArt"
+            :src="selectedItem.image || selectedItem.coverArt"
             class="modal-cover-img"
           />
           <div v-else class="modal-cover-placeholder">▶</div>
@@ -202,8 +202,8 @@
           </button>
           <span v-else class="text-post-badge">💬 Text Update</span>
 
-          <button class="like-btn" @click="toggleLike(selectedItem.id)">
-            ❤️ {{ selectedItem?.likesCount || 0 }}
+          <button class="like-btn" @click="toggleLike(selectedItem)">
+            ❤️ {{ isItemLiked(selectedItem?.id) ? "Liked" : "Like" }}
           </button>
         </div>
 
@@ -351,63 +351,10 @@ const textPosts = computed(() =>
 );
 const reposts = ref([]);
 
+// Pulling directly from the registered beats module with debug logs
 const liked = computed(() => {
-  const likedSongIds = store?.getters?.["auth/likedSongIds"] || [];
-  const playerQueue = store?.state?.player?.queue || [];
-  const allArtists = store?.getters?.["artists/allArtists"] || [];
-
-  const masterTrackMap = {};
-
-  // 1. Map player queue tracks
-  playerQueue.forEach((track) => {
-    if (track && track.id) {
-      const trackData = {
-        id: track.id,
-        title: track.title,
-        artist: track.artist,
-        audioUrl: track.audioUrl,
-        image: track.image || track.coverArt || null,
-        type: "track",
-      };
-      masterTrackMap[String(track.id)] = trackData;
-    }
-  });
-
-  // 2. Map artist tracks (supports compound IDs & flat IDs)
-  allArtists.forEach((artist) => {
-    if (artist.tracks && artist.tracks.length > 0) {
-      artist.tracks.forEach((t) => {
-        const compoundId = `${artist.id}-${t.id}`;
-        const trackData = {
-          id: compoundId,
-          artistId: artist.id,
-          title: t.title,
-          artist: artist.name,
-          audioUrl: t.audioUrl || artist.audioUrl || null,
-          image:
-            t.image || t.coverArt || artist.image || artist.coverArt || null,
-          type: "track",
-        };
-
-        masterTrackMap[String(compoundId)] = trackData;
-        masterTrackMap[String(t.id)] = trackData; // Fallback for flat IDs
-      });
-    }
-  });
-
-  // Map user's liked IDs with flexible lookup fallbacks
-  return likedSongIds
-    .map((likedId) => {
-      const stringId = String(likedId);
-      if (masterTrackMap[stringId]) return masterTrackMap[stringId];
-
-      // Fallback search: check if any master map key ends with or matches the liked ID
-      const matchingKey = Object.keys(masterTrackMap).find(
-        (key) => key.endsWith(`-${stringId}`) || key === stringId,
-      );
-      return matchingKey ? masterTrackMap[matchingKey] : null;
-    })
-    .filter((track) => track !== null);
+  const result = store.getters["beats/likedBeats"] || [];
+  return result;
 });
 
 const activeItems = computed(() => {
@@ -494,8 +441,15 @@ function handlePlayTrack() {
   }
 }
 
-function toggleLike(postId) {
-  store.dispatch("auth/togglePostLike", postId);
+function isItemLiked(itemId) {
+  const likedBeatsList = store.getters["beats/likedBeats"] || [];
+  return likedBeatsList.some((beat) => String(beat.id) === String(itemId));
+}
+
+function toggleLike(item) {
+  if (!item) return;
+  // Pass the full object so the store caches custom profile uploads
+  store.dispatch("beats/toggleLikeBeat", item);
 }
 
 function submitComment(postId) {

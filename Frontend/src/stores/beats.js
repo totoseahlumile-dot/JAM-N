@@ -1,5 +1,6 @@
 export default {
   namespaced: true,
+
   state: () => ({
     beats: [
       // --- Hip-Hop ---
@@ -162,15 +163,48 @@ export default {
         price: 115,
       },
     ],
+    likedBeatIds: [], // Tracks IDs of liked items
+    customLikedItems: [], // Caches full item objects for custom-uploaded likes
   }),
+
   getters: {
     allBeats: (state) => state.beats,
+
+    // Combines standard beats and custom liked items to evaluate the liked list
+    likedBeats: (state) => {
+      const allKnownItems = [...state.beats, ...state.customLikedItems];
+      const uniqueItems = Array.from(
+        new Map(allKnownItems.map((item) => [item.id, item])).values(),
+      );
+      return uniqueItems.filter((item) => state.likedBeatIds.includes(item.id));
+    },
   },
+
   mutations: {
     ADD_BEAT(state, newBeat) {
       state.beats.unshift(newBeat);
     },
+
+    TOGGLE_LIKE_BEAT(state, beatOrId) {
+      const beatId = typeof beatOrId === "object" ? beatOrId.id : beatOrId;
+      const beatObj = typeof beatOrId === "object" ? beatOrId : null;
+
+      const index = state.likedBeatIds.indexOf(beatId);
+      if (index > -1) {
+        state.likedBeatIds.splice(index, 1); // Unlike
+      } else {
+        state.likedBeatIds.push(beatId); // Like
+
+        // Save reference if it's a custom user upload/item not in main array
+        if (beatObj && !state.beats.some((b) => b.id === beatId)) {
+          if (!state.customLikedItems.some((b) => b.id === beatId)) {
+            state.customLikedItems.push(beatObj);
+          }
+        }
+      }
+    },
   },
+
   actions: {
     addBeat({ commit }, beatData) {
       const formattedBeat = {
@@ -184,6 +218,11 @@ export default {
         price: beatData.price || 100,
       };
       commit("ADD_BEAT", formattedBeat);
+    },
+
+    toggleLikeBeat({ commit }, beatPayload) {
+      console.log("Toggling like for payload:", beatPayload);
+      commit("TOGGLE_LIKE_BEAT", beatPayload);
     },
   },
 };

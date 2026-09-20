@@ -130,11 +130,15 @@ export default {
             title: "H2Hart",
             audioUrl: "/audio/brendan-peyper-h2hart.mp3",
           },
+
+          /*
           {
             id: "t4-2",
             title: "Sarie Marais",
             audioUrl: "/audio/brendan-peyper-sarie-marais.mp3",
           },
+          */
+
           {
             id: "t4-3",
             title: "Rooi Vlag",
@@ -181,11 +185,15 @@ export default {
             title: "Holy Dove",
             audioUrl: "/audio/civil-twilight-holy-dove.mp3",
           },
+
+          /*
           {
             id: "t5-4",
             title: "The Courage Of The Fall",
             audioUrl: "/audio/civil-twilight-the-courage-of-the-fall.mp3",
           },
+          */
+
           {
             id: "t5-5",
             title: "Holy Weather",
@@ -260,8 +268,8 @@ export default {
           },
           {
             id: "t7-3",
-            title: "Dancing In The Villa",
-            audioUrl: "/audio/da-capo-dancing-in-the-villa.mp3",
+            title: "Dance In Villa",
+            audioUrl: "/audio/da-capo-dance-in-villa.mp3",
           },
           {
             id: "t7-4",
@@ -418,11 +426,13 @@ export default {
             title: "Incurable",
             audioUrl: "/audio/jamali-incurable.mp3",
           },
+          /*
           {
             id: "t11-3",
             title: "Yours Fatally",
             audioUrl: "/audio/jamali-yours-fatally.mp3",
           },
+          */
           {
             id: "t11-4",
             title: "Skut Julle Lywe",
@@ -450,7 +460,13 @@ export default {
         bio: "Versatile singer, songwriter, and poet creating introspective, moody soundscapes.",
         tracks: [
           { id: "t12-1", title: "Aweh", audioUrl: "/audio/lordkez-aweh.mp3" },
-          { id: "t12-2", title: "4SHO", audioUrl: "/audio/lordkez-4sho.mp3" },
+
+          /*
+          { id: "t12-2",
+            title: "4SHO",
+            audioUrl: "/audio/lordkez-4sho.mp3" },
+          */
+
           {
             id: "t12-3",
             title: "belladonna",
@@ -580,16 +596,21 @@ export default {
             title: "Don't Wake The Scarecrow",
             audioUrl: "/audio/the-black-cat-bones-dont-wake.mp3",
           },
+
+          /*
           {
             id: "t15-4",
             title: "When I See You",
             audioUrl: "/audio/the-black-cat-bones-when-i-see-you.mp3",
           },
+          
           {
             id: "t15-5",
             title: "Black Cat Bone",
             audioUrl: "/audio/the-black-cat-bones-black-cat-bone.mp3",
           },
+          */
+
           {
             id: "t15-6",
             title: "The Well",
@@ -631,11 +652,14 @@ export default {
             title: "Can't Remember Your Name",
             audioUrl: "/audio/the-dirty-skirts-cant-remember.mp3",
           },
+
+          /*
           {
             id: "t16-6",
             title: "Evil Comes",
             audioUrl: "/audio/the-dirty-skirts-evil-comes.mp3",
           },
+          */
         ],
       },
       {

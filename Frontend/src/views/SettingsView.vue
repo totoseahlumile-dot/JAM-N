@@ -2,7 +2,9 @@
   <div class="settings-page">
     <header class="settings-header">
       <h1>Settings</h1>
-      <p class="subtitle">Manage your account preferences and music profile settings.</p>
+      <p class="subtitle">
+        Manage your account preferences and music profile settings.
+      </p>
     </header>
 
     <!-- Account & Profile Section -->
@@ -12,11 +14,17 @@
       <div class="settings-group">
         <div class="field-row summary-row">
           <div class="field-info">
-            <label>{{ user?.name ?? 'Guest' }}</label>
-            <span class="field-desc">{{ user?.email ?? '' }}</span>
+            <label>{{ user?.name ?? "Guest" }}</label>
+            <span class="field-desc">{{ user?.email ?? "" }}</span>
           </div>
           <button class="edit-btn" @click="showEditModal = true">Edit</button>
         </div>
+
+        <!-- Subscription & Billing Link -->
+        <RouterLink to="/subscription" class="nav-row">
+          <span>Subscription Plan &amp; Limits</span>
+          <span class="chevron">›</span>
+        </RouterLink>
       </div>
     </section>
 
@@ -28,17 +36,30 @@
         <div class="toggle-row">
           <div class="field-info">
             <label>Accepting Custom Beat Requests</label>
-            <span class="field-desc">Allow artists to message you directly for custom beat projects.</span>
+            <span class="field-desc"
+              >Allow artists to message you directly for custom beat
+              projects.</span
+            >
           </div>
-          <input type="checkbox" v-model="creatorSettings.customRequests" class="toggle-checkbox" />
+          <input
+            type="checkbox"
+            v-model="creatorSettings.customRequests"
+            class="toggle-checkbox"
+          />
         </div>
 
         <div class="toggle-row">
           <div class="field-info">
             <label>Mixing &amp; Mastering Availability</label>
-            <span class="field-desc">Show your engineering services on your public profile.</span>
+            <span class="field-desc"
+              >Show your engineering services on your public profile.</span
+            >
           </div>
-          <input type="checkbox" v-model="creatorSettings.mixingServices" class="toggle-checkbox" />
+          <input
+            type="checkbox"
+            v-model="creatorSettings.mixingServices"
+            class="toggle-checkbox"
+          />
         </div>
 
         <RouterLink to="/beat-store/my-beats" class="nav-row">
@@ -56,17 +77,29 @@
         <div class="toggle-row">
           <div class="field-info">
             <label>Private Account</label>
-            <span class="field-desc">Only approved followers can see your posts and activity.</span>
+            <span class="field-desc"
+              >Only approved followers can see your posts and activity.</span
+            >
           </div>
-          <input type="checkbox" v-model="privacySettings.isPrivate" class="toggle-checkbox" />
+          <input
+            type="checkbox"
+            v-model="privacySettings.isPrivate"
+            class="toggle-checkbox"
+          />
         </div>
 
         <div class="toggle-row">
           <div class="field-info">
             <label>Show Liked Tracks on Profile</label>
-            <span class="field-desc">Display a Liked tab on your public profile.</span>
+            <span class="field-desc"
+              >Display a Liked tab on your public profile.</span
+            >
           </div>
-          <input type="checkbox" v-model="privacySettings.showLikes" class="toggle-checkbox" />
+          <input
+            type="checkbox"
+            v-model="privacySettings.showLikes"
+            class="toggle-checkbox"
+          />
         </div>
       </div>
     </section>
@@ -79,17 +112,31 @@
         <div class="toggle-row">
           <div class="field-info">
             <label>Email Updates</label>
-            <span class="field-desc">Receive newsletters, feature updates, and activity summaries.</span>
+            <span class="field-desc"
+              >Receive newsletters, feature updates, and activity
+              summaries.</span
+            >
           </div>
-          <input type="checkbox" v-model="notificationSettings.emailAlerts" class="toggle-checkbox" />
+          <input
+            type="checkbox"
+            v-model="notificationSettings.emailAlerts"
+            class="toggle-checkbox"
+          />
         </div>
 
         <div class="toggle-row">
           <div class="field-info">
             <label>New Followers &amp; Likes</label>
-            <span class="field-desc">Get notified when someone follows you or likes your uploads.</span>
+            <span class="field-desc"
+              >Get notified when someone follows you or likes your
+              uploads.</span
+            >
           </div>
-          <input type="checkbox" v-model="notificationSettings.activityAlerts" class="toggle-checkbox" />
+          <input
+            type="checkbox"
+            v-model="notificationSettings.activityAlerts"
+            class="toggle-checkbox"
+          />
         </div>
       </div>
     </section>
@@ -111,37 +158,39 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
-import { useStore } from 'vuex'
-import EditProfileModal from '@/components/common/EditProfileModal.vue'
+import { ref, reactive, computed } from "vue";
+import { RouterLink, useRouter } from "vue-router";
+import { useStore } from "vuex";
+import EditProfileModal from "@/components/common/EditProfileModal.vue";
 
-const store = useStore()
-const router = useRouter()
+const store = useStore();
+const router = useRouter();
 
-const user = computed(() => store.state.auth?.user)
-const isArtistOrProducer = computed(() => store.getters['auth/isArtistOrProducer'])
+const user = computed(() => store.state.auth?.user);
+const isArtistOrProducer = computed(
+  () => store.getters["auth/isArtistOrProducer"],
+);
 
-const showEditModal = ref(false)
+const showEditModal = ref(false);
 
 const creatorSettings = reactive({
   customRequests: true,
   mixingServices: false,
-})
+});
 
 const privacySettings = reactive({
   isPrivate: false,
   showLikes: true,
-})
+});
 
 const notificationSettings = reactive({
   emailAlerts: true,
   activityAlerts: true,
-})
+});
 
 function handleLogout() {
-  store.dispatch('auth/logout')
-  router.push('/')
+  store.dispatch("auth/logout");
+  router.push("/");
 }
 </script>
 
