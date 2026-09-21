@@ -1,12 +1,13 @@
 import express from "express";
 import * as socialController from "../controllers/social.controller.js";
 import authenticate from "../middleware/authenticate.js";
+import optionalAuthenticate from "../middleware/optionalAuthenticate.js";
 import authorizeSocialOwnership from "../middleware/authorizeSocialOwnership.js";
 
 const router = express.Router();
 
-router.get("/posts", socialController.getPosts);
-router.get("/posts/:id", socialController.getPost);
+router.get("/posts", optionalAuthenticate, socialController.getPosts);
+router.get("/posts/:id", optionalAuthenticate, socialController.getPost);
 router.post("/posts", authenticate, socialController.createPost);
 router.put("/posts/:id", authenticate, authorizeSocialOwnership("post"), socialController.updatePost);
 router.delete("/posts/:id", authenticate, authorizeSocialOwnership("post"), socialController.deletePost);

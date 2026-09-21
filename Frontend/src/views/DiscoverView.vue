@@ -250,7 +250,7 @@
               </button>
               <div v-if="activeDropdownId === beat.id" class="dropdown-menu">
                 <button @click="addToQueue(beat)">Add to Queue</button>
-                <button @click="openPurchaseModal(beat)">Buy License</button>
+                <button disabled title="Beat licensing is not available yet">License coming soon</button>
                 <button @click="navigateToStore">Browse Beat Store</button>
                 <button @click="shareTrack(beat)">Share</button>
               </div>
@@ -380,15 +380,10 @@ function isFollowing(artistId) {
   return store?.getters?.["auth/isFollowing"]?.(artistId) ?? false;
 }
 
-function toggleFollow(artist) {
-  store?.commit("auth/TOGGLE_FOLLOW", {
-    id: artist.id,
-    name: artist.name,
-    handle: artist.name
-      ? artist.name.toLowerCase().replace(/\s+/g, "_")
-      : "user",
-    image: artist.image ?? null,
-  });
+async function toggleFollow(artist) {
+  if (!store.getters["auth/isLoggedIn"]) { router.push("/login"); return; }
+  try { await store.dispatch("auth/toggleFollowArtist", artist.id); }
+  catch (error) { alert(error.message); }
 }
 
 function isTrackLiked(trackId) {
@@ -456,7 +451,20 @@ onUnmounted(() => window.removeEventListener("click", handleClickOutside));
 
 function addToPlaylist(track) {
   activeDropdownId.value = null;
-  console.log("Add to playlist:", track.title);
+  if (!store.getters["auth/isLoggedIn"]) { router.push("/login"); return; }
+  const playlists = store.getters["auth/userPlaylists"] || [];
+  const choices = playlists.map((playlist, index) => `${index + 1}. ${playlist.title}`).join("\n");
+  const response = window.prompt(
+    choices ? `Choose a playlist number or enter a new playlist name:\n${choices}` : "Name a new playlist:",
+  );
+  if (!response?.trim()) return;
+  const index = Number(response.trim()) - 1;
+  const playlist = Number.isInteger(index) && playlists[index]
+    ? playlists[index]
+    : store.dispatch("auth/createPlaylist", response.trim());
+  Promise.resolve(playlist).then((selected) => {
+    store.dispatch("auth/addTrackToPlaylist", { playlistId: selected.id, track });
+  });
 }
 
 function addToQueue(item) {
@@ -470,12 +478,15 @@ function addToQueue(item) {
   });
 }
 
-function shareTrack(track) {
+async function shareTrack(track) {
   activeDropdownId.value = null;
-  navigator.clipboard.writeText(
-    window.location.origin + (track.audioUrl || ""),
-  );
-  alert("Link copied to clipboard!");
+  const link = window.location.origin + (track.audioUrl || "");
+  try {
+    await navigator.clipboard.writeText(link);
+    alert("Link copied to clipboard!");
+  } catch {
+    window.prompt("Copy this link:", link);
+  }
 }
 </script>
 

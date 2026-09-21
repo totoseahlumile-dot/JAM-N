@@ -128,10 +128,11 @@
 
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from "vue";
-import { useRoute, RouterLink } from "vue-router";
+import { useRoute, useRouter, RouterLink } from "vue-router";
 import { useStore } from "vuex";
 
 const route = useRoute();
+const router = useRouter();
 const store = useStore();
 
 const artistId = computed(() => route.params.id);
@@ -164,12 +165,13 @@ const likedSongIds = computed(() => store.getters["auth/likedSongIds"] || []);
 const userPlaylists = computed(() => store.getters["auth/userPlaylists"] || []);
 
 function formatSongId(trackId) {
-  return `${artist.value.id}-${trackId}`;
+  // Use the catalog track ID everywhere so likes match Discover and Library.
+  return String(trackId);
 }
 
 function isLiked(trackId) {
   const formattedId = formatSongId(trackId);
-  return likedSongIds.value.includes(formattedId);
+  return likedSongIds.value.some((id) => String(id) === formattedId);
 }
 
 function handleLike(track) {
@@ -179,15 +181,11 @@ function handleLike(track) {
   activePlaylistSubmenuId.value = null;
 }
 
-function toggleFollow() {
-  if (artist.value) {
-    store.commit("auth/TOGGLE_FOLLOW", {
-      id: artist.value.id,
-      name: artist.value.name,
-      handle: artistHandle.value,
-      image: artist.value.image ?? null,
-    });
-  }
+async function toggleFollow() {
+  if (!artist.value) return;
+  if (!store.getters["auth/isLoggedIn"]) { router.push("/login"); return; }
+  try { await store.dispatch("auth/toggleFollowArtist", artist.value.id); }
+  catch (error) { alert(error.message); }
 }
 
 function playTrack(track) {

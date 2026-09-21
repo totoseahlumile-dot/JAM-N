@@ -12,6 +12,8 @@
           type="button"
           class="type-tab"
           :class="{ active: postType === 'audio' }"
+          disabled
+          title="Audio uploads need server file storage and are not available yet"
           @click="setPostType('audio')"
         >
           Track / Audio
@@ -20,6 +22,8 @@
           type="button"
           class="type-tab"
           :class="{ active: postType === 'media' }"
+          disabled
+          title="Media uploads need server file storage and are not available yet"
           @click="setPostType('media')"
         >
           Visual / Media
@@ -33,6 +37,7 @@
           Text Update
         </button>
       </div>
+      <p>Audio and media uploads will be available when file storage is connected. Text posts are saved to your profile and the community feed.</p>
 
       <form class="post-form" @submit.prevent="submitPost">
         <!-- Main Caption / Text Input -->
@@ -119,7 +124,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'post-created'])
 const store = useStore()
 
-const postType = ref('audio') // 'audio' | 'media' | 'text'
+const postType = ref('text') // Only text posts have a working backend upload path.
 const caption = ref('')
 
 // Audio Post State
@@ -229,7 +234,7 @@ function closeModal() {
   coverPreview.value = null
   mediaPreview.value = null
   mediaFileType.value = null
-  postType.value = 'audio'
+  postType.value = 'text'
 
   emit('update:modelValue', false)
 }

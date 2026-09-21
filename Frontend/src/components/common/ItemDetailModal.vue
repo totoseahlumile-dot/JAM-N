@@ -164,13 +164,10 @@ function isFollowing(artistId) {
   return store.getters['auth/isFollowing']?.(artistId) ?? false
 }
 
-function toggleFollow(artist) {
-  store.commit('auth/TOGGLE_FOLLOW', {
-    id: artist.id,
-    name: artist.name,
-    handle: artist.name.toLowerCase().replace(/\s+/g, '_'),
-    image: artist.image ?? null,
-  })
+async function toggleFollow(artist) {
+  if (!store.getters['auth/isLoggedIn']) { router.push('/login'); return }
+  try { await store.dispatch('auth/toggleFollowArtist', artist.id) }
+  catch (error) { alert(error.message) }
 }
 </script>
 

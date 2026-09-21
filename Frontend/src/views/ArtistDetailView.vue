@@ -70,8 +70,8 @@
 
   <div v-else class="artist-profile-page empty-state">
     <p>Artist not found.</p>
-    <button class="back-btn" @click="router.push('/artists')">
-      Back to Artists
+    <button class="back-btn" @click="router.push('/discover')">
+      Back to Discover
     </button>
   </div>
 </template>
@@ -133,13 +133,11 @@ const isFollowing = computed(() => {
   return store?.getters?.["auth/isFollowing"]?.(artist.value.id) ?? false;
 });
 
-function toggleFollow() {
+async function toggleFollow() {
   if (!artist.value) return;
-  store.commit("auth/TOGGLE_FOLLOW", {
-    id: artist.value.id,
-    name: artist.value.name,
-    handle: artist.value.name.toLowerCase().replace(/\s+/g, ""),
-  });
+  if (!store.getters["auth/isLoggedIn"]) { router.push("/login"); return; }
+  try { await store.dispatch("auth/toggleFollowArtist", artist.value.id); }
+  catch (error) { alert(error.message); }
 }
 
 // Safely normalize tracks whether they are stored as strings or objects

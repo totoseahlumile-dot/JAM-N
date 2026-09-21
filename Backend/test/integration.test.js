@@ -224,6 +224,12 @@ test("post ownership, comments, and idempotent likes work together", async () =>
   const fetched = await expectStatus(200, `/api/posts/${post.body.id}`);
   assert.equal(Number(fetched.body.post.likeCount), 1);
   assert.equal(Number(fetched.body.post.commentCount), 1);
+  assert.equal(Number(fetched.body.post.likedByMe), 0);
+  const likedView = await expectStatus(200, `/api/posts/${post.body.id}`, { token: reader.body.accessToken });
+  assert.equal(Number(likedView.body.post.likedByMe), 1);
+  const profilePosts = await expectStatus(200, `/api/posts?userId=${author.body.user.id}`, { token: reader.body.accessToken });
+  assert.equal(Number(profilePosts.body.posts[0].likeCount), 1);
+  assert.equal(Number(profilePosts.body.posts[0].likedByMe), 1);
 
   const inbox = await expectStatus(200, "/api/alerts", { token: author.body.accessToken });
   assert.equal(inbox.body.alerts.length, 2);

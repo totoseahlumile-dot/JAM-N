@@ -59,7 +59,7 @@ const createAlert = async (details) => {
 
 const getPosts = async (req, res, next) => {
   try {
-    const options = { ...pagination(req.query), userId: positiveInteger(req.query.userId, "userId", true) };
+    const options = { ...pagination(req.query), userId: positiveInteger(req.query.userId, "userId", true), viewerId: req.user?.id || 0 };
     const posts = await social.listPosts(options);
     res.json({ posts, pagination: { limit: options.limit, offset: options.offset } });
   } catch (error) { next(error); }
@@ -67,7 +67,7 @@ const getPosts = async (req, res, next) => {
 
 const getPost = async (req, res, next) => {
   try {
-    const post = await social.findPostById(positiveInteger(req.params.id, "post id"));
+    const post = await social.findPostById(positiveInteger(req.params.id, "post id"), req.user?.id || 0);
     if (!post) return next(httpError(404, "POST_NOT_FOUND", "Post not found"));
     return res.json({ post });
   } catch (error) { return next(error); }

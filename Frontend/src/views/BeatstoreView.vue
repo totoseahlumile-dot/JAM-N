@@ -3,14 +3,14 @@
     <header class="beatstore-header">
       <h1>Beat Store</h1>
       <div class="header-actions">
-        <button class="cart-trigger-btn" @click="showCartDrawer = true">
-          🛒 Cart
+        <button class="cart-trigger-btn" disabled title="Beat checkout is not available yet">
+          🛒 Cart coming soon
           <span v-if="cartItems.length > 0" class="cart-badge">{{
             cartItems.length
           }}</span>
         </button>
-        <button class="upload-btn" @click="showUploadModal = true">
-          + Upload beat
+        <button class="upload-btn" disabled title="Beat file storage is not connected yet">
+          Beat uploads coming soon
         </button>
       </div>
 
@@ -90,8 +90,8 @@
                 />
               </svg>
             </button>
-            <button class="beat-buy-btn" @click="openPurchaseModal(beat)">
-              Buy
+            <button class="beat-buy-btn" disabled title="Beat licensing is not available yet">
+              Licensing soon
             </button>
           </div>
         </div>

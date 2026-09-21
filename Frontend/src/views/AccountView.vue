@@ -20,6 +20,10 @@
             <span class="stat-count">{{ uploads.length }}</span>
             <span class="stat-label">Uploads</span>
           </div>
+          <div class="stat">
+            <span class="stat-count">{{ profileLikeCount }}</span>
+            <span class="stat-label">Post likes</span>
+          </div>
 
           <!-- Clickable Followers Stat -->
           <div class="stat clickable" @click="openUserList('followers')">
@@ -44,6 +48,7 @@
         </button>
       </div>
     </header>
+    <p v-if="profileError" role="alert" class="empty-state">{{ profileError }}</p>
 
     <!-- Tabs: Uploads, Posts, Reposts, Liked, Following -->
     <section class="profile-content">
@@ -153,9 +158,7 @@
 
     <!-- Floating upload button -->
     <button
-      v-if="
-        isArtistOrProducer && (activeTab === 'uploads' || activeTab === 'posts')
-      "
+      v-if="user && activeTab === 'posts'"
       class="upload-fab"
       @click="showUploadModal = true"
       aria-label="Upload"
@@ -246,8 +249,8 @@
         </div>
 
         <div class="modal-actions">
-          <button class="btn-delete" @click="deletePost(selectedItem.id)">
-            Delete
+          <button class="btn-delete" @click="activeTab === 'liked' ? removeLikedItem(selectedItem) : deletePost(selectedItem.id)">
+            {{ activeTab === 'liked' ? 'Remove from Liked' : 'Delete' }}
           </button>
           <button
             type="button"
@@ -272,14 +275,15 @@
           <div
             v-for="person in activeUserList"
             :key="person.id"
-            class="user-row clickable"
-            @click="goToArtist(person.id)"
+            class="user-row"
+            :class="{ clickable: userListType === 'following' }"
+            @click="userListType === 'following' && goToArtist(person.id)"
           >
             <div class="user-avatar"></div>
             <div class="user-info">
-              <p class="user-name">{{ person.name }}</p>
-              <p v-if="person.handle" class="user-handle">
-                @{{ person.handle }}
+              <p class="user-name">{{ person.name || person.displayName }}</p>
+              <p v-if="person.handle || person.username" class="user-handle">
+                @{{ person.handle || person.username }}
               </p>
             </div>
           </div>
@@ -304,11 +308,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRouter } from "vue-router";
 import EditProfileModal from "@/components/common/EditProfileModal.vue";
 import CreatePostModal from "@/components/common/CreatePostModal.vue";
+import { apiRequest } from "@/services/api";
 
 const store = useStore();
 const router = useRouter();
@@ -316,14 +321,7 @@ const router = useRouter();
 const showEditModal = ref(false);
 const user = computed(() => store?.state?.auth?.user ?? null);
 
-const isArtistOrProducer = computed(() => {
-  if (store?.getters?.["auth/isArtistOrProducer"] !== undefined) {
-    return store.getters["auth/isArtistOrProducer"];
-  }
-  return true;
-});
-
-const followers = computed(() => user.value?.followersList ?? []);
+const followers = ref([]);
 const following = computed(() => user.value?.followingList ?? []);
 
 const roleLabel = computed(() => {
@@ -335,7 +333,6 @@ const roleLabel = computed(() => {
 const tabs = [
   { key: "uploads", label: "Uploads" },
   { key: "posts", label: "Posts" },
-  { key: "reposts", label: "Reposts" },
   { key: "liked", label: "Liked" },
   { key: "following", label: "Following" },
 ];
@@ -346,15 +343,47 @@ const allUserUploads = computed(() => store.getters["auth/userUploads"] ?? []);
 const uploads = computed(() =>
   allUserUploads.value.filter((item) => item.type !== "text"),
 );
-const textPosts = computed(() =>
-  allUserUploads.value.filter((item) => item.type === "text"),
-);
-const reposts = ref([]);
+const backendPosts = ref([]);
+const profileError = ref("");
+const textPosts = computed(() => backendPosts.value);
+const profileLikeCount = computed(() => backendPosts.value.reduce((sum, post) => sum + Number(post.likesCount || 0), 0));
 
-// Pulling directly from the registered beats module with debug logs
+async function loadMyPosts() {
+  if (!user.value?.id) { backendPosts.value = []; return; }
+  try {
+    const { posts } = await apiRequest(`/api/posts?userId=${encodeURIComponent(user.value.id)}&limit=100`, { token: store.getters["auth/accessToken"] });
+    backendPosts.value = posts.map((post) => ({
+      ...post, type: "text", title: post.caption || "Post", likesCount: Number(post.likeCount || 0),
+      comments: [], backendPost: true,
+    }));
+    profileError.value = "";
+  } catch (error) {
+    profileError.value = `Could not load your posts: ${error.message}`;
+  }
+}
+async function loadFollowers() {
+  if (!user.value?.id) { followers.value = []; return; }
+  try {
+    const response = await apiRequest(`/api/users/${encodeURIComponent(user.value.id)}/followers?limit=100`);
+    followers.value = response.followers;
+  } catch (error) { profileError.value = error.message; }
+}
+watch(() => user.value?.id, () => { loadMyPosts(); loadFollowers(); }, { immediate: true });
+onMounted(() => store.dispatch("content/fetchTracks").catch(() => {}));
+
 const liked = computed(() => {
-  const result = store.getters["beats/likedBeats"] || [];
-  return result;
+  const ids = new Set((store.getters["auth/likedSongIds"] || []).map(String));
+  const artists = store.getters["artists/allArtists"] || [];
+  const artistTracks = artists.flatMap((artist) => (artist.tracks || []).map((track) => ({
+    ...track, artist: artist.name, image: artist.image,
+  })));
+  const knownItems = [
+    ...(store.state.content?.tracks || []),
+    ...artistTracks,
+    ...(store.getters["beats/allBeats"] || []),
+  ];
+  return [...new Map(knownItems.map((item) => [String(item.id), item])).values()]
+    .filter((item) => ids.has(String(item.id)));
 });
 
 const activeItems = computed(() => {
@@ -367,7 +396,6 @@ const emptyMessage = computed(() => {
   const messages = {
     uploads: "No music uploads yet.",
     posts: "No text posts yet.",
-    reposts: "No reposts yet.",
     liked: "No liked songs yet.",
     following: "No followed artists yet.",
   };
@@ -400,8 +428,9 @@ function goToArtist(personId) {
   router.push(`/artists/${personId}`);
 }
 
-function unfollowArtist(artist) {
-  store.commit("auth/TOGGLE_FOLLOW", artist);
+async function unfollowArtist(artist) {
+  try { await store.dispatch("auth/toggleFollowArtist", artist.id); }
+  catch (error) { profileError.value = error.message; }
 }
 
 // --- Detail Card & Playback Handler (Connected to player.js) ---
@@ -422,10 +451,16 @@ const isCurrentTrackPlaying = computed(() => {
   );
 });
 
-function openItem(item) {
+async function openItem(item) {
   selectedItem.value = item;
   newCommentText.value = "";
   showDetailModal.value = true;
+  if (item.backendPost) {
+    try {
+      const { comments } = await apiRequest(`/api/posts/${item.id}/comments`);
+      item.comments = comments.map((comment) => ({ id: comment.id, text: comment.body, createdAt: new Date(comment.createdAt).toLocaleString() }));
+    } catch (error) { profileError.value = error.message; }
+  }
 }
 
 function handlePlayTrack() {
@@ -442,18 +477,42 @@ function handlePlayTrack() {
 }
 
 function isItemLiked(itemId) {
-  const likedBeatsList = store.getters["beats/likedBeats"] || [];
-  return likedBeatsList.some((beat) => String(beat.id) === String(itemId));
+  const backendPost = backendPosts.value.find((post) => String(post.id) === String(itemId));
+  if (backendPost) return Boolean(backendPost.likedByMe);
+  const ownUpload = allUserUploads.value.find((item) => String(item.id) === String(itemId));
+  if (ownUpload) return Boolean(ownUpload.isLiked);
+  return store.getters["auth/isLiked"]?.(itemId) || false;
 }
 
-function toggleLike(item) {
+async function toggleLike(item) {
   if (!item) return;
-  // Pass the full object so the store caches custom profile uploads
-  store.dispatch("beats/toggleLikeBeat", item);
+  if (item.backendPost) {
+    const id = String(item.id);
+    try {
+      const liked = Boolean(item.likedByMe);
+      await apiRequest(`/api/posts/${id}/like`, { method: liked ? "DELETE" : "PUT", token: store.getters["auth/accessToken"] });
+      await loadMyPosts();
+      selectedItem.value = backendPosts.value.find((post) => String(post.id) === id) || null;
+    } catch (error) { profileError.value = error.message; }
+    return;
+  }
+  if (allUserUploads.value.some((upload) => String(upload.id) === String(item.id))) {
+    store.dispatch("auth/togglePostLike", item.id);
+    return;
+  }
+  store.commit("auth/TOGGLE_LIKE", item.id);
 }
 
-function submitComment(postId) {
+async function submitComment(postId) {
   if (!newCommentText.value.trim()) return;
+  if (selectedItem.value?.backendPost) {
+    try {
+      await apiRequest(`/api/posts/${postId}/comments`, { method: "POST", token: store.getters["auth/accessToken"], body: { body: newCommentText.value.trim() } });
+      newCommentText.value = "";
+      await openItem(selectedItem.value);
+      return;
+    } catch (error) { profileError.value = error.message; return; }
+  }
   store.dispatch("auth/addPostComment", {
     postId,
     text: newCommentText.value.trim(),
@@ -461,17 +520,38 @@ function submitComment(postId) {
   newCommentText.value = "";
 }
 
-function deletePost(postId) {
+async function deletePost(postId) {
   if (confirm("Are you sure you want to delete this item?")) {
+    if (selectedItem.value?.backendPost) {
+      try {
+        await apiRequest(`/api/posts/${postId}`, { method: "DELETE", token: store.getters["auth/accessToken"] });
+        showDetailModal.value = false;
+        await loadMyPosts();
+      } catch (error) { profileError.value = error.message; }
+      return;
+    }
     store.dispatch("auth/deleteUpload", postId);
     showDetailModal.value = false;
   }
 }
 
+function removeLikedItem(item) {
+  if (!item) return;
+  store.commit("auth/TOGGLE_LIKE", item.id);
+  showDetailModal.value = false;
+}
+
 // --- Create Post Handler ---
 const showUploadModal = ref(false);
 
-function handlePostCreated(postData) {
+async function handlePostCreated(postData) {
+  if (postData.type === "text") {
+    try {
+      await apiRequest("/api/posts", { method: "POST", token: store.getters["auth/accessToken"], body: { caption: postData.content.caption } });
+      await loadMyPosts();
+    } catch (error) { profileError.value = error.message; }
+    return;
+  }
   store.dispatch("auth/createPost", postData);
 }
 </script>

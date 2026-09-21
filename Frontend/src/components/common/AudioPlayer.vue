@@ -152,7 +152,7 @@ function onLoadedMetadata() {
 }
 
 function onEnded() {
-  store.dispatch("player/togglePlay");
+  store.dispatch("player/playNext");
 }
 
 // Real formatting based on actual playback time

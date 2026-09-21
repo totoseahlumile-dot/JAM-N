@@ -1,3 +1,5 @@
+import { resolveAudioUrl } from "../services/audio";
+
 export default {
   namespaced: true,
   state: () => ({
@@ -503,13 +505,17 @@ export default {
     ADD_TO_QUEUE(state, track) {
       state.queue.push(track);
     },
+    SHIFT_QUEUE(state) {
+      state.queue.shift();
+    },
     SET_EXPANDED(state, value) {
       state.isExpanded = value;
     },
   },
   actions: {
     playTrack({ commit }, track) {
-      if (!track.audioUrl) {
+      const audioUrl = resolveAudioUrl(track.audioUrl, track.artist, track.title);
+      if (!audioUrl) {
         console.error("No audio URL provided for track:", track);
         return;
       }
@@ -531,7 +537,7 @@ export default {
         localStorage.setItem("jamn_play_counts", JSON.stringify(counts));
       }
 
-      commit("SET_TRACK", track);
+      commit("SET_TRACK", { ...track, audioUrl, coverArt: track.coverArt || track.image || null });
     },
     togglePlay({ commit }) {
       commit("TOGGLE_PLAYBACK");
@@ -541,6 +547,15 @@ export default {
     },
     addToQueue({ commit }, track) {
       commit("ADD_TO_QUEUE", track);
+    },
+    playNext({ state, commit, dispatch }) {
+      if (state.queue.length) {
+        const next = state.queue[0];
+        commit("SHIFT_QUEUE");
+        dispatch("playTrack", next);
+      } else if (state.isPlaying) {
+        commit("TOGGLE_PLAYBACK");
+      }
     },
   },
 };

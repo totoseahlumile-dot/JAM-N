@@ -6,12 +6,13 @@ const postColumns = `
   u.id AS authorId, u.username AS authorUsername, u.display_name AS authorDisplayName,
   u.avatar_url AS authorAvatarUrl,
   (SELECT COUNT(*) FROM post_likes pl WHERE pl.post_id = p.id) AS likeCount,
+  (SELECT COUNT(*) FROM post_likes mine WHERE mine.post_id = p.id AND mine.user_id = ?) AS likedByMe,
   (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS commentCount
 `;
 
-const listPosts = async ({ userId, limit, offset }) => {
+const listPosts = async ({ userId, viewerId = 0, limit, offset }) => {
   const where = userId ? "WHERE p.user_id = ?" : "";
-  const values = userId ? [userId] : [];
+  const values = userId ? [viewerId, userId] : [viewerId];
   const [rows] = await pool.execute(
     `SELECT ${postColumns}
      FROM posts p JOIN users u ON u.id = p.user_id
@@ -22,13 +23,13 @@ const listPosts = async ({ userId, limit, offset }) => {
   return rows;
 };
 
-const findPostById = async (id) => {
+const findPostById = async (id, viewerId = 0) => {
   const [rows] = await pool.execute(
     `SELECT ${postColumns}
      FROM posts p JOIN users u ON u.id = p.user_id
      LEFT JOIN media_types mt ON mt.id = p.media_type_id
      WHERE p.id = ? LIMIT 1`,
-    [id]
+    [viewerId, id]
   );
   return rows[0] || null;
 };

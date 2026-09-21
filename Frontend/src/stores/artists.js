@@ -1,4 +1,5 @@
 import { apiRequest } from "../services/api";
+import { resolveAudioUrl } from "../services/audio";
 
 const knownImageSlugs = new Set([
   "a-reece", "alice-phoebe-lou", "bongeziwe-mabandla", "hunter-rose",
@@ -12,7 +13,10 @@ const imageFor = (name) => {
 const mapArtist = (artist) => ({
   ...artist, name: artist.stageName, genre: artist.genres || [],
   image: artist.avatarUrl || imageFor(artist.stageName),
-  tracks: artist.tracks || [], albums: artist.albums || []
+  tracks: (artist.tracks || []).map((track) => ({
+    ...track,
+    audioUrl: resolveAudioUrl(track.audioUrl, artist.stageName, track.title),
+  })), albums: artist.albums || []
 });
 
 export default {

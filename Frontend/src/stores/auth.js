@@ -15,12 +15,12 @@ const getters = {
     return state.user?.role === "artist" || state.user?.role === "admin";
   },
   isLiked: (state) => (trackId) => {
-    return state.likedTrackIds.includes(trackId);
+    return state.likedTrackIds.some((id) => String(id) === String(trackId));
   },
   likedSongIds: (state) => state.likedTrackIds || [],
   isFollowing: (state) => (artistId) => {
     return (
-      state.user?.followingList?.some((artist) => artist.id === artistId) ??
+      state.user?.followingList?.some((artist) => String(artist.id) === String(artistId)) ??
       false
     );
   },
@@ -44,37 +44,26 @@ const mutations = {
     state.accessToken = accessToken;
     state.isAuthenticated = true;
   },
+  SET_FOLLOWING(state, artists) {
+    if (state.user) state.user.followingList = artists.map((artist) => ({
+      id: artist.id, name: artist.stageName, handle: artist.stageName.toLowerCase().replace(/\s+/g, "_"), image: null,
+    }));
+  },
   LOGOUT(state) {
     state.user = null;
     state.accessToken = null;
     state.isAuthenticated = false;
   },
   TOGGLE_LIKE(state, trackId) {
-    const index = state.likedTrackIds.indexOf(trackId);
+    const index = state.likedTrackIds.findIndex((id) => String(id) === String(trackId));
     if (index === -1) {
-      state.likedTrackIds.push(trackId);
+      state.likedTrackIds.push(String(trackId));
     } else {
       state.likedTrackIds.splice(index, 1);
     }
     localStorage.setItem(
       "liked_track_ids",
       JSON.stringify(state.likedTrackIds),
-    );
-  },
-  TOGGLE_FOLLOW(state, artist) {
-    if (!state.user) return;
-    if (!state.user.followingList) {
-      state.user.followingList = [];
-    }
-    const index = state.user.followingList.findIndex((a) => a.id === artist.id);
-    if (index > -1) {
-      state.user.followingList.splice(index, 1);
-    } else {
-      state.user.followingList.push(artist);
-    }
-    localStorage.setItem(
-      "user_following",
-      JSON.stringify(state.user.followingList),
     );
   },
   ADD_UPLOAD(state, newPost) {
@@ -176,6 +165,10 @@ const actions = {
   async login({ commit }, credentials) {
     const session = await apiRequest("/api/auth/login", { method: "POST", body: credentials });
     commit("SET_SESSION", session);
+    try {
+      const { artists } = await apiRequest("/api/follows", { token: session.accessToken });
+      commit("SET_FOLLOWING", artists);
+    } catch { /* Login still succeeds if follows are temporarily unavailable. */ }
     return session;
   },
   async register({ commit }, details) {
@@ -187,12 +180,25 @@ const actions = {
     try {
       const session = await apiRequest("/api/auth/refresh", { method: "POST" });
       commit("SET_SESSION", session);
+      try {
+        const { artists } = await apiRequest("/api/follows", { token: session.accessToken });
+        commit("SET_FOLLOWING", artists);
+      } catch { /* Session restoration is independent of the follow list. */ }
       return session;
     } catch {
       commit("LOGOUT");
       commit("subscription/SET_PLAN", "free", { root: true });
       return null;
     }
+  },
+  async toggleFollowArtist({ state, commit }, artistId) {
+    if (!state.accessToken) throw new Error("Sign in to follow artists.");
+    const following = state.user?.followingList?.some((artist) => String(artist.id) === String(artistId));
+    await apiRequest(`/api/artists/${encodeURIComponent(artistId)}/follow`, {
+      method: following ? "DELETE" : "PUT", token: state.accessToken,
+    });
+    const { artists } = await apiRequest("/api/follows", { token: state.accessToken });
+    commit("SET_FOLLOWING", artists);
   },
   async logout({ commit }) {
     try { await apiRequest("/api/auth/logout", { method: "POST" }); } catch { /* Clear local auth even when offline. */ }
