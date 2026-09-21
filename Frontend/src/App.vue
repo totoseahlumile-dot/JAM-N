@@ -1,85 +1,55 @@
-<script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+  <div id="app">
+    <AppNavbar />
+    <main class="main-content">
+      <RouterView />
+    </main>
+    <AudioPlayer ref="globalAudioPlayer" />
+  </div>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import { RouterView } from 'vue-router'
+import AppNavbar from './components/common/AppNavbar.vue'
+import AudioPlayer from './components/common/AudioPlayer.vue'
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+const store = useStore()
+const globalAudioPlayer = ref(null)
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
+const currentTrack = computed(() => store.getters['player/activeTrack'])
+const isPlaying = computed(() => store.getters['player/isPlaying'])
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
+// Watch when playback state toggles from the store
+watch(isPlaying, (playing) => {
+  // If your AudioPlayer component encapsulates its own HTML5 audio element, 
+  // it should track this getter. Otherwise, standard audio syncing happens here.
+})
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
+// Watch when a track is clicked/changed to ensure it triggers playback
+watch(currentTrack, (track) => {
+  if (track && track.audioUrl) {
+    console.log("Active track updated in store:", track.title)
   }
+})
+</script>
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
+<style>
+/* Basic layout reset and spacing */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #333;
+  background-color: #f9f9f9;
+}
 
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.main-content {
+  padding-bottom: 80px; /* Leaves space for fixed audio player at the bottom */
 }
 </style>

@@ -1,7 +1,9 @@
-import { createStore } from 'vuex'
-import artists from './artists'
-import auth from './auth'
-import player from './player'
+import { createStore } from "vuex";
+import artists from "./artists";
+import auth from "./auth";
+import player from "./player";
+import beats from "./beats";
+import subscription from "./modules/subscription"; // 1. Import your subscription module
 
 const store = createStore({
   state: {
@@ -16,8 +18,10 @@ const store = createStore({
   modules: {
     artists,
     auth,
-    player
-  }
-})
+    player,
+    beats,
+    subscription, // 2. Register it here under modules
+  },
+});
 
-export default store
+export default store;
