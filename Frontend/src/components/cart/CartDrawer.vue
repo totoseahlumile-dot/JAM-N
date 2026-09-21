@@ -32,8 +32,8 @@
             <span>Total:</span>
             <span class="total-price">R{{ totalPrice }}</span>
           </div>
-          <button class="checkout-btn" @click="handleCheckout">
-            Proceed to Checkout
+          <button class="checkout-btn" disabled title="Beat licensing is not yet available">
+            Beat checkout coming soon
           </button>
         </footer>
       </div>
@@ -65,10 +65,6 @@ function close() {
   emit('update:isOpen', false)
 }
 
-function handleCheckout() {
-  alert(`Proceeding to checkout with ${props.items.length} item(s) total: R${totalPrice.value}`)
-  emit('checkout')
-}
 </script>
 
 <style scoped>

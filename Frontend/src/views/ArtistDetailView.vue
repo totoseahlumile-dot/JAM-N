@@ -77,7 +77,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useStore } from "vuex";
 import { useRoute, useRouter } from "vue-router";
 
@@ -86,6 +86,7 @@ const route = useRoute();
 const router = useRouter();
 
 const artistId = route.params.id;
+onMounted(() => store.dispatch("artists/fetchArtist", artistId).catch(() => {}));
 
 // Get artist details from store or mock list
 const artist = computed(() => {
@@ -123,7 +124,7 @@ const artist = computed(() => {
       bio: "Smooth neo-soul vocals and melodies.",
     },
   ];
-  return allArtists.find((a) => a.id === artistId);
+  return allArtists.find((a) => String(a.id) === String(artistId));
 });
 
 // Check if current user is following this artist using your existing Vuex getter

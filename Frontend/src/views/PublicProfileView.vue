@@ -137,6 +137,7 @@ const store = useStore();
 const artistId = computed(() => route.params.id);
 const openMenuId = ref(null);
 const activePlaylistSubmenuId = ref(null);
+onMounted(() => store.dispatch("artists/fetchArtist", artistId.value).catch(() => {}));
 
 // Fetch target artist from the artists Vuex module
 const artist = computed(() => {

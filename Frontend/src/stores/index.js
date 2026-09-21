@@ -3,7 +3,8 @@ import artists from "./artists";
 import auth from "./auth";
 import player from "./player";
 import beats from "./beats";
-import subscription from "./modules/subscription"; // 1. Import your subscription module
+import subscription from "./modules/subscription";
+import content from "./content";
 
 const store = createStore({
   state: {
@@ -20,7 +21,8 @@ const store = createStore({
     auth,
     player,
     beats,
-    subscription, // 2. Register it here under modules
+    subscription,
+    content,
   },
 });
 

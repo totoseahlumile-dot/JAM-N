@@ -1,3 +1,20 @@
+import { apiRequest } from "../services/api";
+
+const knownImageSlugs = new Set([
+  "a-reece", "alice-phoebe-lou", "bongeziwe-mabandla", "hunter-rose",
+  "internet-girl", "moonchild-sanelly", "the-parlotones", "usimamane",
+  "vigro-deep", "will-linley"
+]);
+const imageFor = (name) => {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  return knownImageSlugs.has(slug) ? `/images/artists/${slug}.jpg` : null;
+};
+const mapArtist = (artist) => ({
+  ...artist, name: artist.stageName, genre: artist.genres || [],
+  image: artist.avatarUrl || imageFor(artist.stageName),
+  tracks: artist.tracks || [], albums: artist.albums || []
+});
+
 export default {
   state: () => ({
     artistsList: [
@@ -857,8 +874,28 @@ export default {
   getters: {
     allArtists: (state) => state.artistsList,
     getArtistById: (state) => (id) => {
-      return state.artistsList.find((artist) => artist.id === id);
+      return state.artistsList.find((artist) => String(artist.id) === String(id));
     },
+  },
+
+  mutations: {
+    SET_ARTISTS(state, artists) { state.artistsList = artists; },
+    UPSERT_ARTIST(state, artist) {
+      const index = state.artistsList.findIndex((item) => String(item.id) === String(artist.id));
+      if (index === -1) state.artistsList.push(artist);
+      else state.artistsList.splice(index, 1, artist);
+    }
+  },
+
+  actions: {
+    async fetchArtists({ commit }) {
+      const { artists } = await apiRequest("/api/artists?limit=100");
+      const mapped = artists.map(mapArtist); commit("SET_ARTISTS", mapped); return mapped;
+    },
+    async fetchArtist({ commit }, id) {
+      const { artist } = await apiRequest(`/api/artists/${id}`);
+      const mapped = mapArtist(artist); commit("UPSERT_ARTIST", mapped); return mapped;
+    }
   },
 
   namespaced: true,

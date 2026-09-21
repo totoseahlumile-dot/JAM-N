@@ -8,6 +8,12 @@
         creator tools.
       </p>
     </header>
+    <section class="usage-section" aria-label="Verified plan status">
+      <p>Plans are verified by the backend. After returning from PayFast, paste your access token and refresh status; a return alone does not activate access.</p>
+      <input v-model.trim="statusToken" type="password" autocomplete="off" placeholder="Backend access token" />
+      <button class="btn-outline" @click="refreshStatus">Refresh verified plan</button>
+      <p v-if="statusMessage" role="status">{{ statusMessage }}</p>
+    </section>
 
     <!-- Usage -->
     <section class="usage-section" aria-label="Your upload usage">
@@ -70,7 +76,7 @@
           Current Plan
         </button>
         <button
-          v-else
+          v-else-if="plan.id !== 'free'"
           class="plan-btn"
           :class="planState(plan) === 'upgrade' ? 'btn-primary' : 'btn-outline'"
           @click="openCheckout(plan)"
@@ -87,8 +93,7 @@
       <div class="faq-item">
         <h4>Can I cancel or change my plan anytime?</h4>
         <p>
-          Yes. Upgrade or downgrade at any time from this page. Downgrading to
-          Free is how you cancel a paid plan.
+          Plus and Pro are one-time 30-day purchases. They do not renew automatically. Paid access expires unless you buy another term.
         </p>
       </div>
       <div class="faq-item">
@@ -138,6 +143,18 @@ import {
 } from "@/stores/config/plans";
 
 const store = useStore();
+const statusToken = ref("");
+const statusMessage = ref("");
+
+async function refreshStatus() {
+  try {
+    if (!statusToken.value) throw new Error("Enter a backend access token first.");
+    const result = await store.dispatch("subscription/refreshSubscription", statusToken.value);
+    statusMessage.value = result.activeUntil ? `${result.planId} active until ${new Date(result.activeUntil).toLocaleString()}` : "No active paid plan yet.";
+  } catch (error) {
+    statusMessage.value = error.message || "Could not check plan status.";
+  }
+}
 
 const currentPlan = computed(() => store.getters["subscription/plan"]);
 const checkout = ref(null); // { plan, mode } while the modal is open

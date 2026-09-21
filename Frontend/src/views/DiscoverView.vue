@@ -296,7 +296,7 @@ const selectedBeatForPurchase = ref(null);
 
 const allArtists = computed(() => store?.getters?.["artists/allArtists"] ?? []);
 const popularTracks = computed(
-  () => store?.getters?.["tracks/popularTracks"] ?? [],
+  () => store?.getters?.["content/popularTracks"] ?? [],
 );
 const trendingBeats = computed(
   () => store?.getters?.["beats/allBeats"]?.slice(0, 5) ?? [],
@@ -448,7 +448,10 @@ function handleClickOutside(e) {
   }
 }
 
-onMounted(() => window.addEventListener("click", handleClickOutside));
+onMounted(() => {
+  window.addEventListener("click", handleClickOutside);
+  Promise.allSettled([store.dispatch("artists/fetchArtists"), store.dispatch("content/fetchTracks")]);
+});
 onUnmounted(() => window.removeEventListener("click", handleClickOutside));
 
 function addToPlaylist(track) {

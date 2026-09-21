@@ -1,3 +1,5 @@
+@import '../base.css';
+
 /* 1. Global CSS Custom Properties (60-30-10 Design Rule) */
 
 @property --badge-bg {

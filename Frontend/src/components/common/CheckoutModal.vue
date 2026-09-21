@@ -31,7 +31,7 @@
           <p class="payout-note">
             On a R{{ EXAMPLE_SALE }} beat sale you'd keep
             <strong>R{{ payout.payout }}</strong>
-            ({{ plan.limits.commission }}% commission).
+            ({{ plan.commissionText }} commission).
           </p>
 
           <div v-if="overLimit.length" class="warning">
@@ -42,9 +42,10 @@
             </p>
           </div>
 
-          <p class="sim-note">
-            Payments are simulated for this demo. No real charge is made.
-          </p>
+          <p class="sim-note">Sandbox checkout: no real charge. Access starts only after PayFast confirms payment. This is a one-time 30-day purchase, not automatic renewal.</p>
+          <label class="sim-note" for="payment-token">Backend access token (until the login page is connected)</label>
+          <input id="payment-token" v-model.trim="accessToken" type="password" autocomplete="off" placeholder="Paste Bearer token" />
+          <p v-if="error" role="alert" class="warning">{{ error }}</p>
 
           <div class="actions">
             <button
@@ -95,6 +96,7 @@
 import { computed, ref } from "vue";
 import { useStore } from "vuex";
 import { calcBeatPayout, formatPrice } from "@/stores/config/plans";
+import { apiRequest } from "@/services/api";
 
 const props = defineProps({
   plan: { type: Object, required: true },
@@ -107,6 +109,8 @@ const EXAMPLE_SALE = 500;
 
 const processing = ref(false);
 const completed = ref(false);
+const accessToken = ref("");
+const error = ref("");
 
 const currentPlan = computed(() => store.getters["subscription/plan"]);
 const isDowngrade = computed(() => props.mode === "downgrade");
@@ -133,12 +137,32 @@ const overLimit = computed(() =>
 );
 
 async function confirm() {
+  error.value = "";
+  if (!accessToken.value) {
+    error.value = "Get an access token from POST /api/auth/login first.";
+    return;
+  }
   processing.value = true;
-  // Simulated payment delay. Swap for the real PayFast/Ozow call once the backend endpoint exists.
-  await new Promise((resolve) => setTimeout(resolve, 1200));
-  await store.dispatch("subscription/subscribe", props.plan.id);
-  processing.value = false;
-  completed.value = true;
+  try {
+    const checkout = await apiRequest("/api/payments/checkout", {
+      method: "POST", token: accessToken.value, body: { planId: props.plan.id },
+    });
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = checkout.checkoutUrl;
+    Object.entries(checkout.fields).forEach(([name, value]) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = value;
+      form.append(input);
+    });
+    document.body.append(form);
+    form.submit();
+  } catch (cause) {
+    error.value = cause.message || "Checkout could not start.";
+    processing.value = false;
+  }
 }
 
 function attemptClose() {

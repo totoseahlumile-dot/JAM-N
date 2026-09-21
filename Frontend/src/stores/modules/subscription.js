@@ -1,4 +1,5 @@
 import { DEFAULT_PLAN_ID, getPlan } from "../config/plans";
+import { apiRequest } from "../../services/api";
 
 // Demo persistence so the chosen plan survives a page refresh.
 // When the backend Subscriptions table is ready, replace this with API calls in the actions.
@@ -31,7 +32,7 @@ export default {
   namespaced: true,
 
   state: () => ({
-    planId: saved?.planId ?? DEFAULT_PLAN_ID,
+    planId: DEFAULT_PLAN_ID,
     // How many songs and beats the user has uploaded so far.
     usage: {
       songs: saved?.usage?.songs ?? 0,
@@ -54,7 +55,6 @@ export default {
   mutations: {
     SET_PLAN(state, planId) {
       state.planId = planId;
-      save(state);
     },
     SET_USAGE(state, usage) {
       state.usage = { ...state.usage, ...usage };
@@ -67,18 +67,10 @@ export default {
   },
 
   actions: {
-    // Simulated payment succeeds instantly here; the checkout modal adds the fake "processing" delay.
-    // Returns a receipt object directly instead of making callers look the result up afterwards.
-    subscribe({ commit }, planId) {
-      const plan = getPlan(planId);
-      if (!plan) return null;
-      commit("SET_PLAN", planId);
-      return {
-        planId: plan.id,
-        planName: plan.name,
-        price: plan.price,
-        date: new Date().toISOString(),
-      };
+    async refreshSubscription({ commit }, token) {
+      const subscription = await apiRequest("/api/payments/subscription", { token });
+      commit("SET_PLAN", subscription.planId);
+      return subscription;
     },
 
     // Use this to sync counts from the real uploads list (e.g. when Account/Beat Store loads).
