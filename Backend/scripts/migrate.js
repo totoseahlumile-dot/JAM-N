@@ -18,12 +18,18 @@ try {
   const filenames = (await fs.readdir(directory)).filter((name) => name.endsWith(".sql")).sort();
   for (const filename of filenames) {
     const sql = await fs.readFile(path.join(directory, filename), "utf8");
-    const checksum = crypto.createHash("sha256").update(sql).digest("hex");
+    // Git may check out SQL with CRLF on Windows even when the migration was
+    // originally applied with LF. Line endings do not change the SQL, so use
+    // LF for new checksums while accepting old raw-file checksums as well.
+    const checksum = crypto.createHash("sha256").update(sql.replace(/\r\n/g, "\n")).digest("hex");
+    const rawChecksum = crypto.createHash("sha256").update(sql).digest("hex");
     const [rows] = await connection.execute("SELECT checksum FROM schema_migrations WHERE filename = ?", [filename]);
     if (rows[0]) {
       // A changed checksum means deployed history was rewritten. Refusing to
       // continue is safer than silently claiming an unknown schema is current.
-      if (rows[0].checksum !== checksum) throw new Error(`Applied migration was modified: ${filename}`);
+      if (rows[0].checksum !== checksum && rows[0].checksum !== rawChecksum) {
+        throw new Error(`Applied migration was modified: ${filename}`);
+      }
       console.log(`skip ${filename}`);
       continue;
     }
