@@ -9,8 +9,8 @@
       </p>
     </header>
     <section class="usage-section" aria-label="Verified plan status">
-      <p>Plans are verified by the backend. After returning from PayFast, paste your access token and refresh status; a return alone does not activate access.</p>
-      <input v-model.trim="statusToken" type="password" autocomplete="off" placeholder="Backend access token" />
+      <p>Plans are verified by the backend. Returning from PayFast alone does not activate access.</p>
+      <RouterLink v-if="!isLoggedIn" to="/login">Sign in to check your plan</RouterLink>
       <button class="btn-outline" @click="refreshStatus">Refresh verified plan</button>
       <p v-if="statusMessage" role="status">{{ statusMessage }}</p>
     </section>
@@ -132,6 +132,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import { useStore } from "vuex";
+import { RouterLink } from "vue-router";
 import CheckoutModal from "@/components/common/CheckoutModal.vue";
 import {
   PLANS,
@@ -143,13 +144,21 @@ import {
 } from "@/stores/config/plans";
 
 const store = useStore();
-const statusToken = ref("");
 const statusMessage = ref("");
+const isLoggedIn = computed(() => store.getters["auth/isLoggedIn"]);
 
 async function refreshStatus() {
   try {
-    if (!statusToken.value) throw new Error("Enter a backend access token first.");
-    const result = await store.dispatch("subscription/refreshSubscription", statusToken.value);
+    if (!isLoggedIn.value) throw new Error("Sign in first.");
+    let result;
+    try {
+      result = await store.dispatch("subscription/refreshSubscription", store.getters["auth/accessToken"]);
+    } catch (cause) {
+      if (cause.status !== 401) throw cause;
+      const session = await store.dispatch("auth/restoreSession");
+      if (!session) throw new Error("Your session expired. Please sign in again.");
+      result = await store.dispatch("subscription/refreshSubscription", session.accessToken);
+    }
     statusMessage.value = result.activeUntil ? `${result.planId} active until ${new Date(result.activeUntil).toLocaleString()}` : "No active paid plan yet.";
   } catch (error) {
     statusMessage.value = error.message || "Could not check plan status.";

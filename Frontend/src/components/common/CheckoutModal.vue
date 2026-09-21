@@ -43,8 +43,7 @@
           </div>
 
           <p class="sim-note">Sandbox checkout: no real charge. Access starts only after PayFast confirms payment. This is a one-time 30-day purchase, not automatic renewal.</p>
-          <label class="sim-note" for="payment-token">Backend access token (until the login page is connected)</label>
-          <input id="payment-token" v-model.trim="accessToken" type="password" autocomplete="off" placeholder="Paste Bearer token" />
+          <p v-if="!isLoggedIn" class="sim-note">Sign in before starting checkout. <RouterLink to="/login">Go to login</RouterLink></p>
           <p v-if="error" role="alert" class="warning">{{ error }}</p>
 
           <div class="actions">
@@ -95,6 +94,7 @@
 <script setup>
 import { computed, ref } from "vue";
 import { useStore } from "vuex";
+import { RouterLink } from "vue-router";
 import { calcBeatPayout, formatPrice } from "@/stores/config/plans";
 import { apiRequest } from "@/services/api";
 
@@ -109,8 +109,8 @@ const EXAMPLE_SALE = 500;
 
 const processing = ref(false);
 const completed = ref(false);
-const accessToken = ref("");
 const error = ref("");
+const isLoggedIn = computed(() => store.getters["auth/isLoggedIn"]);
 
 const currentPlan = computed(() => store.getters["subscription/plan"]);
 const isDowngrade = computed(() => props.mode === "downgrade");
@@ -138,15 +138,25 @@ const overLimit = computed(() =>
 
 async function confirm() {
   error.value = "";
-  if (!accessToken.value) {
-    error.value = "Get an access token from POST /api/auth/login first.";
+  if (!isLoggedIn.value) {
+    error.value = "Sign in first to purchase a plan.";
     return;
   }
   processing.value = true;
   try {
-    const checkout = await apiRequest("/api/payments/checkout", {
-      method: "POST", token: accessToken.value, body: { planId: props.plan.id },
-    });
+    let checkout;
+    try {
+      checkout = await apiRequest("/api/payments/checkout", {
+        method: "POST", token: store.getters["auth/accessToken"], body: { planId: props.plan.id },
+      });
+    } catch (cause) {
+      if (cause.status !== 401) throw cause;
+      const session = await store.dispatch("auth/restoreSession");
+      if (!session) throw new Error("Your session expired. Please sign in again.");
+      checkout = await apiRequest("/api/payments/checkout", {
+        method: "POST", token: session.accessToken, body: { planId: props.plan.id },
+      });
+    }
     const form = document.createElement("form");
     form.method = "POST";
     form.action = checkout.checkoutUrl;

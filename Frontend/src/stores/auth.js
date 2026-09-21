@@ -1,41 +1,18 @@
+import { apiRequest } from "../services/api";
+
 const state = () => ({
-  user: {
-    id: "usr_101",
-    name: "JAMN Team",
-    email: "music@jamn.co.za",
-    roles: ["listener", "artist"],
-    followingList: (() => {
-      try {
-        return JSON.parse(localStorage.getItem("user_following")) || [];
-      } catch (e) {
-        return [];
-      }
-    })(),
-    uploads: (() => {
-      try {
-        return JSON.parse(localStorage.getItem("user_uploads")) || [];
-      } catch (e) {
-        return [];
-      }
-    })(),
-    playlists: (() => {
-      try {
-        return JSON.parse(localStorage.getItem("user_playlists")) || [];
-      } catch (e) {
-        return [];
-      }
-    })(),
-  },
-  isAuthenticated: true,
+  user: null,
+  accessToken: null,
+  isAuthenticated: false,
   likedTrackIds: JSON.parse(localStorage.getItem("liked_track_ids")) || [],
 });
 
 const getters = {
   currentUser: (state) => state.user,
-  isLoggedIn: (state) => state.isAuthenticated && !!state.user,
+  isLoggedIn: (state) => state.isAuthenticated && !!state.user && !!state.accessToken,
+  accessToken: (state) => state.accessToken,
   isArtistOrProducer: (state) => {
-    const roles = state.user?.roles ?? [];
-    return roles.includes("artist") || roles.includes("producer");
+    return state.user?.role === "artist" || state.user?.role === "admin";
   },
   isLiked: (state) => (trackId) => {
     return state.likedTrackIds.includes(trackId);
@@ -54,10 +31,22 @@ const getters = {
 const mutations = {
   SET_USER(state, user) {
     state.user = user;
-    state.isAuthenticated = !!user;
+  },
+  SET_SESSION(state, { user, accessToken }) {
+    state.user = {
+      ...user,
+      name: user.display_name || user.username,
+      roles: [user.role],
+      followingList: [],
+      uploads: [],
+      playlists: [],
+    };
+    state.accessToken = accessToken;
+    state.isAuthenticated = true;
   },
   LOGOUT(state) {
     state.user = null;
+    state.accessToken = null;
     state.isAuthenticated = false;
   },
   TOGGLE_LIKE(state, trackId) {
@@ -184,31 +173,31 @@ const mutations = {
 };
 
 const actions = {
-  login({ commit }, credentials) {
-    let savedUploads = [];
-    let savedPlaylists = [];
-    let savedFollowing = [];
-    try {
-      savedUploads = JSON.parse(localStorage.getItem("user_uploads")) || [];
-      savedPlaylists = JSON.parse(localStorage.getItem("user_playlists")) || [];
-      savedFollowing = JSON.parse(localStorage.getItem("user_following")) || [];
-    } catch (e) {
-      savedUploads = [];
-      savedPlaylists = [];
-      savedFollowing = [];
-    }
-    commit("SET_USER", {
-      id: "usr_102",
-      name: credentials.email.split("@")[0],
-      email: credentials.email,
-      roles: ["listener"],
-      followingList: savedFollowing,
-      uploads: savedUploads,
-      playlists: savedPlaylists,
-    });
+  async login({ commit }, credentials) {
+    const session = await apiRequest("/api/auth/login", { method: "POST", body: credentials });
+    commit("SET_SESSION", session);
+    return session;
   },
-  logout({ commit }) {
+  async register({ commit }, details) {
+    const session = await apiRequest("/api/auth/register", { method: "POST", body: details });
+    commit("SET_SESSION", session);
+    return session;
+  },
+  async restoreSession({ commit }) {
+    try {
+      const session = await apiRequest("/api/auth/refresh", { method: "POST" });
+      commit("SET_SESSION", session);
+      return session;
+    } catch {
+      commit("LOGOUT");
+      commit("subscription/SET_PLAN", "free", { root: true });
+      return null;
+    }
+  },
+  async logout({ commit }) {
+    try { await apiRequest("/api/auth/logout", { method: "POST" }); } catch { /* Clear local auth even when offline. */ }
     commit("LOGOUT");
+    commit("subscription/SET_PLAN", "free", { root: true });
   },
   toggleLike({ commit }, trackId) {
     commit("TOGGLE_LIKE", trackId);
