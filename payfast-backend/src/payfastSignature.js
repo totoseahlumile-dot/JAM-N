@@ -14,7 +14,14 @@ const crypto = require("crypto");
  *   encodeURIComponent gives %20, so we swap it after encoding.
  */
 function payfastEncode(value) {
-  return encodeURIComponent(value.toString().trim()).replace(/%20/g, "+");
+  return encodeURIComponent(value.toString().trim())
+    .replace(/%20/g, "+")
+    .replace(/'/g, "%27")
+    .replace(/\(/g, "%28")
+    .replace(/\)/g, "%29")
+    .replace(/\*/g, "%2A")
+    .replace(/!/g, "%21")
+    .replace(/~/g, "%7E");
 }
 
 function generateSignature(fields, passphrase) {

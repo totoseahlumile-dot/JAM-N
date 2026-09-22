@@ -134,11 +134,46 @@ const overLimit = computed(() =>
 
 async function confirm() {
   processing.value = true;
-  // Simulated payment delay. Swap for the real PayFast/Ozow call once the backend endpoint exists.
-  await new Promise((resolve) => setTimeout(resolve, 1200));
-  await store.dispatch("subscription/subscribe", props.plan.id);
-  processing.value = false;
-  completed.value = true;
+
+  if (isDowngrade.value) {
+    // Downgrades don't involve a charge — keep the existing simulated flow.
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await store.dispatch("subscription/subscribe", props.plan.id);
+    processing.value = false;
+    completed.value = true;
+    return;
+  }
+
+  // Upgrades go through PayFast for real.
+  try {
+    const res = await fetch("http://localhost:4000/api/payment/initiate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan: props.plan.id }),
+    });
+
+    if (!res.ok) throw new Error("Failed to start checkout");
+
+    const { action, fields } = await res.json();
+
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = action;
+
+    Object.entries(fields).forEach(([key, value]) => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  } catch (err) {
+    console.error("Checkout failed:", err);
+    processing.value = false;
+  }
 }
 
 function attemptClose() {

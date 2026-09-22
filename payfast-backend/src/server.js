@@ -34,7 +34,7 @@ const orders = {};
  */
 const PLANS = {
   plus: { name: "JAM'N Plus", amount: "49.00" },
-  pro: { name: "JAM'N Pro", amount: "99.00" },
+  pro: { name: "JAM'N Pro", amount: "129.00" },
 };
 
 /**
@@ -53,11 +53,15 @@ app.post("/api/payment/initiate", (req, res) => {
 
   const paymentId = `jamn_${plan}_${Date.now()}`;
 
+  // Append the plan + payment id so the success page knows what to activate
+  // once the browser is redirected back.
+  const returnUrlWithPlan = `${FRONTEND_RETURN_URL}?plan=${plan}&m_payment_id=${paymentId}`;
+
   // Order matters here — this exact order is what gets signed.
   const fields = {
     merchant_id: PAYFAST_MERCHANT_ID,
     merchant_key: PAYFAST_MERCHANT_KEY,
-    return_url: FRONTEND_RETURN_URL,
+    return_url: returnUrlWithPlan,
     cancel_url: FRONTEND_CANCEL_URL,
     notify_url: NOTIFY_URL,
     m_payment_id: paymentId,

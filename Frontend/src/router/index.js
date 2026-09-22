@@ -55,6 +55,16 @@ const router = createRouter({
       name: "subscription",
       component: () => import("../views/SubscriptionView.vue"),
     },
+    {
+      path: "/payment/success",
+      name: "payment-success",
+      component: () => import("../views/PaymentSuccessView.vue"),
+    },
+    {
+      path: "/payment/cancel",
+      name: "payment-cancel",
+      component: () => import("../views/PaymentCancelView.vue"),
+    },
   ],
 });
 
