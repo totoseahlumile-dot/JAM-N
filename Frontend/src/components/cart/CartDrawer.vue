@@ -32,8 +32,12 @@
             <span>Total:</span>
             <span class="total-price">R{{ totalPrice }}</span>
           </div>
-          <button class="checkout-btn" @click="handleCheckout">
-            Proceed to Checkout
+          <button
+            class="checkout-btn"
+            :disabled="checkingOut"
+            @click="handleCheckout"
+          >
+            {{ checkingOut ? "Redirecting…" : "Proceed to Checkout" }}
           </button>
         </footer>
       </div>
@@ -42,7 +46,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   isOpen: {
@@ -57,6 +61,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update:isOpen', 'remove-item', 'checkout'])
 
+const checkingOut = ref(false)
+
 const totalPrice = computed(() => {
   return props.items.reduce((sum, item) => sum + item.price, 0)
 })
@@ -65,9 +71,50 @@ function close() {
   emit('update:isOpen', false)
 }
 
-function handleCheckout() {
-  alert(`Proceeding to checkout with ${props.items.length} item(s) total: R${totalPrice.value}`)
-  emit('checkout')
+async function handleCheckout() {
+  if (props.items.length === 0) return
+
+  checkingOut.value = true
+
+  const cartItems = props.items.map((item) => ({
+    beatId: item.beat.id,
+    title: item.beat.title,
+    price: item.price,
+    licenseType: item.licenseType,
+  }))
+
+  try {
+    const res = await fetch('http://localhost:4000/api/payment/initiate-cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: cartItems }),
+    })
+
+    if (!res.ok) throw new Error('Failed to start checkout')
+
+    const { action, fields } = await res.json()
+
+    // PayFast requires a real form POST + full page redirect, not fetch/axios.
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = action
+
+    Object.entries(fields).forEach(([key, value]) => {
+      const input = document.createElement('input')
+      input.type = 'hidden'
+      input.name = key
+      input.value = value
+      form.appendChild(input)
+    })
+
+    document.body.appendChild(form)
+    form.submit()
+    // Browser navigates away here — nothing below this line runs.
+  } catch (err) {
+    console.error('Checkout failed:', err)
+    checkingOut.value = false
+    alert('Something went wrong starting checkout. Please try again.')
+  }
 }
 </script>
 
@@ -223,5 +270,10 @@ function handleCheckout() {
   border-radius: 8px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.checkout-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

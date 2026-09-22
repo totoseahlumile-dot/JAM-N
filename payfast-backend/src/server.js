@@ -168,6 +168,74 @@ function validateWithPayfast(fields, callback) {
   request.end();
 }
 
+/**
+ * POST /api/payment/initiate-cart
+ * body: { items: [{ beatId, title, price, licenseType }, ...] }
+ *
+ * Beat Store carts don't map to fixed PLANS like subscriptions do — each
+ * item has its own price — so this builds ONE PayFast payment for the
+ * cart's total, since PayFast's redirect checkout only supports a single
+ * item_name/amount per payment (not a real multi-line-item cart).
+ *
+ * NOTE: prices are trusted from the frontend here, same as beat prices are
+ * already trusted throughout the rest of the app (no server-side beats DB
+ * to check against yet). Fine for the assignment scope, but flag this if a
+ * shared backend/price source exists later — it should validate against
+ * that instead of trusting the client-sent price.
+ */
+app.post("/api/payment/initiate-cart", (req, res) => {
+  const { items } = req.body;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: "Cart is empty" });
+  }
+
+  const total = items.reduce((sum, item) => sum + Number(item.price || 0), 0);
+
+  if (total <= 0) {
+    return res.status(400).json({ error: "Invalid cart total" });
+  }
+
+  const paymentId = `jamn_beats_${Date.now()}`;
+
+  const itemName =
+    items.length === 1
+      ? items[0].title
+      : `JAM'N Beat Store (${items.length} items)`;
+
+  const beatIds = items.map((item) => item.beatId).join(",");
+
+  const returnUrlWithInfo = `${FRONTEND_RETURN_URL}?type=beat_cart&beat_ids=${encodeURIComponent(
+    beatIds
+  )}&m_payment_id=${paymentId}`;
+
+  const fields = {
+    merchant_id: PAYFAST_MERCHANT_ID,
+    merchant_key: PAYFAST_MERCHANT_KEY,
+    return_url: returnUrlWithInfo,
+    cancel_url: FRONTEND_CANCEL_URL,
+    notify_url: NOTIFY_URL,
+    m_payment_id: paymentId,
+    amount: total.toFixed(2),
+    item_name: itemName,
+    custom_str1: beatIds,
+  };
+
+  const signature = generateSignature(fields, PAYFAST_PASSPHRASE);
+
+  orders[paymentId] = {
+    type: "beat_cart",
+    beatIds: items.map((item) => item.beatId),
+    amount: total.toFixed(2),
+    status: "pending",
+  };
+
+  res.json({
+    action: PAYFAST_URL,
+    fields: { ...fields, signature },
+  });
+});
+
 // Simple endpoint to check order status from the frontend after redirect back
 app.get("/api/payment/status/:paymentId", (req, res) => {
   const order = orders[req.params.paymentId];

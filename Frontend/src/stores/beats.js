@@ -165,6 +165,7 @@ export default {
     ],
     likedBeatIds: [], // Tracks IDs of liked items
     customLikedItems: [], // Caches full item objects for custom-uploaded likes
+    purchasedBeatIds: [], // Tracks IDs of beats the user has bought
   }),
 
   getters: {
@@ -178,6 +179,11 @@ export default {
       );
       return uniqueItems.filter((item) => state.likedBeatIds.includes(item.id));
     },
+
+    isPurchased: (state) => (beatId) => state.purchasedBeatIds.includes(beatId),
+
+    purchasedBeats: (state) =>
+      state.beats.filter((b) => state.purchasedBeatIds.includes(b.id)),
   },
 
   mutations: {
@@ -203,6 +209,12 @@ export default {
         }
       }
     },
+
+    ADD_PURCHASED_BEAT(state, beatId) {
+      if (!state.purchasedBeatIds.includes(beatId)) {
+        state.purchasedBeatIds.push(beatId);
+      }
+    },
   },
 
   actions: {
@@ -223,6 +235,11 @@ export default {
     toggleLikeBeat({ commit }, beatPayload) {
       console.log("Toggling like for payload:", beatPayload);
       commit("TOGGLE_LIKE_BEAT", beatPayload);
+    },
+
+    purchaseBeats({ commit }, beatIds) {
+      // beatIds is an array of beat id strings, e.g. from a completed cart checkout
+      beatIds.forEach((id) => commit("ADD_PURCHASED_BEAT", id));
     },
   },
 };

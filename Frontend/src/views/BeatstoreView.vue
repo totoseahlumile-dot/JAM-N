@@ -90,8 +90,13 @@
                 />
               </svg>
             </button>
-            <button class="beat-buy-btn" @click="openPurchaseModal(beat)">
-              Buy
+            <button
+              class="beat-buy-btn"
+              :class="{ owned: isBeatPurchased(beat.id) }"
+              :disabled="isBeatPurchased(beat.id)"
+              @click="isBeatPurchased(beat.id) ? null : openPurchaseModal(beat)"
+            >
+              {{ isBeatPurchased(beat.id) ? "Owned" : "Buy" }}
             </button>
           </div>
         </div>
@@ -179,6 +184,11 @@ function isBeatLiked(beatId) {
 
 function toggleBeatLike(beatId) {
   store?.commit("auth/TOGGLE_LIKE", beatId);
+}
+
+// Purchase state, backed by beats.js's purchasedBeatIds
+function isBeatPurchased(beatId) {
+  return store.getters["beats/isPurchased"](beatId);
 }
 
 const genres = computed(() => {
@@ -521,6 +531,16 @@ function handleBeatUploaded(newBeat) {
 
 .beat-buy-btn:hover {
   opacity: 0.85;
+}
+
+.beat-buy-btn.owned {
+  background: var(--border-subtle, #e0e0e0);
+  color: var(--text-muted, #666);
+  cursor: default;
+}
+
+.beat-buy-btn.owned:hover {
+  opacity: 1;
 }
 
 .empty-state {
