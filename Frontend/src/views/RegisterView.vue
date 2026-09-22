@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useRouter, RouterLink } from "vue-router";
 import { useAuth } from "../composables/useAuth";
+import api from "../services/api";
 
 const router = useRouter();
 const { setAuth } = useAuth();
@@ -21,7 +22,7 @@ const toggleRole = (role) => {
   }
 };
 
-const handleRegister = (e) => {
+const handleRegister = async (e) => {
   if (e) e.preventDefault();
 
   if (!username.value || !email.value || !password.value) {
@@ -29,18 +30,21 @@ const handleRegister = (e) => {
     return;
   }
 
-  // Create user object and update auth state with setAuth
-  const userData = {
-    username: username.value,
-    email: email.value,
-    roles: selectedRoles.value,
-  };
+  try {
+    const response = await api.post("/auth/register", {
+      username: username.value,
+      email: email.value,
+      password: password.value,
+      roles: selectedRoles.value,
+    });
 
-  // setAuth updates user, sets token, turns off guest mode, and runs pending actions
-  setAuth(userData, "mock-jwt-token-12345");
-
-  // Redirect to Discover page
-  router.push("/discover");
+    const { user, token } = response.data;
+    setAuth(user, token);
+    router.push("/discover");
+  } catch (error) {
+    console.error("Registration failed:", error);
+    alert(error.response?.data?.message || "Registration failed. Please check your backend connection.");
+  }
 };
 
 const handleClose = () => {
@@ -197,7 +201,6 @@ const handleClose = () => {
   color: var(--text-muted);
 }
 
-/* Segmented Pill Toggle */
 .segment-toggle {
   display: flex;
   background-color: #5c4ca8;
@@ -228,7 +231,6 @@ const handleClose = () => {
   color: #ffffff;
 }
 
-/* Role Selector */
 .role-selection {
   margin-bottom: 1.25rem;
 }
@@ -271,7 +273,6 @@ const handleClose = () => {
   background-color: #c4c4cc;
 }
 
-/* Selected States */
 .role-card.selected {
   background-color: var(--secondary-frosted, #c7c6eb);
   border-color: transparent;
@@ -290,7 +291,6 @@ const handleClose = () => {
   color: #1d1e18;
 }
 
-/* Form Styles */
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -317,10 +317,6 @@ const handleClose = () => {
   font-size: 0.88rem;
   color: var(--text-main);
   outline: none;
-}
-
-.form-group input::placeholder {
-  color: var(--text-muted);
 }
 
 .btn-primary {
