@@ -55,7 +55,6 @@ const handlePublish = () => {
         </button>
       </div>
 
-      <!-- Scrollable Form Body -->
       <div class="modal-body">
         <form
           id="create-post-form"
@@ -127,7 +126,6 @@ const handlePublish = () => {
         </form>
       </div>
 
-      <!-- Fixed Footer -->
       <div class="modal-footer">
         <button type="button" class="btn-cancel" @click="$emit('close')">
           Cancel

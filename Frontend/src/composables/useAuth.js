@@ -1,21 +1,23 @@
 import { ref, computed } from "vue";
 
-// Shared reactive state defined outside the composable function (module scope)
+const getStoredGuestState = () => {
+  const stored = localStorage.getItem("isGuest");
+  if (stored !== null) {
+    return stored === "true";
+  }
+  return !localStorage.getItem("token");
+};
+
 const user = ref(JSON.parse(localStorage.getItem("user")) || null);
 const token = ref(localStorage.getItem("token") || null);
-const isGuest = ref(
-  localStorage.getItem("isGuest") !== null
-    ? JSON.parse(localStorage.getItem("isGuest"))
-    : !token.value,
-);
+const isGuest = ref(getStoredGuestState());
 
-// Interceptor & Modal state
 const isAuthModalOpen = ref(false);
 const authMode = ref("signin"); // 'signin' | 'signup'
 const pendingAction = ref(null);
 
 export function useAuth() {
-  // Getters
+  // Getters: User is authenticated strictly when token exists AND isGuest is false
   const isAuthenticated = computed(() => !!token.value && !isGuest.value);
 
   // Core Authentication Action
@@ -71,7 +73,7 @@ export function useAuth() {
       // User is authenticated; execute action directly
       action();
     } else {
-      // User is a guest; save action to replay after sign-in/up
+      // User is a guest; intercept action and trigger auth modal
       pendingAction.value = action;
       authMode.value = mode;
       isAuthModalOpen.value = true;

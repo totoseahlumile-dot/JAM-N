@@ -5,11 +5,12 @@ defineProps({
     required: true,
   },
 });
+
+const emit = defineEmits(["toggle-like"]);
 </script>
 
 <template>
   <div class="post-card">
-    <!-- Renders image dynamically if present -->
     <div v-if="post.image" class="post-image-wrapper">
       <img :src="post.image" :alt="post.title" class="post-cover-img" />
     </div>
@@ -23,6 +24,17 @@ defineProps({
       <h2 class="post-title">{{ post.title }}</h2>
       <p class="post-author">By {{ post.artist }} • {{ post.genre }}</p>
       <p class="post-description">{{ post.description }}</p>
+
+      <div class="post-footer">
+        <button
+          class="like-btn"
+          :class="{ liked: post.liked }"
+          @click="emit('toggle-like', post.id)"
+        >
+          <span class="heart-icon">{{ post.liked ? "❤️" : "🤍" }}</span>
+          <span>{{ post.liked ? "Liked" : "Like" }}</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -97,5 +109,36 @@ defineProps({
   font-size: 0.95rem;
   color: var(--text-main);
   margin-top: 0.5rem;
+}
+
+.post-footer {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.like-btn {
+  background: transparent;
+  border: 1px solid var(--border-card);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+.like-btn:hover {
+  background-color: var(--bg-card-hover);
+}
+
+.like-btn.liked {
+  border-color: #ff3366;
+  color: #ff3366;
 }
 </style>

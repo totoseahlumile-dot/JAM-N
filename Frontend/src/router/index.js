@@ -5,6 +5,7 @@ import DiscoverView from "@/views/DiscoverView.vue";
 import LoginView from "@/views/LoginView.vue";
 import RegisterView from "@/views/RegisterView.vue";
 import ForgotPasswordView from "@/views/ForgotPasswordView.vue";
+import EventsView from "@/views/EventsView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +51,11 @@ const router = createRouter({
       path: "/forgot-password",
       name: "forgot-password",
       component: ForgotPasswordView,
+    },
+    {
+      path: "/events",
+      name: "events",
+      component: EventsView,
     },
     /* Catch-all route to prevent blank screens on broken or unhandled URLs */
     {

@@ -5,9 +5,11 @@ import PostCard from "@/components/posts/PostCard.vue";
 import AuthModal from "@/components/AuthModal.vue";
 import CreatePostModal from "@/components/posts/CreatePost.vue";
 
-const { requireAuth } = useAuth();
+const { requireAuth, isGuest } = useAuth();
 
 const showConnections = ref(true);
+
+// Toggle connections sidebar (allowed for guests so they can view suggestions)
 const toggleConnections = () => {
   showConnections.value = !showConnections.value;
 };
@@ -93,7 +95,7 @@ const filteredPosts = computed(() => {
   });
 });
 
-// Gated Action: Enforce auth check on connection toggle
+// Gated Action: Auth check on follow suggestions
 const toggleFollow = (suggestion) => {
   requireAuth(() => {
     suggestion.followed = !suggestion.followed;
@@ -112,19 +114,31 @@ const toggleFollow = (suggestion) => {
   });
 };
 
-// Gated Action: Open Upload Modal
+// Gated Action: Auth check on post likes
+const handleToggleLike = (postId) => {
+  requireAuth(() => {
+    const targetPost = posts.value.find((p) => p.id === postId);
+    if (targetPost) {
+      targetPost.liked = !targetPost.liked;
+    }
+  });
+};
+
+// Gated Action: Auth check on upload modal open
 const handleOpenUpload = () => {
   requireAuth(() => {
     showUploadModal.value = true;
   });
 };
 
+// Gated Action: Auth check on 'See All' modal open
 const openSeeAll = (type) => {
-  seeAllType.value = type;
-  showSeeAllModal.value = true;
+  requireAuth(() => {
+    seeAllType.value = type;
+    showSeeAllModal.value = true;
+  });
 };
 
-// Handle post submission emitted from CreatePostModal
 const handleCreatePost = (postData) => {
   const badgeVal =
     postData.badge && postData.badge !== "None"
@@ -152,12 +166,10 @@ const handleCreatePost = (postData) => {
 
 <template>
   <div class="feed-page">
-    <!-- Sub-header Controls Bar -->
     <section class="feed-controls-bar">
       <div class="controls-container">
         <h1 class="page-title">FEED</h1>
 
-        <!-- Genre & Filter Chips -->
         <div class="filter-group">
           <button
             v-for="filter in filters"
@@ -206,12 +218,18 @@ const handleCreatePost = (postData) => {
           <p>No matching feed posts found.</p>
         </div>
 
-        <PostCard v-for="post in filteredPosts" :key="post.id" :post="post" />
+        <PostCard
+          v-for="post in filteredPosts"
+          :key="post.id"
+          :post="post"
+          @toggle-like="handleToggleLike"
+        />
       </div>
 
       <!-- Connections Sidebar -->
       <aside v-if="showConnections" class="connections-sidebar">
-        <div class="sidebar-section">
+        <!-- Hidden for Guest users -->
+        <div v-if="!isGuest" class="sidebar-section">
           <div class="section-header">
             <h3>Your Connections ({{ connections.length }})</h3>
             <button class="btn-see-all" @click="openSeeAll('connections')">
@@ -233,6 +251,7 @@ const handleCreatePost = (postData) => {
           </div>
         </div>
 
+        <!-- Visible to both Guests and Authenticated Users -->
         <div class="sidebar-section">
           <div class="section-header">
             <h3>Follow Suggestions</h3>
