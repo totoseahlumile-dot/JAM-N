@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useAuth } from "@/composables/useAuth";
+import api from "@/services/api";
 
 const { requireAuth } = useAuth();
 
@@ -13,98 +14,115 @@ const filters = ["Events", "This week", "Free"];
 const selectedItem = ref(null);
 const modalType = ref(null); // 'details' | 'buy-ticket'
 
-// Sample Data: Events
-const events = ref([
-  {
-    id: 1,
-    title: "Live Jazz & Soul Night",
-    location:
-      "Baxter Theatre Centre (Concert Hall), Main Road, Rondebosch, Cape Town",
-    genre: "Jazz / Soul",
-    date: "22nd September, 7:00 PM",
-    isoDate: "2026-09-22T19:00:00",
-    price: "R210",
-    isFree: false,
-    image: "/images/event1.jpg",
-  },
-  {
-    id: 2,
-    title: "Amapiano Under The Tent",
-    location: "Luferheng Department of Human Settlements, Soweto, Johannesburg",
-    genre: "Amapiano / Electronic",
-    date: "26th September, 2:00 PM",
-    isoDate: "2026-09-26T14:00:00",
-    price: "R60",
-    isFree: false,
-    image: "/images/event2.jpg",
-  },
-  {
-    id: 3,
-    title: "Mojo Jazzy Tuesdays",
-    location: "Mojo Market, 30 Regent Road, Sea Point, Cape Town",
-    genre: "Jazz",
-    date: "22nd September, 7:30 PM",
-    isoDate: "2026-09-22T19:30:00",
-    price: "R100",
-    isFree: false,
-    image: "/images/event3.jpg",
-  },
-  {
-    id: 4,
-    title: "The Soul & RnB Xperience",
-    location: "Emperors Palace, 64 Jones Road, Kempton Park, Johannesburg",
-    genre: "Soul / R&B",
-    date: "26th September, 7:00 PM",
-    isoDate: "2026-09-26T19:00:00",
-    price: "R300",
-    isFree: false,
-    image: "/images/event4.jpg",
-  },
-  {
-    id: 5,
-    title: "Woodii Live at JitterBugz",
-    location: "JitterBugz, 12th Avenue, Parktown, Johannesburg",
-    genre: "Afrikaans Live Vermaak / Folk-Rock / Pub Acoustic",
-    date: "2nd October, 8:00 PM",
-    isoDate: "2026-10-02T20:00:00",
-    price: "R150",
-    isFree: false,
-    image: "/images/event5.jpg",
-  },
-  {
-    id: 6,
-    title: "Wonder Fest 2026",
-    location: "Wonderboom National Airport, Pretoria",
-    genre: "WSgija / Dark Amapiano",
-    date: "5th December, 12:00 PM",
-    isoDate: "2026-12-05T12:00:00",
-    price: "R320",
-    isFree: false,
-    image: "/images/event6.jpg",
-  },
-  {
-    id: 7,
-    title: "Free the Jazz Concert",
-    location: "Sandton City, 83 Rivonia Road, Sandton, Johannesburg",
-    genre: "Afro Jazz / Jazz Fusion",
-    date: "24th September, 10:00 AM",
-    isoDate: "2026-09-24T10:00:00",
-    price: "Free",
-    isFree: true,
-    image: "/images/event7.jpg",
-  },
-  {
-    id: 8,
-    title: "WOMAD Global Sounds",
-    location: "Amphitheatre, V&A Waterfront, Dock Road, Cape Town",
-    genre: "World Music / Global Rhythms",
-    date: "24th September, 12:00 PM",
-    isoDate: "2026-09-24T12:00:00",
-    price: "Free",
-    isFree: true,
-    image: "/images/event8.jpg",
-  },
-]);
+// Events & Loading State
+const events = ref([]);
+const loading = ref(true);
+
+const fetchEvents = async () => {
+  try {
+    loading.value = true;
+    const response = await api.get("/events");
+    events.value = response.data || [];
+  } catch (error) {
+    console.error("Failed to fetch events from backend, using fallback data:", error);
+    events.value = [
+      {
+        id: 1,
+        title: "Live Jazz & Soul Night",
+        location: "Baxter Theatre Centre (Concert Hall), Main Road, Rondebosch, Cape Town",
+        genre: "Jazz / Soul",
+        date: "22nd September, 7:00 PM",
+        isoDate: "2026-09-22T19:00:00",
+        price: "R210",
+        isFree: false,
+        image: "/images/event1.jpg",
+      },
+      {
+        id: 2,
+        title: "Amapiano Under The Tent",
+        location: "Luferheng Department of Human Settlements, Soweto, Johannesburg",
+        genre: "Amapiano / Electronic",
+        date: "26th September, 2:00 PM",
+        isoDate: "2026-09-26T14:00:00",
+        price: "R60",
+        isFree: false,
+        image: "/images/event2.jpg",
+      },
+      {
+        id: 3,
+        title: "Mojo Jazzy Tuesdays",
+        location: "Mojo Market, 30 Regent Road, Sea Point, CapeTown",
+        genre: "Jazz",
+        date: "22nd September, 7:30 PM",
+        isoDate: "2026-09-22T19:30:00",
+        price: "R100",
+        isFree: false,
+        image: "/images/event3.jpg",
+      },
+      {
+        id: 4,
+        title: "The Soul & RnB Xperience",
+        location: "Emperors Palace, 64 Jones Road, Kempton Park, Johannesburg",
+        genre: "Soul / R&B",
+        date: "26th September, 7:00 PM",
+        isoDate: "2026-09-26T19:00:00",
+        price: "R300",
+        isFree: false,
+        image: "/images/event4.jpg",
+      },
+      {
+        id: 5,
+        title: "Woodii Live at JitterBugz",
+        location: "JitterBugz, 12th Avenue, Parktown, Johannesburg",
+        genre: "Afrikaans Live Vermaak / Folk-Rock / Pub Acoustic",
+        date: "2nd October, 8:00 PM",
+        isoDate: "2026-10-02T20:00:00",
+        price: "R150",
+        isFree: false,
+        image: "/images/event5.jpg",
+      },
+      {
+        id: 6,
+        title: "Wonder Fest 2026",
+        location: "Wonderboom National Airport, Pretoria",
+        genre: "WSgija / Dark Amapiano",
+        date: "5th December, 12:00 PM",
+        isoDate: "2026-12-05T12:00:00",
+        price: "R320",
+        isFree: false,
+        image: "/images/event6.jpg",
+      },
+      {
+        id: 7,
+        title: "Free the Jazz Concert",
+        location: "Sandton City, 83 Rivonia Road, Sandton, Johannesburg",
+        genre: "Afro Jazz / Jazz Fusion",
+        date: "24th September, 10:00 AM",
+        isoDate: "2026-09-24T10:00:00",
+        price: "Free",
+        isFree: true,
+        image: "/images/event7.jpg",
+      },
+      {
+        id: 8,
+        title: "WOMAD Global Sounds",
+        location: "Amphitheatre, V&A Waterfront, Dock Road, Cape Town",
+        genre: "World Music / Global Rhythms",
+        date: "24th September, 12:00 PM",
+        isoDate: "2026-09-24T12:00:00",
+        price: "Free",
+        isFree: true,
+        image: "/images/event8.jpg",
+      },
+    ];
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchEvents();
+});
 
 // Helper function to check if a date string falls within the current week
 const isThisWeek = (isoDateStr) => {
@@ -129,9 +147,9 @@ const filteredEvents = computed(() => {
     const query = searchQuery.value.toLowerCase().trim();
     const matchesSearch =
       !query ||
-      event.title.toLowerCase().includes(query) ||
-      event.location.toLowerCase().includes(query) ||
-      event.genre.toLowerCase().includes(query);
+      event.title?.toLowerCase().includes(query) ||
+      event.location?.toLowerCase().includes(query) ||
+      event.genre?.toLowerCase().includes(query);
 
     if (!matchesSearch) return false;
 
@@ -221,7 +239,10 @@ const closeModal = () => {
           </button>
         </div>
 
-        <div v-if="filteredEvents.length > 0" class="cards-grid">
+        <div v-if="loading" class="empty-state">
+          <p>Loading events...</p>
+        </div>
+        <div v-else-if="filteredEvents.length > 0" class="cards-grid">
           <article
             v-for="event in filteredEvents"
             :key="event.id"
@@ -304,8 +325,7 @@ const closeModal = () => {
             <div class="modal-body">
               <p>
                 You are getting tickets for
-                <strong>{{ selectedItem?.title }}</strong
-                >.
+                <strong>{{ selectedItem?.title }}</strong>.
               </p>
               <p class="ticket-price">
                 <strong>Total Amount:</strong> {{ selectedItem?.price }}
