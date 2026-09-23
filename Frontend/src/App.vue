@@ -1,22 +1,30 @@
 <template>
   <div id="app">
-    <AppNavbar />
-    <main class="main-content">
+    <AppNavbar v-if="showChrome" />
+    <main class="main-content" :class="{ 'main-content--guest': !showChrome }">
       <RouterView />
     </main>
-    <AudioPlayer ref="globalAudioPlayer" />
+    <AudioPlayer v-if="showChrome" ref="globalAudioPlayer" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useStore } from 'vuex'
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import AppNavbar from './components/common/AppNavbar.vue'
 import AudioPlayer from './components/common/AudioPlayer.vue'
 
 const store = useStore()
+const router = useRouter()
+const route = useRoute()
 const globalAudioPlayer = ref(null)
+const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
+const showChrome = computed(() => isLoggedIn.value || route.name === 'discover')
+
+watch(isLoggedIn, (loggedIn, wasLoggedIn) => {
+  if (wasLoggedIn && !loggedIn) router.replace('/')
+})
 
 const currentTrack = computed(() => store.getters['player/activeTrack'])
 const isPlaying = computed(() => store.getters['player/isPlaying'])
@@ -51,5 +59,10 @@ body {
 
 .main-content {
   padding-bottom: 80px; /* Leaves space for fixed audio player at the bottom */
+}
+.main-content--guest { padding-bottom: 0; }
+@media (max-width: 650px) {
+  .main-content { padding-bottom: 104px; }
+  .main-content--guest { padding-bottom: 0; }
 }
 </style>

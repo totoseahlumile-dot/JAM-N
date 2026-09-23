@@ -20,7 +20,7 @@ const rateLimit = ({ windowMs, max }) => {
       const ttl = Math.max(0, await redis.pTTL(redisKey));
       res.set("RateLimit-Limit", String(max)); res.set("RateLimit-Remaining", String(Math.max(0, max - count)));
       res.set("RateLimit-Reset", String(Math.ceil((now + ttl) / 1000)));
-      if (count > max) { res.set("Retry-After", String(Math.ceil(ttl / 1000))); return next(httpError(429, "RATE_LIMIT_EXCEEDED", "Too many authentication attempts; try again later")); }
+      if (count > max) { res.set("Retry-After", String(Math.ceil(ttl / 1000))); return next(httpError(429, "RATE_LIMIT_EXCEEDED", "Too many requests; try again later")); }
       return next();
     }
     const current = clients.get(key);
@@ -36,7 +36,7 @@ const rateLimit = ({ windowMs, max }) => {
 
     if (entry.count > max) {
       res.set("Retry-After", String(Math.ceil((entry.resetAt - now) / 1000)));
-      return next(httpError(429, "RATE_LIMIT_EXCEEDED", "Too many authentication attempts; try again later"));
+      return next(httpError(429, "RATE_LIMIT_EXCEEDED", "Too many requests; try again later"));
     }
 
     // Remove expired entries occasionally without running a permanent timer.

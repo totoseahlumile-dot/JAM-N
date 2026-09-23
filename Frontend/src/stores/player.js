@@ -499,6 +499,9 @@ export default {
     SET_CURRENT_TIME(state, time) {
       state.currentTime = time;
     },
+    SEEK_TO(state, seconds) {
+      state.seekRequest = { seconds, id: Date.now() };
+    },
     SET_VOLUME(state, volume) {
       state.volume = volume;
     },

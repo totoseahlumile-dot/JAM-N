@@ -99,8 +99,7 @@ const trackFields = (body, creating = false) => compact({
   album_id: optionalId(body, "albumId"),
   title: stringField(body, "title", { required: creating, max: 255 }),
   audio_url: nullableStringField(body, "audioUrl"),
-  release_date: nullableStringField(body, "releaseDate", 10),
-  stream_count: body.streamCount === undefined ? undefined : Math.max(0, Number.parseInt(body.streamCount, 10) || 0)
+  release_date: nullableStringField(body, "releaseDate", 10)
 });
 
 const getArtists = async (req, res, next) => {

@@ -1,7 +1,7 @@
 <template>
   <header class="navbar">
     <div class="navbar-container">
-      <RouterLink to="/" class="brand-logo">
+      <RouterLink to="/discover" class="brand-logo">
         <img src="@/assets/logo.png" alt="JAM'N Logo" class="brand-logo-img" />
         <span>JAM'N</span>
       </RouterLink>

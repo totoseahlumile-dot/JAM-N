@@ -4,6 +4,10 @@ import { resolveAudioUrl } from "../services/audio";
 const state = () => ({ tracks: [], events: [], posts: [], loading: {}, errors: {} });
 const mutations = {
   SET_RESOURCE(state, { resource, value }) { state[resource] = value; },
+  SET_TRACK_STREAM_COUNT(state, { id, streamCount }) {
+    const track = state.tracks.find((item) => String(item.id) === String(id));
+    if (track) track.streamCount = streamCount;
+  },
   SET_LOADING(state, { resource, value }) { state.loading = { ...state.loading, [resource]: value }; },
   SET_ERROR(state, { resource, value }) { state.errors = { ...state.errors, [resource]: value }; }
 };

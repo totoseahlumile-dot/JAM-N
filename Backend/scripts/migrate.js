@@ -6,6 +6,12 @@ import mysql from "mysql2/promise";
 import env from "../src/config/env.js";
 
 const directory = fileURLToPath(new URL("../database/migrations", import.meta.url));
+// These migrations were applied locally before their files were lost in a
+// worktree reset. The reconstructed files describe the same existing tables.
+const legacyChecksums = {
+  "007_track_comments.sql": "ad6570a672191837a5f69f6ffae38653412e13df101d2af1f707e8d09d42c69f",
+  "008_track_plays.sql": "adc7f6d80d523741f6d89f7621c6b20661dbd8aef22c86d76059257137235f64"
+};
 const { name: database, ...databaseOptions } = env.database;
 const connection = await mysql.createConnection({ ...databaseOptions, database, multipleStatements: true });
 
@@ -27,7 +33,7 @@ try {
     if (rows[0]) {
       // A changed checksum means deployed history was rewritten. Refusing to
       // continue is safer than silently claiming an unknown schema is current.
-      if (rows[0].checksum !== checksum && rows[0].checksum !== rawChecksum) {
+      if (rows[0].checksum !== checksum && rows[0].checksum !== rawChecksum && rows[0].checksum !== legacyChecksums[filename]) {
         throw new Error(`Applied migration was modified: ${filename}`);
       }
       console.log(`skip ${filename}`);

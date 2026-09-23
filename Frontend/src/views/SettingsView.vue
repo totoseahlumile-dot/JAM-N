@@ -188,9 +188,9 @@ const notificationSettings = reactive({
   activityAlerts: true,
 });
 
-function handleLogout() {
-  store.dispatch("auth/logout");
-  router.push("/");
+async function handleLogout() {
+  await store.dispatch("auth/logout");
+  router.replace("/");
 }
 </script>
 

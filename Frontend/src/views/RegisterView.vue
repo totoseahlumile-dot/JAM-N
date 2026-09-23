@@ -1,9 +1,10 @@
 <script setup>
 import { ref } from "vue";
-import { useRouter, RouterLink } from "vue-router";
+import { useRoute, useRouter, RouterLink } from "vue-router";
 import { useStore } from "vuex";
 
 const router = useRouter();
+const route = useRoute();
 const store = useStore();
 const role = ref("listener");
 const username = ref("");
@@ -21,7 +22,8 @@ async function handleRegister() {
       username: username.value, displayName: displayName.value,
       email: email.value, password: password.value, role: role.value,
     });
-    router.push("/discover");
+    const requested = route.query.redirect;
+    router.replace(typeof requested === "string" && requested.startsWith("/") && !requested.startsWith("//") ? requested : "/discover");
   } catch (cause) {
     error.value = cause.details?.join(". ") || cause.message || "Registration failed.";
   } finally {
@@ -33,7 +35,7 @@ async function handleRegister() {
 <template>
   <div class="auth-page-wrapper">
     <div class="auth-card">
-      <RouterLink to="/discover" class="close-btn" aria-label="Close">×</RouterLink>
+      <RouterLink to="/login" class="close-btn" aria-label="Back to sign in">×</RouterLink>
       <header class="modal-header"><h1>Join JAM’N</h1><p>Create your account to get started</p></header>
       <nav class="segment-toggle" aria-label="Authentication">
         <RouterLink to="/login" class="segment-btn">Sign in</RouterLink>

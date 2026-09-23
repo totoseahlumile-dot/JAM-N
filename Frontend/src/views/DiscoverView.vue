@@ -174,6 +174,7 @@
           </div>
 
           <div class="track-actions" @click.stop>
+            <button type="button" class="comments-link" @click="router.push(`/track/${track.id}`)">Comments</button>
             <button
               class="like-btn-track"
               :class="{ liked: isTrackLiked(track.id) }"
