@@ -1,28 +1,3 @@
-<script setup>
-import { computed } from "vue";
-import { RouterLink, useRouter } from "vue-router";
-import { useStore } from "vuex";
-
-const store = useStore();
-const router = useRouter();
-
-const isLoggedIn = computed(() => {
-  if (!store) return false;
-  return (
-    store.getters["auth/isLoggedIn"] ?? store.getters["isLoggedIn"] ?? false
-  );
-});
-
-const handleLogout = () => {
-  if (store) {
-    store.dispatch("auth/setGuestMode").catch(() => {
-      store.dispatch("setGuestMode");
-    });
-  }
-  router.push("/login");
-};
-</script>
-
 <template>
   <header class="navbar">
     <div class="navbar-container">
@@ -40,7 +15,18 @@ const handleLogout = () => {
       </nav>
 
       <div class="user-action">
-        <!-- Settings icon -->
+        <!-- Dynamic Subscription Upgrade / Plan Badge -->
+        <RouterLink
+          to="/subscription"
+          class="nav-upgrade-badge"
+          :class="`${currentPlan.id}-nav-badge`"
+          :title="isFreePlan ? 'Upgrade your plan' : 'Manage your subscription'"
+        >
+          <span v-if="isFreePlan" class="upgrade-text">✦ Upgrade</span>
+          <span v-else class="plan-badge-text">{{ currentPlan.name }}</span>
+        </RouterLink>
+
+        <!-- Settings gear -->
         <RouterLink
           to="/settings"
           class="settings-icon-btn"
@@ -53,11 +39,12 @@ const handleLogout = () => {
           </svg>
         </RouterLink>
 
-        <!-- Dynamic Auth Link -->
+        <!-- Not logged in: show Login -->
         <RouterLink v-if="!isLoggedIn" to="/login" class="nav-item">
           Login
         </RouterLink>
 
+        <!-- Logged in: show profile icon -->
         <RouterLink
           v-else
           to="/account"
@@ -75,20 +62,31 @@ const handleLogout = () => {
   </header>
 </template>
 
+<script setup>
+import { computed } from "vue";
+import { RouterLink } from "vue-router";
+import { useStore } from "vuex";
+
+const store = useStore();
+
+const isLoggedIn = computed(() => store.getters["auth/isLoggedIn"]);
+const currentPlan = computed(() => store.getters["subscription/plan"]);
+const isFreePlan = computed(() => currentPlan.value.id === "free");
+</script>
+
 <style scoped>
 .navbar {
   width: 100%;
-  background-color: var(--bg-surface, #ffffff);
-  border-bottom: 1px solid #e2e2e8;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 0.85rem 2rem;
-  box-sizing: border-box;
 }
 
 .navbar-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1400px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -98,8 +96,10 @@ const handleLogout = () => {
   gap: 0.6rem;
   font-size: 1.25rem;
   font-weight: 800;
-  color: #1d1e18;
+  color: var(--text-main);
   text-decoration: none;
+  letter-spacing: 0.05em;
+  -webkit-font-smoothing: antialiased;
 }
 
 .brand-logo-img {
@@ -117,18 +117,16 @@ const handleLogout = () => {
 .nav-item {
   font-size: 0.95rem;
   font-weight: 500;
-  color: #666;
+  color: var(--text-muted);
   text-decoration: none;
-  padding-bottom: 4px;
-  border-bottom: 3px solid transparent;
-  transition: all 0.15s ease;
+  transition: color 0.15s ease;
 }
 
 .nav-item:hover,
-.nav-item.router-link-active {
-  color: #1d1e18;
+.router-link-active {
+  color: var(--text-main);
   font-weight: 600;
-  border-bottom-color: #ba93dc;
+  border-bottom: 3px solid var(--primary-wisteria);
 }
 
 .user-action {
@@ -137,17 +135,58 @@ const handleLogout = () => {
   gap: 1.25rem;
 }
 
+/* Subscription Badge / Upgrade Pill */
+.nav-upgrade-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.nav-upgrade-badge:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+/* Free plan: styled as a clean action button */
+.free-nav-badge {
+  background: rgba(186, 147, 220, 0.12);
+  color: var(--primary-wisteria);
+  border: 1px solid rgba(186, 147, 220, 0.3);
+}
+
+/* Plus plan pill style */
+.plus-nav-badge {
+  background: rgba(186, 147, 220, 0.2);
+  color: var(--text-main);
+  border: 1px solid var(--primary-wisteria);
+}
+
+/* Pro plan highlighted premium badge */
+.pro-nav-badge {
+  background: var(--primary-wisteria);
+  color: var(--text-dark-btn, #fff);
+  box-shadow: 0 2px 8px rgba(186, 147, 220, 0.3);
+}
+
 .settings-icon-btn,
 .profile-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
 }
 
 .settings-icon-btn:hover,
 .profile-icon-btn:hover {
-  color: #1d1e18;
+  color: var(--text-main);
 }
 
 .settings-icon {

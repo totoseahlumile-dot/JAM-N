@@ -1,11 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomeView from "@/views/HomeView.vue";
-import FeedView from "@/views/FeedView.vue";
-import DiscoverView from "@/views/DiscoverView.vue";
-import LoginView from "@/views/LoginView.vue";
-import RegisterView from "@/views/RegisterView.vue";
-import ForgotPasswordView from "@/views/ForgotPasswordView.vue";
-import EventsView from "@/views/EventsView.vue";
+import HomeView from "../views/HomeView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -16,51 +10,60 @@ const router = createRouter({
       component: HomeView,
     },
     {
-      path: "/feed",
-      name: "feed",
-      component: FeedView,
-    },
-    {
-      path: "/Feed",
-      redirect: "/feed",
-    },
-    {
       path: "/discover",
       name: "discover",
-      component: DiscoverView,
+      component: () => import("../views/DiscoverView.vue"),
     },
     {
-      path: "/Discover",
-      redirect: "/discover",
+      path: "/feed",
+      name: "feed",
+      component: () => import("../views/FeedView.vue"),
     },
     {
-      path: "/login",
-      name: "login",
-      component: LoginView,
+      path: "/library",
+      name: "library",
+      component: () => import("../views/LibraryView.vue"),
     },
     {
-      path: "/register",
-      name: "register",
-      component: RegisterView,
-    },
-    {
-      path: "/signup",
-      redirect: "/register",
-    },
-    {
-      path: "/forgot-password",
-      name: "forgot-password",
-      component: ForgotPasswordView,
+      path: "/beat-store",
+      name: "beat-store",
+      component: () => import("../views/BeatstoreView.vue"),
     },
     {
       path: "/events",
       name: "events",
-      component: EventsView,
+      component: () => import("../views/EventsView.vue"),
     },
-    /* Catch-all route to prevent blank screens on broken or unhandled URLs */
     {
-      path: "/:pathMatch(.*)*",
-      redirect: "/",
+      path: "/account",
+      name: "account",
+      component: () => import("../views/AccountView.vue"),
+    },
+    {
+      path: "/artists/:id",
+      name: "public-profile",
+      component: () => import("../views/PublicProfileView.vue"),
+      props: true,
+    },
+    {
+      path: "/settings",
+      name: "settings",
+      component: () => import("../views/SettingsView.vue"),
+    },
+    {
+      path: "/subscription",
+      name: "subscription",
+      component: () => import("../views/SubscriptionView.vue"),
+    },
+    {
+      path: "/payment/success",
+      name: "payment-success",
+      component: () => import("../views/PaymentSuccessView.vue"),
+    },
+    {
+      path: "/payment/cancel",
+      name: "payment-cancel",
+      component: () => import("../views/PaymentCancelView.vue"),
     },
   ],
 });
