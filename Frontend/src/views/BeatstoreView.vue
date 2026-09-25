@@ -1,129 +1,137 @@
 <template>
-  <div class="beatstore-view">
-    <header class="beatstore-header">
-      <h1>Beat Store</h1>
-      <div class="header-actions">
-        <button class="cart-trigger-btn" @click="showCartDrawer = true">
-          🛒 Cart
-          <span v-if="cartItems.length > 0" class="cart-badge">{{
-            cartItems.length
-          }}</span>
-        </button>
-        <button class="upload-btn" @click="showUploadModal = true">
-          + Upload beat
-        </button>
-      </div>
+  <div class="beatstore-page">
+    <header class="page-header">
+      <div class="header-inner">
+        <div class="header-top">
+          <h1>Beat Store</h1>
+          <div class="header-actions">
+            <button class="cart-trigger-btn" @click="showCartDrawer = true">
+              🛒 Cart
+              <span v-if="cartItems.length > 0" class="cart-badge">{{
+                cartItems.length
+              }}</span>
+            </button>
+            <button class="upload-btn" @click="showUploadModal = true">
+              + Upload beat
+            </button>
+          </div>
+        </div>
 
-      <!-- Search Bar matching Discover Page -->
-      <div class="search-bar">
-        <input
-          type="text"
-          placeholder="Search beats, producers..."
-          v-model="searchQuery"
-        />
-        <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+        <!-- Search Bar matching Discover Page -->
+        <div class="search-bar">
+          <input
+            type="text"
+            placeholder="Search beats, producers..."
+            v-model="searchQuery"
           />
-        </svg>
-      </div>
+          <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+            />
+          </svg>
+        </div>
 
-      <!-- Expandable Filter Tags Container matching Discover Page -->
-      <div class="filter-container">
-        <div class="filter-tags" :class="{ expanded: showAllGenres }">
+        <!-- Expandable Filter Tags Container matching Discover Page -->
+        <div class="filter-container">
+          <div class="filter-tags" :class="{ expanded: showAllGenres }">
+            <button
+              v-for="(genre, index) in genres"
+              :key="genre"
+              class="tag"
+              :class="{ active: activeGenre === genre }"
+              :style="getFilterStyle(index, activeGenre === genre)"
+              @click="activeGenre = genre"
+            >
+              {{ genre }}
+            </button>
+          </div>
           <button
-            v-for="(genre, index) in genres"
-            :key="genre"
-            class="tag"
-            :class="{ active: activeGenre === genre }"
-            :style="getFilterStyle(index, activeGenre === genre)"
-            @click="activeGenre = genre"
+            v-if="genres.length > 8"
+            class="genre-toggle-btn"
+            @click="showAllGenres = !showAllGenres"
           >
-            {{ genre }}
+            {{ showAllGenres ? "Show Less ▲" : `+${genres.length - 8} More ▼` }}
           </button>
         </div>
-        <button
-          v-if="genres.length > 8"
-          class="genre-toggle-btn"
-          @click="showAllGenres = !showAllGenres"
-        >
-          {{ showAllGenres ? "Show Less ▲" : `+${genres.length - 8} More ▼` }}
-        </button>
       </div>
     </header>
 
-    <!-- Beat grid with Discover-style card layout -->
-    <div class="beat-grid">
-      <div
-        v-for="beat in filteredBeats"
-        :key="beat.id"
-        class="beat-card clickable"
-        :class="{ 'active-card': isCurrentTrack(beat) }"
-        @click="playBeatDirectly(beat)"
-      >
-        <div class="image-wrapper">
-          <img
-            v-if="beat.coverArt"
-            :src="beat.coverArt"
-            :alt="beat.title"
-            class="placeholder-img"
-          />
-          <div v-else class="placeholder-img placeholder-fallback">
-            <span class="play-icon">▶</span>
+    <div class="beatstore-container">
+      <!-- Beat grid with Discover-style card layout -->
+      <div class="beat-grid">
+        <div
+          v-for="beat in filteredBeats"
+          :key="beat.id"
+          class="beat-card clickable"
+          :class="{ 'active-card': isCurrentTrack(beat) }"
+          @click="playBeatDirectly(beat)"
+        >
+          <div class="image-wrapper">
+            <img
+              v-if="beat.coverArt"
+              :src="beat.coverArt"
+              :alt="beat.title"
+              class="placeholder-img"
+            />
+            <div v-else class="placeholder-img placeholder-fallback">
+              <span class="play-icon">▶</span>
+            </div>
           </div>
-        </div>
-        <p class="beat-title">{{ beat.title }}</p>
-        <p class="beat-producer">{{ beat.artist || beat.producer }}</p>
+          <p class="beat-title">{{ beat.title }}</p>
+          <p class="beat-producer">{{ beat.artist || beat.producer }}</p>
 
-        <div class="beat-footer">
-          <span class="beat-price">R{{ beat.price || 100 }}</span>
-          <div class="footer-actions" @click.stop>
-            <button
-              class="like-btn-footer"
-              :class="{ liked: isBeatLiked(beat.id) }"
-              @click="toggleBeatLike(beat.id)"
-              aria-label="Like beat"
-            >
-              <svg class="heart-icon" viewBox="0 0 24 24">
-                <path
-                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                />
-              </svg>
-            </button>
-            <button
-              class="beat-buy-btn"
-              :class="{ owned: isBeatPurchased(beat.id) }"
-              :disabled="isBeatPurchased(beat.id)"
-              @click="isBeatPurchased(beat.id) ? null : openPurchaseModal(beat)"
-            >
-              {{ isBeatPurchased(beat.id) ? "Owned" : "Buy" }}
-            </button>
+          <div class="beat-footer">
+            <span class="beat-price">R{{ beat.price || 100 }}</span>
+            <div class="footer-actions" @click.stop>
+              <button
+                class="like-btn-footer"
+                :class="{ liked: isBeatLiked(beat.id) }"
+                @click="toggleBeatLike(beat.id)"
+                aria-label="Like beat"
+              >
+                <svg class="heart-icon" viewBox="0 0 24 24">
+                  <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  />
+                </svg>
+              </button>
+              <button
+                class="beat-buy-btn"
+                :class="{ owned: isBeatPurchased(beat.id) }"
+                :disabled="isBeatPurchased(beat.id)"
+                @click="
+                  isBeatPurchased(beat.id) ? null : openPurchaseModal(beat)
+                "
+              >
+                {{ isBeatPurchased(beat.id) ? "Owned" : "Buy" }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <p v-if="filteredBeats.length === 0" class="empty-state">
+        No beats match this filter yet.
+      </p>
+
+      <!-- Modals & Drawers -->
+      <BeatUploadModal
+        v-model:is-open="showUploadModal"
+        @beat-uploaded="handleBeatUploaded"
+      />
+
+      <PurchaseBeatModal
+        v-model:is-open="showLicenseModal"
+        :selected-beat="selectedBeat"
+        @add-to-cart="handleAddToCart"
+      />
+
+      <CartDrawer
+        v-model:is-open="showCartDrawer"
+        :items="cartItems"
+        @remove-item="removeCartItem"
+      />
     </div>
-
-    <p v-if="filteredBeats.length === 0" class="empty-state">
-      No beats match this filter yet.
-    </p>
-
-    <!-- Modals & Drawers -->
-    <BeatUploadModal
-      v-model:is-open="showUploadModal"
-      @beat-uploaded="handleBeatUploaded"
-    />
-
-    <PurchaseBeatModal
-      v-model:is-open="showLicenseModal"
-      :selected-beat="selectedBeat"
-      @add-to-cart="handleAddToCart"
-    />
-
-    <CartDrawer
-      v-model:is-open="showCartDrawer"
-      :items="cartItems"
-      @remove-item="removeCartItem"
-    />
   </div>
 </template>
 
@@ -247,21 +255,52 @@ function handleBeatUploaded(newBeat) {
 </script>
 
 <style scoped>
-.beatstore-view {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  background-color: var(--bg-main, #ffffff);
+.beatstore-page {
+  background-color: var(--bg-main, #f7f7f9);
   color: var(--text-main, #111111);
+  min-height: 100vh;
 }
 
-.beatstore-header {
-  margin-bottom: 1.5rem;
+/* Full width white header spanning edge-to-edge, matching Discover */
+.page-header {
+  background-color: var(--bg-surface, #ffffff);
+  border-bottom: 1px solid var(--border-subtle, #eaeaea);
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  margin-bottom: 2rem;
+  padding: 1.5rem 0 1.25rem 0;
 }
 
-.beatstore-header h1 {
-  margin: 0 0 1.25rem 0;
-  font-size: 1.5rem;
+/* Inner wrapper to match content max-width and padding */
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  width: 100%;
+}
+
+/* Container for content below header, widened to match Discover */
+.beatstore-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem 2rem 2rem;
+  width: 100%;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.35rem;
   font-weight: 800;
   color: var(--text-main, #111111);
   letter-spacing: -0.02em;
@@ -271,8 +310,6 @@ function handleBeatUploaded(newBeat) {
   display: flex;
   gap: 0.75rem;
   align-items: center;
-  float: right;
-  margin-top: -3.2rem;
 }
 
 .cart-trigger-btn {
@@ -309,7 +346,7 @@ function handleBeatUploaded(newBeat) {
   font-weight: 600;
 }
 
-/* Search Bar matching Discover Page */
+/* Search Bar, styled to match Discover's purple search box */
 .search-bar {
   position: relative;
   max-width: 100%;
@@ -319,17 +356,17 @@ function handleBeatUploaded(newBeat) {
 .search-bar input {
   width: 100%;
   padding: 0.6rem 1rem 0.6rem 2.5rem;
-  background-color: var(--bg-surface, #fff);
-  border: 1px solid var(--border-subtle, #e0e0e0);
-  border-radius: 6px;
+  background-color: #ede9f6;
+  border: none;
+  border-radius: 8px;
   font-size: 0.85rem;
   outline: none;
   color: var(--text-main, #111);
-  transition: border-color 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
 .search-bar input:focus {
-  border-color: var(--primary-wisteria, #b19cd9);
+  background-color: #e4ddf6;
 }
 
 .search-icon {
@@ -344,7 +381,7 @@ function handleBeatUploaded(newBeat) {
 
 /* Filter Tags Collapse Container matching Discover Page */
 .filter-container {
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
 }
 
 .filter-tags {

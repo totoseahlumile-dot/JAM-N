@@ -1,305 +1,321 @@
 <template>
   <div class="profile-page">
     <!-- Profile header -->
-    <header class="profile-header">
-      <div class="profile-avatar-large">
-        <img
-          v-if="user?.image"
-          :src="user.image"
-          :alt="user?.name"
-          class="avatar-img"
-        />
-        <span v-else class="avatar-fallback">🎵</span>
-      </div>
-
-      <div class="profile-details">
-        <p class="profile-name">{{ user?.name ?? "Guest" }}</p>
-
-        <div class="profile-stats">
-          <div class="stat">
-            <span class="stat-count">{{ uploads.length }}</span>
-            <span class="stat-label">Uploads</span>
+    <header class="page-header">
+      <div class="header-inner">
+        <div class="profile-header">
+          <div class="profile-avatar-large">
+            <img
+              v-if="user?.image"
+              :src="user.image"
+              :alt="user?.name"
+              class="avatar-img"
+            />
+            <span v-else class="avatar-fallback">🎵</span>
           </div>
 
-          <!-- Clickable Followers Stat -->
-          <div class="stat clickable" @click="openUserList('followers')">
-            <span class="stat-count">{{ followers.length }}</span>
-            <span class="stat-label">Followers</span>
-          </div>
+          <div class="profile-details">
+            <p class="profile-name">{{ user?.name ?? "Guest" }}</p>
 
-          <!-- Clickable Following Stat -->
-          <div class="stat clickable" @click="openUserList('following')">
-            <span class="stat-count">{{ following.length }}</span>
-            <span class="stat-label">Following</span>
+            <div class="profile-stats">
+              <div class="stat">
+                <span class="stat-count">{{ uploads.length }}</span>
+                <span class="stat-label">Uploads</span>
+              </div>
+
+              <!-- Clickable Followers Stat -->
+              <div class="stat clickable" @click="openUserList('followers')">
+                <span class="stat-count">{{ followers.length }}</span>
+                <span class="stat-label">Followers</span>
+              </div>
+
+              <!-- Clickable Following Stat -->
+              <div class="stat clickable" @click="openUserList('following')">
+                <span class="stat-count">{{ following.length }}</span>
+                <span class="stat-label">Following</span>
+              </div>
+            </div>
+
+            <p class="profile-bio">{{ roleLabel }}</p>
+
+            <button
+              class="btn-primary edit-profile-btn"
+              @click="showEditModal = true"
+            >
+              Edit Profile
+            </button>
           </div>
         </div>
-
-        <p class="profile-bio">{{ roleLabel }}</p>
-
-        <button
-          class="btn-primary edit-profile-btn"
-          @click="showEditModal = true"
-        >
-          Edit Profile
-        </button>
       </div>
     </header>
 
-    <!-- Tabs: Uploads, Posts, Reposts, Liked, Following -->
-    <section class="profile-content">
-      <div class="content-tabs">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          class="content-tab"
-          :class="{ active: activeTab === tab.key }"
-          @click="activeTab = tab.key"
-        >
-          {{ tab.label }}
-        </button>
-      </div>
-
-      <!-- VIEW FOR UPLOADS & LIKED (Grid Format) -->
-      <div
-        v-if="
-          (activeTab === 'uploads' || activeTab === 'liked') &&
-          activeItems.length > 0
-        "
-        class="content-grid"
-      >
-        <div
-          v-for="item in activeItems"
-          :key="item.id"
-          class="content-tile clickable"
-          @click="openItem(item)"
-        >
-          <div class="tile-placeholder">
-            <img
-              v-if="item.image || item.coverArt"
-              :src="item.image || item.coverArt"
-              class="tile-img"
-              :alt="item.title"
-            />
-            <span v-else class="play-icon">▶</span>
-          </div>
-          <p class="tile-title">{{ item.title }}</p>
-          <p v-if="item.artist" class="tile-subtitle">{{ item.artist }}</p>
-        </div>
-      </div>
-
-      <!-- VIEW FOR POSTS (Vertical Feed Format) -->
-      <div
-        v-else-if="activeTab === 'posts' && textPosts.length > 0"
-        class="posts-feed"
-      >
-        <div
-          v-for="post in textPosts"
-          :key="post.id"
-          class="post-card clickable"
-          @click="openItem(post)"
-        >
-          <div class="post-header">
-            <div class="user-avatar-small"></div>
-            <span class="post-author">{{ user?.name }}</span>
-          </div>
-          <p class="post-text">{{ post.caption || post.title }}</p>
-          <div class="post-footer">
-            <span class="post-stat">❤️ {{ post.likesCount || 0 }}</span>
-            <span class="post-stat">💬 {{ (post.comments || []).length }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- VIEW FOR FOLLOWING TAB -->
-      <div v-else-if="activeTab === 'following'" class="following-section">
-        <div v-if="following.length > 0" class="following-grid">
-          <div
-            v-for="artist in following"
-            :key="artist.id"
-            class="followed-artist-card clickable"
-            @click="goToArtist(artist.id)"
+    <div class="profile-container">
+      <!-- Tabs: Uploads, Posts, Reposts, Liked, Following -->
+      <section class="profile-content">
+        <div class="content-tabs">
+          <button
+            v-for="tab in tabs"
+            :key="tab.key"
+            class="content-tab"
+            :class="{ active: activeTab === tab.key }"
+            @click="activeTab = tab.key"
           >
-            <div class="artist-avatar-sm">
-              <img v-if="artist.image" :src="artist.image" :alt="artist.name" />
-              <span v-else>🎵</span>
+            {{ tab.label }}
+          </button>
+        </div>
+
+        <!-- VIEW FOR UPLOADS & LIKED (Grid Format) -->
+        <div
+          v-if="
+            (activeTab === 'uploads' || activeTab === 'liked') &&
+            activeItems.length > 0
+          "
+          class="content-grid"
+        >
+          <div
+            v-for="item in activeItems"
+            :key="item.id"
+            class="content-tile clickable"
+            @click="openItem(item)"
+          >
+            <div class="tile-placeholder">
+              <img
+                v-if="item.image || item.coverArt"
+                :src="item.image || item.coverArt"
+                class="tile-img"
+                :alt="item.title"
+              />
+              <span v-else class="play-icon">▶</span>
             </div>
-            <div class="followed-info">
-              <h4>{{ artist.name }}</h4>
-              <p>
-                @{{
-                  artist.handle || artist.name.toLowerCase().replace(/\s+/g, "")
-                }}
+            <p class="tile-title">{{ item.title }}</p>
+            <p v-if="item.artist" class="tile-subtitle">{{ item.artist }}</p>
+          </div>
+        </div>
+
+        <!-- VIEW FOR POSTS (Vertical Feed Format) -->
+        <div
+          v-else-if="activeTab === 'posts' && textPosts.length > 0"
+          class="posts-feed"
+        >
+          <div
+            v-for="post in textPosts"
+            :key="post.id"
+            class="post-card clickable"
+            @click="openItem(post)"
+          >
+            <div class="post-header">
+              <div class="user-avatar-small"></div>
+              <span class="post-author">{{ user?.name }}</span>
+            </div>
+            <p class="post-text">{{ post.caption || post.title }}</p>
+            <div class="post-footer">
+              <span class="post-stat">❤️ {{ post.likesCount || 0 }}</span>
+              <span class="post-stat"
+                >💬 {{ (post.comments || []).length }}</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW FOR FOLLOWING TAB -->
+        <div v-else-if="activeTab === 'following'" class="following-section">
+          <div v-if="following.length > 0" class="following-grid">
+            <div
+              v-for="artist in following"
+              :key="artist.id"
+              class="followed-artist-card clickable"
+              @click="goToArtist(artist.id)"
+            >
+              <div class="artist-avatar-sm">
+                <img
+                  v-if="artist.image"
+                  :src="artist.image"
+                  :alt="artist.name"
+                />
+                <span v-else>🎵</span>
+              </div>
+              <div class="followed-info">
+                <h4>{{ artist.name }}</h4>
+                <p>
+                  @{{
+                    artist.handle ||
+                    artist.name.toLowerCase().replace(/\s+/g, "")
+                  }}
+                </p>
+              </div>
+              <button
+                class="btn-primary following-state"
+                @click.stop="unfollowArtist(artist)"
+              >
+                Following
+              </button>
+            </div>
+          </div>
+          <p v-else class="empty-state">
+            You aren't following any artists yet. Discover independent talent in
+            the Discover tab!
+          </p>
+        </div>
+
+        <!-- EMPTY STATE (For general tabs) -->
+        <p v-else-if="activeTab !== 'following'" class="empty-state">
+          {{ emptyMessage }}
+        </p>
+      </section>
+
+      <!-- Floating upload button -->
+      <button
+        v-if="
+          isArtistOrProducer &&
+          (activeTab === 'uploads' || activeTab === 'posts')
+        "
+        class="upload-fab"
+        @click="showUploadModal = true"
+        aria-label="Upload"
+      ></button>
+
+      <!-- Detail Modal (Connected to player.js) -->
+      <div
+        v-if="showDetailModal"
+        class="modal-overlay"
+        @click.self="showDetailModal = false"
+      >
+        <div class="modal-card detail-card modal-container">
+          <div v-if="selectedItem?.type !== 'text'" class="modal-cover">
+            <img
+              v-if="selectedItem?.image || selectedItem?.coverArt"
+              :src="selectedItem.image || selectedItem.coverArt"
+              class="modal-cover-img"
+            />
+            <div v-else class="modal-cover-placeholder">▶</div>
+          </div>
+
+          <h3 v-if="selectedItem?.type !== 'text'">
+            {{ selectedItem?.title }}
+          </h3>
+          <p
+            v-if="selectedItem?.artist && selectedItem?.type !== 'text'"
+            class="modal-subtitle"
+          >
+            {{ selectedItem.artist }}
+          </p>
+          <p
+            v-if="selectedItem?.caption && selectedItem?.type === 'text'"
+            class="post-modal-text"
+          >
+            "{{ selectedItem.caption }}"
+          </p>
+
+          <!-- Player Controls & Interactions -->
+          <div class="interaction-bar">
+            <button
+              v-if="selectedItem?.type !== 'text' && selectedItem?.audioUrl"
+              class="btn-primary play-track-btn"
+              @click="handlePlayTrack"
+            >
+              {{ isCurrentTrackPlaying ? "⏸ Pause Track" : "▶ Play Track" }}
+            </button>
+            <span v-else class="text-post-badge">💬 Text Update</span>
+
+            <button class="like-btn" @click="toggleLike(selectedItem)">
+              ❤️ {{ isItemLiked(selectedItem?.id) ? "Liked" : "Like" }}
+            </button>
+          </div>
+
+          <!-- Comments Section -->
+          <div class="comments-section">
+            <h4>Comments</h4>
+            <div class="comments-list">
+              <div
+                v-for="comment in selectedItem?.comments || []"
+                :key="comment.id"
+                class="comment-item"
+              >
+                <span class="comment-text">{{ comment.text }}</span>
+                <span class="comment-time">{{ comment.createdAt }}</span>
+              </div>
+              <p
+                v-if="
+                  !selectedItem?.comments || selectedItem.comments.length === 0
+                "
+                class="no-comments"
+              >
+                No comments yet.
               </p>
             </div>
+
+            <div class="comment-input-row">
+              <input
+                v-model="newCommentText"
+                type="text"
+                placeholder="Add a comment..."
+                @keyup.enter="submitComment(selectedItem.id)"
+              />
+              <button
+                class="btn-primary comment-send-btn"
+                @click="submitComment(selectedItem.id)"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-delete" @click="deletePost(selectedItem.id)">
+              Delete
+            </button>
             <button
-              class="btn-primary following-state"
-              @click.stop="unfollowArtist(artist)"
+              type="button"
+              class="close-btn-secondary"
+              @click="showDetailModal = false"
             >
-              Following
+              Close
             </button>
           </div>
         </div>
-        <p v-else class="empty-state">
-          You aren't following any artists yet. Discover independent talent in
-          the Discover tab!
-        </p>
       </div>
 
-      <!-- EMPTY STATE (For general tabs) -->
-      <p v-else-if="activeTab !== 'following'" class="empty-state">
-        {{ emptyMessage }}
-      </p>
-    </section>
-
-    <!-- Floating upload button -->
-    <button
-      v-if="
-        isArtistOrProducer && (activeTab === 'uploads' || activeTab === 'posts')
-      "
-      class="upload-fab"
-      @click="showUploadModal = true"
-      aria-label="Upload"
-    ></button>
-
-    <!-- Detail Modal (Connected to player.js) -->
-    <div
-      v-if="showDetailModal"
-      class="modal-overlay"
-      @click.self="showDetailModal = false"
-    >
-      <div class="modal-card detail-card modal-container">
-        <div v-if="selectedItem?.type !== 'text'" class="modal-cover">
-          <img
-            v-if="selectedItem?.image || selectedItem?.coverArt"
-            :src="selectedItem.image || selectedItem.coverArt"
-            class="modal-cover-img"
-          />
-          <div v-else class="modal-cover-placeholder">▶</div>
-        </div>
-
-        <h3 v-if="selectedItem?.type !== 'text'">{{ selectedItem?.title }}</h3>
-        <p
-          v-if="selectedItem?.artist && selectedItem?.type !== 'text'"
-          class="modal-subtitle"
-        >
-          {{ selectedItem.artist }}
-        </p>
-        <p
-          v-if="selectedItem?.caption && selectedItem?.type === 'text'"
-          class="post-modal-text"
-        >
-          "{{ selectedItem.caption }}"
-        </p>
-
-        <!-- Player Controls & Interactions -->
-        <div class="interaction-bar">
-          <button
-            v-if="selectedItem?.type !== 'text' && selectedItem?.audioUrl"
-            class="btn-primary play-track-btn"
-            @click="handlePlayTrack"
-          >
-            {{ isCurrentTrackPlaying ? "⏸ Pause Track" : "▶ Play Track" }}
-          </button>
-          <span v-else class="text-post-badge">💬 Text Update</span>
-
-          <button class="like-btn" @click="toggleLike(selectedItem)">
-            ❤️ {{ isItemLiked(selectedItem?.id) ? "Liked" : "Like" }}
-          </button>
-        </div>
-
-        <!-- Comments Section -->
-        <div class="comments-section">
-          <h4>Comments</h4>
-          <div class="comments-list">
+      <!-- Followers / Following List Modal -->
+      <div
+        v-if="showUserListModal"
+        class="modal-overlay"
+        @click.self="showUserListModal = false"
+      >
+        <div class="modal-card modal-container">
+          <h3>{{ userListTitle }}</h3>
+          <div v-if="activeUserList.length > 0" class="user-list">
             <div
-              v-for="comment in selectedItem?.comments || []"
-              :key="comment.id"
-              class="comment-item"
+              v-for="person in activeUserList"
+              :key="person.id"
+              class="user-row clickable"
+              @click="goToArtist(person.id)"
             >
-              <span class="comment-text">{{ comment.text }}</span>
-              <span class="comment-time">{{ comment.createdAt }}</span>
+              <div class="user-avatar"></div>
+              <div class="user-info">
+                <p class="user-name">{{ person.name }}</p>
+                <p v-if="person.handle" class="user-handle">
+                  @{{ person.handle }}
+                </p>
+              </div>
             </div>
-            <p
-              v-if="
-                !selectedItem?.comments || selectedItem.comments.length === 0
-              "
-              class="no-comments"
-            >
-              No comments yet.
-            </p>
           </div>
-
-          <div class="comment-input-row">
-            <input
-              v-model="newCommentText"
-              type="text"
-              placeholder="Add a comment..."
-              @keyup.enter="submitComment(selectedItem.id)"
-            />
-            <button
-              class="btn-primary comment-send-btn"
-              @click="submitComment(selectedItem.id)"
-            >
-              Send
-            </button>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn-delete" @click="deletePost(selectedItem.id)">
-            Delete
-          </button>
+          <p v-else class="empty-state">No {{ userListType }} yet.</p>
           <button
-            type="button"
-            class="close-btn-secondary"
-            @click="showDetailModal = false"
+            class="btn-outline close-btn"
+            @click="showUserListModal = false"
           >
             Close
           </button>
         </div>
       </div>
-    </div>
 
-    <!-- Followers / Following List Modal -->
-    <div
-      v-if="showUserListModal"
-      class="modal-overlay"
-      @click.self="showUserListModal = false"
-    >
-      <div class="modal-card modal-container">
-        <h3>{{ userListTitle }}</h3>
-        <div v-if="activeUserList.length > 0" class="user-list">
-          <div
-            v-for="person in activeUserList"
-            :key="person.id"
-            class="user-row clickable"
-            @click="goToArtist(person.id)"
-          >
-            <div class="user-avatar"></div>
-            <div class="user-info">
-              <p class="user-name">{{ person.name }}</p>
-              <p v-if="person.handle" class="user-handle">
-                @{{ person.handle }}
-              </p>
-            </div>
-          </div>
-        </div>
-        <p v-else class="empty-state">No {{ userListType }} yet.</p>
-        <button
-          class="btn-outline close-btn"
-          @click="showUserListModal = false"
-        >
-          Close
-        </button>
-      </div>
+      <!-- Shared Modals -->
+      <EditProfileModal v-model="showEditModal" />
+      <CreatePostModal
+        v-model="showUploadModal"
+        @post-created="handlePostCreated"
+      />
     </div>
-
-    <!-- Shared Modals -->
-    <EditProfileModal v-model="showEditModal" />
-    <CreatePostModal
-      v-model="showUploadModal"
-      @post-created="handlePostCreated"
-    />
   </div>
 </template>
 
@@ -478,21 +494,44 @@ function handlePostCreated(postData) {
 
 <style scoped>
 .profile-page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
-  position: relative;
-  background-color: var(--bg-main, #fafafd);
+  background-color: var(--bg-main, #f7f7f9);
   color: var(--text-main, #1d1e18);
+  min-height: 100vh;
+}
+
+/* Full width white header spanning edge-to-edge, matching Discover/Library/Beat Store */
+.page-header {
+  background-color: var(--bg-surface, #ffffff);
+  border-bottom: 1px solid var(--border-subtle, #e2e2e8);
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  margin-bottom: 1.5rem;
+  padding: 2rem 0;
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  width: 100%;
+}
+
+/* Container for content below header, widened to match the other pages */
+.profile-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem 4rem;
+  position: relative;
 }
 
 .profile-header {
   display: flex;
   gap: 2rem;
   align-items: flex-start;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-subtle, #e2e2e8);
-  margin-bottom: 1.5rem;
 }
 
 .profile-avatar-large {

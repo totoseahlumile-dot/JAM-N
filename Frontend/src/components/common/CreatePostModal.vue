@@ -3,7 +3,9 @@
     <div class="modal-card">
       <header class="modal-header">
         <h3>Create Post</h3>
-        <button class="close-icon-btn" @click="closeModal" aria-label="Close">×</button>
+        <button class="close-icon-btn" @click="closeModal" aria-label="Close">
+          ×
+        </button>
       </header>
 
       <!-- Post Type Selector Tabs -->
@@ -53,31 +55,55 @@
         <div v-if="postType === 'audio'" class="type-section">
           <div class="form-field">
             <label>Track Title *</label>
-            <input v-model="audioForm.title" type="text" placeholder="e.g. Summer Nights Beat" required />
+            <input
+              v-model="audioForm.title"
+              type="text"
+              placeholder="e.g. Summer Nights Beat"
+              required
+            />
           </div>
 
           <div class="form-row">
             <div class="form-field">
               <label>Genre</label>
-              <input v-model="audioForm.genre" type="text" placeholder="e.g. Hip-Hop / Lofi" />
+              <input
+                v-model="audioForm.genre"
+                type="text"
+                placeholder="e.g. Hip-Hop / Lofi"
+              />
             </div>
             <div class="form-field">
               <label>BPM</label>
-              <input v-model.number="audioForm.bpm" type="number" placeholder="120" />
+              <input
+                v-model.number="audioForm.bpm"
+                type="number"
+                placeholder="120"
+              />
             </div>
           </div>
 
           <div class="form-field">
             <label>Audio File (.mp3, .wav) *</label>
-            <input type="file" accept="audio/*" @change="handleAudioSelect" required />
-            <p v-if="audioForm.fileName" class="file-name-preview">Selected: {{ audioForm.fileName }}</p>
+            <input
+              type="file"
+              accept="audio/*"
+              @change="handleAudioSelect"
+              required
+            />
+            <p v-if="audioForm.fileName" class="file-name-preview">
+              Selected: {{ audioForm.fileName }}
+            </p>
           </div>
 
           <div class="form-field">
             <label>Cover Image (Optional)</label>
             <input type="file" accept="image/*" @change="handleCoverSelect" />
             <div v-if="coverPreview" class="media-preview-box">
-              <img :src="coverPreview" class="preview-img" alt="Cover preview" />
+              <img
+                :src="coverPreview"
+                class="preview-img"
+                alt="Cover preview"
+              />
             </div>
           </div>
         </div>
@@ -86,19 +112,38 @@
         <div v-if="postType === 'media'" class="type-section">
           <div class="form-field">
             <label>Upload Image or Video *</label>
-            <input type="file" accept="image/*,video/*" @change="handleMediaSelect" required />
+            <input
+              type="file"
+              accept="image/*,video/*"
+              @change="handleMediaSelect"
+              required
+            />
           </div>
 
           <div v-if="mediaPreview" class="media-preview-box">
-            <img v-if="mediaFileType === 'image'" :src="mediaPreview" class="preview-img" alt="Media preview" />
-            <video v-else-if="mediaFileType === 'video'" :src="mediaPreview" controls class="preview-video"></video>
+            <img
+              v-if="mediaFileType === 'image'"
+              :src="mediaPreview"
+              class="preview-img"
+              alt="Media preview"
+            />
+            <video
+              v-else-if="mediaFileType === 'video'"
+              :src="mediaPreview"
+              controls
+              class="preview-video"
+            ></video>
           </div>
         </div>
 
         <!-- Modal Actions -->
         <div class="modal-actions">
-          <button type="button" class="btn-cancel" @click="closeModal">Cancel</button>
-          <button type="submit" class="btn-submit" :disabled="!isFormValid">Post</button>
+          <button type="button" class="btn-cancel" @click="closeModal">
+            Cancel
+          </button>
+          <button type="submit" class="btn-submit" :disabled="!isFormValid">
+            Post
+          </button>
         </div>
       </form>
     </div>
@@ -106,90 +151,94 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
-import { useStore } from 'vuex'
+import { ref, reactive, computed } from "vue";
+import { useStore } from "vuex";
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
     default: false,
   },
-})
+});
 
-const emit = defineEmits(['update:modelValue', 'post-created'])
-const store = useStore()
+const emit = defineEmits(["update:modelValue", "post-created"]);
+const store = useStore();
 
-const postType = ref('audio') // 'audio' | 'media' | 'text'
-const caption = ref('')
+const postType = ref("audio"); // 'audio' | 'media' | 'text'
+const caption = ref("");
 
 // Audio Post State
 const audioForm = reactive({
-  title: '',
-  genre: '',
+  title: "",
+  genre: "",
   bpm: null,
-  fileName: '',
+  fileName: "",
   audioUrl: null,
-})
-const coverPreview = ref(null)
+});
+const coverPreview = ref(null);
 
 // Visual Media State
-const mediaPreview = ref(null)
-const mediaFileType = ref(null) // 'image' | 'video'
+const mediaPreview = ref(null);
+const mediaFileType = ref(null); // 'image' | 'video'
 
 const captionPlaceholder = computed(() => {
-  if (postType.value === 'audio') return 'Say something about this track...'
-  if (postType.value === 'media') return 'Write a caption...'
-  return "What's on your mind?"
-})
+  if (postType.value === "audio") return "Say something about this track...";
+  if (postType.value === "media") return "Write a caption...";
+  return "What's on your mind?";
+});
 
 const isFormValid = computed(() => {
-  if (postType.value === 'text') {
-    return caption.value.trim().length > 0
+  if (postType.value === "text") {
+    return caption.value.trim().length > 0;
   }
-  if (postType.value === 'audio') {
-    return caption.value.trim().length > 0 && audioForm.title.trim() !== '' && audioForm.audioUrl !== null
+  if (postType.value === "audio") {
+    return (
+      caption.value.trim().length > 0 &&
+      audioForm.title.trim() !== "" &&
+      audioForm.audioUrl !== null
+    );
   }
-  if (postType.value === 'media') {
-    return caption.value.trim().length > 0 && mediaPreview.value !== null
+  if (postType.value === "media") {
+    return caption.value.trim().length > 0 && mediaPreview.value !== null;
   }
-  return false
-})
+  return false;
+});
 
 function setPostType(type) {
-  postType.value = type
+  postType.value = type;
 }
 
 function handleAudioSelect(event) {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    audioForm.fileName = file.name
-    audioForm.audioUrl = URL.createObjectURL(file)
+    audioForm.fileName = file.name;
+    audioForm.audioUrl = URL.createObjectURL(file);
   }
 }
 
 function handleCoverSelect(event) {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    coverPreview.value = URL.createObjectURL(file)
+    coverPreview.value = URL.createObjectURL(file);
   }
 }
 
 function handleMediaSelect(event) {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    mediaFileType.value = file.type.startsWith('video') ? 'video' : 'image'
-    mediaPreview.value = URL.createObjectURL(file)
+    mediaFileType.value = file.type.startsWith("video") ? "video" : "image";
+    mediaPreview.value = URL.createObjectURL(file);
   }
 }
 
 function submitPost() {
-  if (!isFormValid.value) return
+  if (!isFormValid.value) return;
 
   let contentData = {
     caption: caption.value,
-  }
+  };
 
-  if (postType.value === 'audio') {
+  if (postType.value === "audio") {
     contentData = {
       ...contentData,
       title: audioForm.title,
@@ -197,41 +246,41 @@ function submitPost() {
       bpm: audioForm.bpm,
       audioUrl: audioForm.audioUrl,
       coverImage: coverPreview.value,
-    }
-  } else if (postType.value === 'media') {
+    };
+  } else if (postType.value === "media") {
     contentData = {
       ...contentData,
       mediaUrl: mediaPreview.value,
       mediaType: mediaFileType.value,
-    }
+    };
   }
 
   // Dispatch post action to Vuex store (if posts module exists)
-  if (store?.hasModule?.('posts')) {
-    store.dispatch('posts/createPost', {
+  if (store?.hasModule?.("posts")) {
+    store.dispatch("posts/createPost", {
       type: postType.value,
       content: contentData,
-    })
+    });
   }
 
-  emit('post-created', { type: postType.value, content: contentData })
-  closeModal()
+  emit("post-created", { type: postType.value, content: contentData });
+  closeModal();
 }
 
 function closeModal() {
   // Reset form
-  caption.value = ''
-  audioForm.title = ''
-  audioForm.genre = ''
-  audioForm.bpm = null
-  audioForm.fileName = ''
-  audioForm.audioUrl = null
-  coverPreview.value = null
-  mediaPreview.value = null
-  mediaFileType.value = null
-  postType.value = 'audio'
+  caption.value = "";
+  audioForm.title = "";
+  audioForm.genre = "";
+  audioForm.bpm = null;
+  audioForm.fileName = "";
+  audioForm.audioUrl = null;
+  coverPreview.value = null;
+  mediaPreview.value = null;
+  mediaFileType.value = null;
+  postType.value = "audio";
 
-  emit('update:modelValue', false)
+  emit("update:modelValue", false);
 }
 </script>
 
@@ -250,8 +299,8 @@ function closeModal() {
 }
 
 .modal-card {
-  background: #ffffff;
-  border-radius: 12px;
+  background: var(--bg-surface, #ffffff);
+  border-radius: 16px;
   width: 90%;
   max-width: 480px;
   max-height: 90vh;
@@ -271,6 +320,7 @@ function closeModal() {
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
+  color: var(--text-main, #111);
 }
 
 .close-icon-btn {
@@ -285,26 +335,32 @@ function closeModal() {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.25rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-subtle, #ede9f6);
   padding-bottom: 0.75rem;
 }
 
 .type-tab {
   flex: 1;
   padding: 0.5rem;
-  border: 1px solid #eee;
-  background: #f9f9f9;
-  border-radius: 6px;
+  border: 1px solid #dcd6f0;
+  background: #ede9f6;
+  border-radius: 8px;
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
+  color: var(--text-main, #111);
   transition: all 0.2s ease;
 }
 
+.type-tab:hover {
+  background: #e4ddf6;
+}
+
 .type-tab.active {
-  background: #333;
-  color: #fff;
-  border-color: #333;
+  background: var(--primary-wisteria, #b19cd9);
+  color: var(--text-dark-btn, #111);
+  border-color: #b19cd9;
+  font-weight: 700;
 }
 
 .post-form {
@@ -323,17 +379,36 @@ function closeModal() {
 .form-field label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #444;
+  color: var(--text-muted, #555);
 }
 
-.form-field input[type='text'],
-.form-field input[type='number'],
+.form-field input[type="text"],
+.form-field input[type="number"],
 .form-field textarea {
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 0.55rem;
+  border: none;
+  background-color: #ede9f6;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
   font-size: 0.85rem;
   font-family: inherit;
+  color: var(--text-main, #111);
+  outline: none;
+  transition: background-color 0.2s ease;
+}
+
+.form-field input[type="text"]:focus,
+.form-field input[type="number"]:focus,
+.form-field textarea:focus {
+  background-color: #e4ddf6;
+}
+
+/* File inputs styling */
+.form-field input[type="file"] {
+  font-size: 0.8rem;
+  color: var(--text-muted, #555);
+  background-color: #ede9f6;
+  padding: 0.5rem;
+  border-radius: 8px;
 }
 
 .char-count {
@@ -360,7 +435,7 @@ function closeModal() {
 
 .file-name-preview {
   font-size: 0.75rem;
-  color: #1db954;
+  color: #2e7d32;
   margin: 0;
   font-weight: 600;
 }
@@ -368,9 +443,9 @@ function closeModal() {
 .media-preview-box {
   width: 100%;
   max-height: 180px;
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
-  background: #f0f0f0;
+  background: #ede9f6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -392,23 +467,32 @@ function closeModal() {
 }
 
 .btn-cancel {
-  border: 1px solid #ccc;
+  border: 1px solid #dcd6f0;
   background: transparent;
+  color: var(--text-main, #111);
   padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.85rem;
 }
 
+.btn-cancel:hover {
+  background: #ede9f6;
+}
+
 .btn-submit {
-  background: #333;
-  color: white;
+  background: var(--primary-wisteria, #b19cd9);
+  color: var(--text-dark-btn, #111);
   border: none;
   padding: 0.5rem 1.25rem;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+}
+
+.btn-submit:hover {
+  opacity: 0.9;
 }
 
 .btn-submit:disabled {

@@ -180,7 +180,7 @@ const closeModal = () => {
     <!-- Header Control Toolbar -->
     <header class="events-header-bar">
       <div class="header-container">
-        <h1 class="page-title">LOCAL EVENTS</h1>
+        <h1 class="page-title">Local Events</h1>
 
         <div class="controls-wrapper">
           <!-- Filter Chips -->
@@ -356,10 +356,11 @@ const closeModal = () => {
 }
 
 .page-title {
-  font-size: 1.6rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
   margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main, #111111);
+  letter-spacing: -0.02em;
 }
 
 .controls-wrapper {

@@ -1,143 +1,68 @@
 <template>
   <div class="discover-page">
     <header class="page-header">
-      <h1>Discover Music</h1>
-      <div class="search-bar">
-        <input
-          type="text"
-          placeholder="Search artists, bands, genres, or cities..."
-          v-model="searchQuery"
-        />
-        <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+      <div class="header-inner">
+        <h1>Discover Music</h1>
+        <div class="search-box">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search artists, bands, genres, or cities..."
+            class="search-input"
           />
-        </svg>
-      </div>
+          <span class="search-icon" aria-hidden="true">🔍︎</span>
+        </div>
 
-      <!-- Filter Tags with Expand/Collapse for overflow -->
-      <div class="filter-container">
-        <div class="filter-tags" :class="{ expanded: showAllGenres }">
+        <!-- Filter Tags with Expand/Collapse for overflow -->
+        <div class="filter-container">
+          <div class="filter-tags" :class="{ expanded: showAllGenres }">
+            <button
+              v-for="(genre, index) in genreOptions"
+              :key="genre"
+              class="tag"
+              :class="{ active: activeGenre === genre }"
+              :style="getFilterStyle(index, activeGenre === genre)"
+              @click="activeGenre = genre"
+            >
+              {{ genre }}
+            </button>
+          </div>
           <button
-            v-for="(genre, index) in genreOptions"
-            :key="genre"
-            class="tag"
-            :class="{ active: activeGenre === genre }"
-            :style="getFilterStyle(index, activeGenre === genre)"
-            @click="activeGenre = genre"
+            v-if="genreOptions.length > 8"
+            class="genre-toggle-btn"
+            @click="showAllGenres = !showAllGenres"
           >
-            {{ genre }}
+            {{
+              showAllGenres
+                ? "Show Less ▲"
+                : `+${genreOptions.length - 8} More ▼`
+            }}
           </button>
         </div>
-        <button
-          v-if="genreOptions.length > 8"
-          class="genre-toggle-btn"
-          @click="showAllGenres = !showAllGenres"
-        >
-          {{
-            showAllGenres ? "Show Less ▲" : `+${genreOptions.length - 8} More ▼`
-          }}
-        </button>
       </div>
     </header>
 
-    <!-- Trending Artists Section -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Trending Artists</h2>
-        <a href="#" class="see-all">See All</a>
-      </div>
-      <div class="card-grid">
-        <div
-          v-for="artist in trendingArtists"
-          :key="artist.id"
-          class="artist-card clickable"
-          @click="goToArtistProfile(artist.id)"
-        >
-          <div class="image-wrapper">
-            <img
-              :src="artist.image"
-              :alt="artist.name"
-              class="placeholder-img"
-            />
-          </div>
-          <p class="artist-name">{{ artist.name }}</p>
-          <p class="artist-genre">
-            {{
-              Array.isArray(artist.genre)
-                ? artist.genre.join(", ")
-                : artist.genre
-            }}
-          </p>
-          <div class="card-actions" @click.stop>
-            <button class="btn-outline" @click="goToArtistProfile(artist.id)">
-              View Profile
-            </button>
-            <button
-              class="btn-primary"
-              :class="{ following: isFollowing(artist.id) }"
-              @click="toggleFollow(artist)"
-            >
-              {{ isFollowing(artist.id) ? "Following" : "Follow" }}
-            </button>
-          </div>
+    <div class="discover-container">
+      <!-- Trending Artists Section -->
+      <section class="section">
+        <div class="section-header">
+          <h2>Trending Artists</h2>
+          <a href="#" class="see-all">See All</a>
         </div>
-      </div>
-      <p v-if="trendingArtists.length === 0" class="empty-state">
-        No artists match this filter yet.
-      </p>
-    </section>
-
-    <!-- Recommended Artists Section with Slide / See All functionality -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Recommended Artists</h2>
-        <div class="header-controls">
+        <div class="card-grid">
           <div
-            v-if="!showAllRecommended && recommendedArtistsFull.length > 9"
-            class="slider-arrows"
+            v-for="artist in trendingArtists"
+            :key="artist.id"
+            class="artist-card clickable"
+            @click="goToArtistProfile(artist.id)"
           >
-            <button
-              class="arrow-btn"
-              @click="scrollRecommended('left')"
-              aria-label="Scroll left"
-            >
-              ‹
-            </button>
-            <button
-              class="arrow-btn"
-              @click="scrollRecommended('right')"
-              aria-label="Scroll right"
-            >
-              ›
-            </button>
-          </div>
-          <button
-            class="see-all"
-            @click="showAllRecommended = !showAllRecommended"
-          >
-            {{ showAllRecommended ? "See Less" : "See All" }}
-          </button>
-        </div>
-      </div>
-
-      <div
-        ref="recommendedScrollRef"
-        class="card-grid"
-        :class="{ 'scrollable-row': !showAllRecommended }"
-      >
-        <div
-          v-for="artist in displayedRecommendedArtists"
-          :key="artist.id"
-          class="artist-card compact clickable"
-          @click="goToArtistProfile(artist.id)"
-        >
-          <img
-            :src="artist.image"
-            :alt="artist.name"
-            class="placeholder-img-sm"
-          />
-          <div class="artist-info">
+            <div class="image-wrapper">
+              <img
+                :src="artist.image"
+                :alt="artist.name"
+                class="placeholder-img"
+              />
+            </div>
             <p class="artist-name">{{ artist.name }}</p>
             <p class="artist-genre">
               {{
@@ -146,138 +71,218 @@
                   : artist.genre
               }}
             </p>
+            <div class="card-actions" @click.stop>
+              <button class="btn-outline" @click="goToArtistProfile(artist.id)">
+                View Profile
+              </button>
+              <button
+                class="btn-primary"
+                :class="{ following: isFollowing(artist.id) }"
+                @click="toggleFollow(artist)"
+              >
+                {{ isFollowing(artist.id) ? "Following" : "Follow" }}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-      <p v-if="recommendedArtistsFull.length === 0" class="empty-state">
-        No more artists to show.
-      </p>
-    </section>
+        <p v-if="trendingArtists.length === 0" class="empty-state">
+          No artists match this filter yet.
+        </p>
+      </section>
 
-    <!-- Trending / Recent Songs Section -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Trending Songs</h2>
-        <a href="#" class="see-all">See All</a>
-      </div>
-      <div class="tracks-list">
-        <div
-          v-for="track in popularTracks"
-          :key="track.id"
-          class="track-row clickable"
-          @click="playTrack(track)"
-        >
-          <img
-            :src="track.image || track.coverArt"
-            :alt="track.title"
-            class="track-thumb"
-          />
-          <div class="track-details">
-            <p class="track-title">{{ track.title }}</p>
-            <p class="track-artist">{{ track.artist }}</p>
-          </div>
-
-          <div class="track-actions" @click.stop>
-            <button
-              class="like-btn-track"
-              :class="{ liked: isTrackLiked(track.id) }"
-              @click="toggleTrackLike(track.id)"
-              aria-label="Like track"
+      <!-- Recommended Artists Section with Slide / See All functionality -->
+      <section class="section">
+        <div class="section-header">
+          <h2>Recommended Artists</h2>
+          <div class="header-controls">
+            <div
+              v-if="!showAllRecommended && recommendedArtistsFull.length > 9"
+              class="slider-arrows"
             >
-              <svg class="heart-icon" viewBox="0 0 24 24">
-                <path
-                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                />
-              </svg>
-            </button>
-            <div class="dropdown-wrapper">
               <button
-                class="more-btn"
-                @click="toggleDropdown(track.id, $event)"
-                aria-label="More options"
+                class="arrow-btn"
+                @click="scrollRecommended('left')"
+                aria-label="Scroll left"
               >
-                ⋮
+                ‹
               </button>
-              <div v-if="activeDropdownId === track.id" class="dropdown-menu">
-                <button @click="addToPlaylist(track)">Add to Playlist</button>
-                <button @click="addToQueue(track)">Add to Queue</button>
-                <button @click="shareTrack(track)">Share</button>
+              <button
+                class="arrow-btn"
+                @click="scrollRecommended('right')"
+                aria-label="Scroll right"
+              >
+                ›
+              </button>
+            </div>
+            <button
+              class="see-all"
+              @click="showAllRecommended = !showAllRecommended"
+            >
+              {{ showAllRecommended ? "See Less" : "See All" }}
+            </button>
+          </div>
+        </div>
+
+        <div
+          ref="recommendedScrollRef"
+          class="card-grid"
+          :class="{ 'scrollable-row': !showAllRecommended }"
+        >
+          <div
+            v-for="artist in displayedRecommendedArtists"
+            :key="artist.id"
+            class="artist-card compact clickable"
+            @click="goToArtistProfile(artist.id)"
+          >
+            <img
+              :src="artist.image"
+              :alt="artist.name"
+              class="placeholder-img-sm"
+            />
+            <div class="artist-info">
+              <p class="artist-name">{{ artist.name }}</p>
+              <p class="artist-genre">
+                {{
+                  Array.isArray(artist.genre)
+                    ? artist.genre.join(", ")
+                    : artist.genre
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
+        <p v-if="recommendedArtistsFull.length === 0" class="empty-state">
+          No more artists to show.
+        </p>
+      </section>
+
+      <!-- Trending / Recent Songs Section -->
+      <section class="section">
+        <div class="section-header">
+          <h2>Trending Songs</h2>
+          <a href="#" class="see-all">See All</a>
+        </div>
+        <div class="tracks-list">
+          <div
+            v-for="track in popularTracks"
+            :key="track.id"
+            class="track-row clickable"
+            @click="playTrack(track)"
+          >
+            <img
+              :src="track.image || track.coverArt"
+              :alt="track.title"
+              class="track-thumb"
+            />
+            <div class="track-details">
+              <p class="track-title">{{ track.title }}</p>
+              <p class="track-artist">{{ track.artist }}</p>
+            </div>
+
+            <div class="track-actions" @click.stop>
+              <button
+                class="like-btn-track"
+                :class="{ liked: isTrackLiked(track.id) }"
+                @click="toggleTrackLike(track.id)"
+                aria-label="Like track"
+              >
+                <svg class="heart-icon" viewBox="0 0 24 24">
+                  <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  />
+                </svg>
+              </button>
+              <div class="dropdown-wrapper">
+                <button
+                  class="more-btn"
+                  @click="toggleDropdown(track.id, $event)"
+                  aria-label="More options"
+                >
+                  ⋮
+                </button>
+                <div v-if="activeDropdownId === track.id" class="dropdown-menu">
+                  <button @click="addToPlaylist(track)">Add to Playlist</button>
+                  <button @click="addToQueue(track)">Add to Queue</button>
+                  <button @click="shareTrack(track)">Share</button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <p v-if="popularTracks.length === 0" class="empty-state">
-        No trending songs available.
-      </p>
-    </section>
+        <p v-if="popularTracks.length === 0" class="empty-state">
+          No trending songs available.
+        </p>
+      </section>
 
-    <!-- Trending / Recent Beats Section -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Trending Beats</h2>
-        <router-link to="/beat-store" class="see-all">Browse Store</router-link>
-      </div>
-      <div class="tracks-list">
-        <div
-          v-for="beat in trendingBeats"
-          :key="beat.id"
-          class="track-row clickable"
-          @click="playBeat(beat)"
-        >
-          <img
-            :src="beat.coverArt || beat.image"
-            :alt="beat.title"
-            class="track-thumb"
-          />
-          <div class="track-details">
-            <p class="track-title">{{ beat.title }}</p>
-            <p class="track-artist">{{ beat.artist }} • R{{ beat.price }}</p>
-          </div>
+      <!-- Trending / Recent Beats Section -->
+      <section class="section">
+        <div class="section-header">
+          <h2>Trending Beats</h2>
+          <router-link to="/beat-store" class="see-all"
+            >Browse Store</router-link
+          >
+        </div>
+        <div class="tracks-list">
+          <div
+            v-for="beat in trendingBeats"
+            :key="beat.id"
+            class="track-row clickable"
+            @click="playBeat(beat)"
+          >
+            <img
+              :src="beat.coverArt || beat.image"
+              :alt="beat.title"
+              class="track-thumb"
+            />
+            <div class="track-details">
+              <p class="track-title">{{ beat.title }}</p>
+              <p class="track-artist">{{ beat.artist }} • R{{ beat.price }}</p>
+            </div>
 
-          <div class="track-actions" @click.stop>
-            <button
-              class="like-btn-track"
-              :class="{ liked: isTrackLiked(beat.id) }"
-              @click="toggleTrackLike(beat.id)"
-              aria-label="Like beat"
-            >
-              <svg class="heart-icon" viewBox="0 0 24 24">
-                <path
-                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                />
-              </svg>
-            </button>
-            <div class="dropdown-wrapper">
+            <div class="track-actions" @click.stop>
               <button
-                class="more-btn"
-                @click="toggleDropdown(beat.id, $event)"
-                aria-label="More options"
+                class="like-btn-track"
+                :class="{ liked: isTrackLiked(beat.id) }"
+                @click="toggleTrackLike(beat.id)"
+                aria-label="Like beat"
               >
-                ⋮
+                <svg class="heart-icon" viewBox="0 0 24 24">
+                  <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  />
+                </svg>
               </button>
-              <div v-if="activeDropdownId === beat.id" class="dropdown-menu">
-                <button @click="addToQueue(beat)">Add to Queue</button>
-                <button @click="openPurchaseModal(beat)">Buy License</button>
-                <button @click="navigateToStore">Browse Beat Store</button>
-                <button @click="shareTrack(beat)">Share</button>
+              <div class="dropdown-wrapper">
+                <button
+                  class="more-btn"
+                  @click="toggleDropdown(beat.id, $event)"
+                  aria-label="More options"
+                >
+                  ⋮
+                </button>
+                <div v-if="activeDropdownId === beat.id" class="dropdown-menu">
+                  <button @click="addToQueue(beat)">Add to Queue</button>
+                  <button @click="openPurchaseModal(beat)">Buy License</button>
+                  <button @click="navigateToStore">Browse Beat Store</button>
+                  <button @click="shareTrack(beat)">Share</button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <p v-if="trendingBeats.length === 0" class="empty-state">
-        No trending beats available.
-      </p>
-    </section>
+        <p v-if="trendingBeats.length === 0" class="empty-state">
+          No trending beats available.
+        </p>
+      </section>
 
-    <!-- Purchase Beat Modal Integration -->
-    <PurchaseBeatModal
-      :is-open="isPurchaseModalOpen"
-      :selected-beat="selectedBeatForPurchase"
-      @update:is-open="isPurchaseModalOpen = $event"
-      @add-to-cart="handleAddToCart"
-    />
+      <!-- Purchase Beat Modal Integration -->
+      <PurchaseBeatModal
+        :is-open="isPurchaseModalOpen"
+        :selected-beat="selectedBeatForPurchase"
+        @update:is-open="isPurchaseModalOpen = $event"
+        @add-to-cart="handleAddToCart"
+      />
+    </div>
   </div>
 </template>
 
@@ -298,7 +303,6 @@ const showAllGenres = ref(false);
 const showAllRecommended = ref(false);
 const recommendedScrollRef = ref(null);
 
-// Modal state for purchasing beats
 const isPurchaseModalOpen = ref(false);
 const selectedBeatForPurchase = ref(null);
 
@@ -492,64 +496,92 @@ function shareTrack(track) {
 
 <style scoped>
 .discover-page {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-  background-color: var(--bg-main, #ffffff);
+  background-color: var(--bg-main, #f7f7f9);
   color: var(--text-main, #111111);
+  min-height: 100vh;
 }
 
-/* Page Header Typography */
+/* Full width white header spanning edge-to-edge */
+.page-header {
+  background-color: var(--bg-surface, #ffffff);
+  border-bottom: 1px solid var(--border-subtle, #eaeaea);
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  margin-bottom: 2rem;
+  padding: 1.5rem 0 1.25rem 0;
+}
+
+/* Inner wrapper to match content max-width and padding */
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  width: 100%;
+}
+
+/* Container for content below header */
+.discover-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem 2rem 2rem;
+  width: 100%;
+}
+
 .page-header h1 {
-  margin: 0 0 1.25rem 0;
-  font-size: 1.5rem;
+  margin: 0 0 1rem 0;
+  font-size: 1.35rem;
   font-weight: 800;
   color: var(--text-main, #111111);
   letter-spacing: -0.02em;
 }
 
-.search-bar {
+/* Search Bar Styled to match Events Page */
+.search-box {
   position: relative;
-  max-width: 100%;
+  display: flex;
+  align-items: center;
+  width: 100%;
   margin-bottom: 1rem;
 }
 
-.search-bar input {
+.search-input {
+  background-color: #ede9f6;
+  border: none;
+  padding: 0.55rem 2.25rem 0.55rem 1rem;
+  border-radius: 8px;
   width: 100%;
-  padding: 0.6rem 1rem 0.6rem 2.5rem;
-  background-color: var(--bg-surface, #fff);
-  border: 1px solid var(--border-subtle, #e0e0e0);
-  border-radius: 6px;
   font-size: 0.85rem;
   outline: none;
   color: var(--text-main, #111);
-  transition: border-color 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
-.search-bar input:focus {
-  border-color: var(--primary-wisteria, #b19cd9);
+.search-input:focus {
+  background-color: #e4ddf6;
 }
 
 .search-icon {
   position: absolute;
-  left: 0.85rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  color: var(--text-muted, #666);
+  right: 0.75rem;
+  font-size: 0.9rem;
+  color: #666;
+  pointer-events: none;
 }
 
-/* Filter Tags Collapse Container */
+/* Filter Tags Container */
 .filter-container {
-  margin-bottom: 2rem;
+  margin-top: 0.5rem;
 }
 
 .filter-tags {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
-  max-height: 40px;
+  max-height: 38px;
   overflow: hidden;
   transition: max-height 0.3s ease;
 }
@@ -565,21 +597,21 @@ function shareTrack(track) {
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  margin-top: 0.5rem;
+  margin-top: 0.4rem;
   padding: 0;
 }
 
 .tag {
   border: none;
-  padding: 0.4rem 1.1rem;
+  padding: 0.35rem 1rem;
   border-radius: 16px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   transition:
     opacity 0.2s ease,
     transform 0.1s ease;
-  height: 32px;
+  height: 30px;
 }
 
 .tag:hover {

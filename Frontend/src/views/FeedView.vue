@@ -168,7 +168,7 @@ const handleCreatePost = (postData) => {
   <div class="feed-page">
     <section class="feed-controls-bar">
       <div class="controls-container">
-        <h1 class="page-title">FEED</h1>
+        <h1 class="page-title">Feed</h1>
 
         <div class="filter-group">
           <button
@@ -383,10 +383,11 @@ const handleCreatePost = (postData) => {
 }
 
 .page-title {
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: var(--text-main);
-  margin-right: 1rem;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main, #111111);
+  letter-spacing: -0.02em;
 }
 
 .check-icon {
@@ -512,5 +513,71 @@ const handleCreatePost = (postData) => {
 .overflow-list {
   max-height: 300px;
   overflow-y: auto;
+}
+
+/* Filter chips and search bar — recolored from grey to the purple used
+   across Discover/Library/Beat Store. These classes had no local rules
+   before (they were relying on a shared/global stylesheet), so these
+   are added here as scoped overrides. */
+.filter-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-chip-btn {
+  border: none;
+  padding: 0.4rem 1.1rem;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background-color: #ede9f6;
+  color: var(--text-main, #111);
+  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.filter-chip-btn:hover {
+  background-color: #e4ddf6;
+}
+
+.filter-chip-btn.active {
+  background-color: var(--primary-wisteria, #b19cd9);
+  color: var(--text-dark-btn, #111);
+  font-weight: 700;
+}
+
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-input {
+  width: 100%;
+  background-color: #ede9f6;
+  border: none;
+  padding: 0.55rem 2.25rem 0.55rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  color: var(--text-main, #111);
+  transition: background-color 0.2s ease;
+}
+
+.search-input:focus {
+  background-color: #e4ddf6;
+}
+
+.search-icon {
+  position: absolute;
+  right: 0.75rem;
+  font-size: 0.9rem;
+  color: #666;
+  pointer-events: none;
 }
 </style>
