@@ -32,7 +32,7 @@
       }}</span>
     </div>
 
-    <!-- Hidden native HTML5 audio element powering the playback -->
+    <!-- Native HTML5 audio element powering playback -->
     <audio
       ref="audioElement"
       :src="currentTrack.audioUrl"
@@ -129,7 +129,7 @@ watch(currentTrack, async (newTrack) => {
   }
 });
 
-// Watch play/pause toggles
+// Watch play/pause toggles from anywhere in the app
 watch(isPlaying, (newVal) => {
   if (!audioElement.value) return;
   if (newVal) {
@@ -155,7 +155,6 @@ function onEnded() {
   store.dispatch("player/togglePlay");
 }
 
-// Real formatting based on actual playback time
 const formattedTime = computed(() => {
   const totalSeconds = Math.floor(currentTime.value);
   const minutes = Math.floor(totalSeconds / 60);
@@ -170,7 +169,6 @@ const formattedDuration = computed(() => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 });
 
-// Real progress calculation based on live duration
 const progressPercent = computed(() => {
   if (!duration.value || duration.value === 0) return 0;
   return Math.min((currentTime.value / duration.value) * 100, 100);
@@ -329,7 +327,6 @@ const progressPercent = computed(() => {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   border-radius: 8px;
   overflow: hidden;
-  /* Prevent flex container squishing */
   flex-shrink: 0;
 }
 

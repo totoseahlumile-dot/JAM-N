@@ -4,7 +4,9 @@
       <div class="modal-card">
         <div class="modal-header">
           <h2 class="modal-title">{{ title }}</h2>
-          <button class="modal-close-btn" @click="close" aria-label="Close">×</button>
+          <button class="modal-close-btn" @click="close" aria-label="Close">
+            ×
+          </button>
         </div>
         <div class="modal-body">
           <slot />
@@ -17,13 +19,13 @@
 <script setup>
 defineProps({
   modelValue: { type: Boolean, required: true },
-  title: { type: String, default: '' },
-})
+  title: { type: String, default: "" },
+});
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(["update:modelValue"]);
 
 function close() {
-  emit('update:modelValue', false)
+  emit("update:modelValue", false);
 }
 </script>
 
