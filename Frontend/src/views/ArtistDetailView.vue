@@ -141,27 +141,30 @@ function toggleFollow() {
   });
 }
 
-// Safely normalize tracks whether they are stored as strings or objects
+// Safely normalize tracks and provide a working sample audio URL fallback
 const formattedTracks = computed(() => {
   if (!artist.value) return [];
 
   const rawTracks = artist.value.tracks || [
-    `${artist.value.name} - Live Session`,
-    `${artist.value.name} - Studio Demo`,
+    { title: `${artist.value.name} - Live Session` },
+    { title: `${artist.value.name} - Studio Demo` },
   ];
+
+  const defaultSampleUrl =
+    "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
 
   return rawTracks.map((track, index) => {
     if (typeof track === "string") {
       return {
         id: `${artistId}_t_${index}`,
         title: track,
-        audioUrl: null,
+        audioUrl: defaultSampleUrl,
       };
     }
     return {
       id: track.id || `${artistId}_t_${index}`,
       title: track.title || "Untitled Track",
-      audioUrl: track.audioUrl || null,
+      audioUrl: track.audioUrl || defaultSampleUrl,
     };
   });
 });

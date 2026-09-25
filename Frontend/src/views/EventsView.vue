@@ -160,6 +160,9 @@ const handleViewDetails = (item) => {
 };
 
 const handleBuyTicket = (item) => {
+  // Close the current modal right away so it doesn't stay in the background
+  closeModal();
+
   requireAuth(() => {
     selectedItem.value = item;
     modalType.value = "buy-ticket";

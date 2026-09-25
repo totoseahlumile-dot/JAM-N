@@ -93,7 +93,7 @@ const handleGuestAccess = () => {
 };
 
 const handleSignUp = () => {
-  if (router) router.push("/signup");
+  if (router) router.push("/register");
 };
 </script>
 

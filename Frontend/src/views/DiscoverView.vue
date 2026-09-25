@@ -167,7 +167,11 @@
           class="track-row clickable"
           @click="playTrack(track)"
         >
-          <img :src="track.image" :alt="track.title" class="track-thumb" />
+          <img
+            :src="track.image || track.coverArt"
+            :alt="track.title"
+            class="track-thumb"
+          />
           <div class="track-details">
             <p class="track-title">{{ track.title }}</p>
             <p class="track-artist">{{ track.artist }}</p>
@@ -221,7 +225,11 @@
           class="track-row clickable"
           @click="playBeat(beat)"
         >
-          <img :src="beat.coverArt" :alt="beat.title" class="track-thumb" />
+          <img
+            :src="beat.coverArt || beat.image"
+            :alt="beat.title"
+            class="track-thumb"
+          />
           <div class="track-details">
             <p class="track-title">{{ beat.title }}</p>
             <p class="track-artist">{{ beat.artist }} • R{{ beat.price }}</p>
@@ -401,7 +409,13 @@ function toggleTrackLike(trackId) {
 
 function playTrack(track) {
   if (track.audioUrl) {
-    store.dispatch("player/playTrack", track);
+    store.dispatch("player/playTrack", {
+      id: track.id,
+      title: track.title,
+      artist: track.artist,
+      coverArt: track.coverArt || track.image,
+      audioUrl: track.audioUrl,
+    });
   } else {
     alert("Audio stream not available.");
   }
@@ -413,7 +427,7 @@ function playBeat(beat) {
       id: beat.id,
       title: beat.title,
       artist: beat.artist,
-      image: beat.coverArt,
+      coverArt: beat.coverArt || beat.image,
       audioUrl: beat.audioUrl,
     });
   } else {
@@ -462,7 +476,7 @@ function addToQueue(item) {
     id: item.id,
     title: item.title,
     artist: item.artist,
-    image: item.image || item.coverArt,
+    coverArt: item.coverArt || item.image,
     audioUrl: item.audioUrl,
   });
 }

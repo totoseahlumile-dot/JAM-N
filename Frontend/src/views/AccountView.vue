@@ -796,8 +796,8 @@ function handlePostCreated(postData) {
 
 /* Floating Action Button */
 .upload-fab {
-  position: fixed;
-  bottom: 100px;
+  position: absolute;
+  bottom: 2rem;
   right: 2rem;
   width: 52px;
   height: 52px;
@@ -810,6 +810,7 @@ function handlePostCreated(postData) {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 10;
 }
 
 .upload-fab::before {

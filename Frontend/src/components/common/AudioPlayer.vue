@@ -330,7 +330,7 @@ const progressPercent = computed(() => {
   border-radius: 8px;
   overflow: hidden;
   /* Prevent flex container squishing */
-  flex-shrink: 0; 
+  flex-shrink: 0;
 }
 
 .expanded-cover {

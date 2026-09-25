@@ -49,7 +49,13 @@
 
         <div class="artist-info">
           <h3 class="artist-name">{{ artist.name }}</h3>
-          <p class="artist-genre">{{ artist.genre || "Independent Artist" }}</p>
+          <p class="artist-genre">
+            {{
+              Array.isArray(artist.genre)
+                ? artist.genre.join(", ")
+                : artist.genre || "Independent Artist"
+            }}
+          </p>
           <span v-if="artist.location" class="artist-location"
             >📍 {{ artist.location }}</span
           >
@@ -75,7 +81,6 @@ const router = useRouter();
 const searchQuery = ref("");
 const selectedGenre = ref("All");
 
-// Mock genres list + 'All' option
 const genres = [
   "All",
   "Hip Hop",
@@ -86,7 +91,6 @@ const genres = [
   "Indie",
 ];
 
-// Pull artists from Vuex store (with a safe fallback array if store module isn't populated yet)
 const artists = computed(() => {
   return (
     store?.getters?.["artists/allArtists"] ?? [
@@ -122,16 +126,21 @@ const artists = computed(() => {
   );
 });
 
-// Filter artists based on search query and genre chip
 const filteredArtists = computed(() => {
   return artists.value.filter((artist) => {
+    const artistGenres = Array.isArray(artist.genre)
+      ? artist.genre
+      : [artist.genre];
+
     const matchesSearch =
       artist.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      (artist.genre &&
-        artist.genre.toLowerCase().includes(searchQuery.value.toLowerCase()));
+      artistGenres.some(
+        (g) => g && g.toLowerCase().includes(searchQuery.value.toLowerCase()),
+      );
 
     const matchesGenre =
-      selectedGenre.value === "All" || artist.genre === selectedGenre.value;
+      selectedGenre.value === "All" ||
+      artistGenres.includes(selectedGenre.value);
 
     return matchesSearch && matchesGenre;
   });
@@ -147,8 +156,8 @@ function goToArtist(artistId) {
   max-width: 900px;
   margin: 0 auto;
   padding: 2rem;
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  background-color: var(--bg-main, #fff);
+  color: var(--text-main, #111);
 }
 
 .discovery-header {
@@ -159,12 +168,12 @@ function goToArtist(artistId) {
   font-size: 1.5rem;
   font-weight: 800;
   margin: 0 0 0.25rem;
-  color: var(--text-main);
+  color: var(--text-main, #111);
 }
 
 .subtitle {
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #666);
   margin: 0 0 1.25rem;
 }
 
@@ -178,16 +187,16 @@ function goToArtist(artistId) {
   width: 100%;
   padding: 0.75rem 1rem;
   font-size: 0.9rem;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
   border-radius: 8px;
   outline: none;
-  color: var(--text-main);
+  color: var(--text-main, #111);
   transition: border-color 0.2s ease;
 }
 
 .search-input:focus {
-  border-color: var(--primary-wisteria);
+  border-color: var(--primary-wisteria, #b19cd9);
 }
 
 .genre-filters {
@@ -202,15 +211,14 @@ function goToArtist(artistId) {
   display: none;
 }
 
-/* Mapped to your main.css .genre-chip / filter-chip spec */
 .genre-chip {
-  background-color: var(--accent-plum);
+  background-color: var(--accent-plum, #d4bcf0);
   border: none;
   padding: 0.4rem 1rem;
   border-radius: 18px;
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--text-dark-btn);
+  color: var(--text-dark-btn, #111);
   cursor: pointer;
   white-space: nowrap;
   transition:
@@ -223,8 +231,8 @@ function goToArtist(artistId) {
 }
 
 .genre-chip.active {
-  background-color: var(--primary-wisteria);
-  color: var(--text-dark-btn);
+  background-color: var(--primary-wisteria, #b19cd9);
+  color: var(--text-dark-btn, #111);
   font-weight: 800;
 }
 
@@ -235,8 +243,8 @@ function goToArtist(artistId) {
 }
 
 .artist-card {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
   border-radius: 10px;
   padding: 1rem;
   text-align: center;
@@ -258,8 +266,8 @@ function goToArtist(artistId) {
   height: 90px;
   margin: 0 auto 0.75rem;
   border-radius: 50%;
-  background-color: var(--bg-main);
-  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-main, #fff);
+  border: 1px solid var(--border-subtle, #e0e0e0);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -280,24 +288,24 @@ function goToArtist(artistId) {
   font-size: 0.95rem;
   font-weight: 700;
   margin: 0 0 0.2rem;
-  color: var(--text-main);
+  color: var(--text-main, #111);
 }
 
 .artist-genre {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #666);
   margin: 0 0 0.4rem;
 }
 
 .artist-location {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-muted, #666);
 }
 
 .empty-state {
   text-align: center;
   padding: 3rem 0;
-  color: var(--text-muted);
+  color: var(--text-muted, #666);
   font-size: 0.9rem;
 }
 </style>
