@@ -5,13 +5,13 @@
         <div class="header-top">
           <h1>Beat Store</h1>
           <div class="header-actions">
-            <button class="cart-trigger-btn" @click="showCartDrawer = true">
+            <button class="cart-trigger-btn" @click="handleCartClick">
               🛒 Cart
               <span v-if="cartItems.length > 0" class="cart-badge">{{
                 cartItems.length
               }}</span>
             </button>
-            <button class="upload-btn" @click="showUploadModal = true">
+            <button class="upload-btn" @click="openUploadModal">
               + Upload beat
             </button>
           </div>
@@ -114,7 +114,7 @@
         No beats match this filter yet.
       </p>
 
-      <!-- Modals & Drawers -->
+      <!-- Modals & Drawers with v-model:is-open bindings -->
       <BeatUploadModal
         v-model:is-open="showUploadModal"
         @beat-uploaded="handleBeatUploaded"
@@ -122,7 +122,7 @@
 
       <PurchaseBeatModal
         v-model:is-open="showLicenseModal"
-        :selected-beat="selectedBeat"
+        :beat="selectedBeat"
         @add-to-cart="handleAddToCart"
       />
 
@@ -138,11 +138,16 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useStore } from "vuex";
+import { useRouter } from "vue-router";
+import { useAuth } from "@/composables/useAuth";
 import BeatUploadModal from "@/components/beats/BeatUploadModal.vue";
 import PurchaseBeatModal from "@/components/beats/PurchaseBeatModal.vue";
 import CartDrawer from "@/components/cart/CartDrawer.vue";
 
 const store = useStore();
+const router = useRouter();
+const { isAuthenticated } = useAuth();
+
 const activeGenre = ref("All Genres");
 const searchQuery = ref("");
 const showAllGenres = ref(false);
@@ -155,6 +160,15 @@ const selectedBeat = ref(null);
 
 // Cart State
 const cartItems = ref([]);
+
+// Helper to enforce sign-in via composable
+function ensureAuth() {
+  if (!isAuthenticated.value) {
+    router.push("/login");
+    return false;
+  }
+  return true;
+}
 
 // Colors for rotating filter pills matching the Discover page pattern
 const filterColors = [
@@ -185,16 +199,17 @@ function isCurrentTrack(beat) {
   return currentTrack.value && currentTrack.value.id === beat.id;
 }
 
-// Like functionality leveraging auth state store module
+// Like functionality
 function isBeatLiked(beatId) {
   return store?.getters?.["auth/isLiked"]?.(beatId) ?? false;
 }
 
 function toggleBeatLike(beatId) {
+  if (!ensureAuth()) return;
   store?.commit("auth/TOGGLE_LIKE", beatId);
 }
 
-// Purchase state, backed by beats.js's purchasedBeatIds
+// Purchase state
 function isBeatPurchased(beatId) {
   return store.getters["beats/isPurchased"](beatId);
 }
@@ -235,12 +250,24 @@ function playBeatDirectly(beat) {
   }
 }
 
+function openUploadModal() {
+  if (!ensureAuth()) return;
+  showUploadModal.value = true;
+}
+
 function openPurchaseModal(beat) {
+  if (!ensureAuth()) return;
   selectedBeat.value = beat;
   showLicenseModal.value = true;
 }
 
+function handleCartClick() {
+  if (!ensureAuth()) return;
+  showCartDrawer.value = true;
+}
+
 function handleAddToCart(cartItem) {
+  if (!ensureAuth()) return;
   cartItems.value.push(cartItem);
   showCartDrawer.value = true;
 }

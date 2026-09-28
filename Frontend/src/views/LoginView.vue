@@ -1,17 +1,24 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter, RouterLink } from "vue-router";
+import { useStore } from "vuex";
 
 const router = useRouter();
+const store = useStore();
 
 const email = ref("");
 const password = ref("");
 
-const handleLogin = () => {
+const handleLogin = async () => {
   if (!email.value || !password.value) {
     alert("Please enter both email and password.");
     return;
   }
+  
+  // Commit user authentication to the Vuex store
+  await store.dispatch("auth/login", { email: email.value });
+  
+  // Redirect to discover page upon successful login
   router.push("/discover");
 };
 

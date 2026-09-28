@@ -39,15 +39,15 @@
           </svg>
         </RouterLink>
 
-        <!-- Not logged in: show Login -->
+        <!-- Not logged in: show Login link -->
         <RouterLink v-if="!isLoggedIn" to="/login" class="nav-item">
           Login
         </RouterLink>
 
-        <!-- Logged in: show profile icon -->
-        <RouterLink
-          v-else
-          to="/account"
+        <!-- Dynamic Account / Profile Circle -->
+        <a
+          href="#"
+          @click.prevent="handleAccountClick"
           class="profile-icon-btn"
           aria-label="Account"
         >
@@ -56,7 +56,7 @@
               d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-3.8-1.04-4.83-2.61.03-1.6 3.23-2.49 4.83-2.49s4.8 1.89 4.83 2.49C15.8 18.96 14.03 20 12 20z"
             />
           </svg>
-        </RouterLink>
+        </a>
       </div>
     </div>
   </header>
@@ -64,14 +64,23 @@
 
 <script setup>
 import { computed } from "vue";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 import { useStore } from "vuex";
 
 const store = useStore();
+const router = useRouter();
 
 const isLoggedIn = computed(() => store.getters["auth/isLoggedIn"]);
 const currentPlan = computed(() => store.getters["subscription/plan"]);
 const isFreePlan = computed(() => currentPlan.value.id === "free");
+
+const handleAccountClick = () => {
+  if (isLoggedIn.value) {
+    router.push("/account");
+  } else {
+    router.push("/signup");
+  }
+};
 </script>
 
 <style scoped>
@@ -182,6 +191,7 @@ const isFreePlan = computed(() => currentPlan.value.id === "free");
   justify-content: center;
   color: var(--text-muted);
   transition: color 0.15s ease;
+  cursor: pointer;
 }
 
 .settings-icon-btn:hover,
