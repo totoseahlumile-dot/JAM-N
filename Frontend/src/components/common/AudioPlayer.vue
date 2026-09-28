@@ -1,36 +1,46 @@
 <template>
-  <!-- Persistent Bottom Bar -->
-  <footer class="audio-player" v-if="currentTrack" @click="openExpandedPlayer">
-    <div class="player-track-info">
-      <img
-        :src="currentTrack.coverArt"
-        :alt="currentTrack.title"
-        class="player-cover"
-      />
-      <div class="player-text">
-        <p class="player-title">{{ currentTrack.title }}</p>
-        <p class="player-artist">{{ currentTrack.artist }}</p>
+  <!-- Persistent Bottom Bar Wrapper -->
+  <footer class="audio-player-wrapper" v-if="currentTrack && !isExpanded">
+    <!-- Main clickable area to open drawer -->
+    <div class="audio-player-main" @click="openExpandedPlayer">
+      <div class="player-track-info">
+        <img
+          :src="currentTrack.coverArt"
+          :alt="currentTrack.title"
+          class="player-cover"
+        />
+        <div class="player-text">
+          <p class="player-title">{{ currentTrack.title }}</p>
+          <p class="player-artist">{{ currentTrack.artist }}</p>
+        </div>
+      </div>
+
+      <div class="player-controls" @click.stop>
+        <button class="player-play-btn" @click="togglePlay">
+          {{ isPlaying ? "Pause" : "Play" }}
+        </button>
+      </div>
+
+      <div class="player-progress" @click.stop>
+        <span class="player-time">{{ formattedTime }}</span>
+        <div class="player-progress-track">
+          <div
+            class="player-progress-fill"
+            :style="{ width: progressPercent + '%' }"
+          ></div>
+        </div>
+        <span class="player-time" v-if="duration > 0">{{
+          formattedDuration
+        }}</span>
       </div>
     </div>
 
-    <div class="player-controls" @click.stop>
-      <button class="player-play-btn" @click="togglePlay">
-        {{ isPlaying ? "Pause" : "Play" }}
-      </button>
-    </div>
-
-    <div class="player-progress" @click.stop>
-      <span class="player-time">{{ formattedTime }}</span>
-      <div class="player-progress-track">
-        <div
-          class="player-progress-fill"
-          :style="{ width: progressPercent + '%' }"
-        ></div>
-      </div>
-      <span class="player-time" v-if="duration > 0">{{
-        formattedDuration
-      }}</span>
-    </div>
+    <!-- Independent Close button outside the click-to-expand area -->
+    <button 
+      class="close-bottom-btn" 
+      type="button"
+      @click.stop.prevent="stopPlayer"
+    >✕</button>
 
     <!-- Native HTML5 audio element powering playback -->
     <audio
@@ -42,15 +52,16 @@
     ></audio>
   </footer>
 
-  <footer class="audio-player audio-player-empty" v-else>
+  <footer class="audio-player-wrapper audio-player-empty" v-else-if="!isExpanded && !currentTrack">
     <p class="player-empty-text">Nothing playing</p>
   </footer>
 
   <!-- Right-Side Slide-out Panel (Desktop Drawer Style) -->
   <div class="expanded-player-overlay" v-if="isExpanded && currentTrack">
-    <div class="expanded-player-content">
-      <button class="close-expanded-btn" @click="closeExpandedPlayer">✕</button>
+    <!-- Close Button for Drawer -->
+    <button class="close-expanded-btn" @click="closeExpandedPlayer">✕</button>
 
+    <div class="expanded-player-content">
       <div class="expanded-artwork-container">
         <img
           :src="currentTrack.coverArt"
@@ -111,6 +122,14 @@ function openExpandedPlayer() {
 
 function closeExpandedPlayer() {
   store.commit("player/SET_EXPANDED", false);
+}
+
+function stopPlayer() {
+  if (audioElement.value) {
+    audioElement.value.pause();
+  }
+  store.commit("player/SET_EXPANDED", false);
+  store.commit("player/SET_CURRENT_TRACK", null);
 }
 
 // Watch track changes, reload source, and automatically play if isPlaying is true
@@ -176,7 +195,7 @@ const progressPercent = computed(() => {
 </script>
 
 <style scoped>
-.audio-player {
+.audio-player-wrapper {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -186,26 +205,40 @@ const progressPercent = computed(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 1.5rem;
-  border-top: 1px solid var(--border-subtle, #ccc);
-  background-color: var(--bg-surface, #fff);
+  border-top: 1px solid rgba(29, 30, 24, 0.15);
+  background-color: var(--primary-wisteria);
   z-index: 1000;
-  cursor: pointer;
 }
+
+.audio-player-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  height: 100%;
+  cursor: pointer;
+  gap: 1.5rem;
+}
+
 .audio-player-empty {
   justify-content: center;
-  cursor: default;
+  background-color: var(--primary-wisteria);
+  opacity: 0.85;
 }
+
 .player-empty-text {
   font-size: 0.85rem;
-  color: var(--text-muted, #666);
-  opacity: 0.8;
+  color: var(--text-dark-btn);
+  font-weight: 500;
 }
+
 .player-track-info {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   min-width: 200px;
 }
+
 .player-cover {
   width: 44px;
   height: 44px;
@@ -213,34 +246,42 @@ const progressPercent = computed(() => {
   object-fit: cover;
   image-rendering: -webkit-optimize-contrast;
 }
+
 .player-title {
   font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-main, #111);
+  font-weight: 700;
+  color: var(--text-dark-btn);
   margin: 0;
 }
+
 .player-artist {
   font-size: 0.75rem;
-  color: var(--text-muted, #666);
+  color: var(--text-dark-btn);
+  opacity: 0.75;
   margin: 0;
 }
+
 .player-controls {
   display: flex;
   align-items: center;
 }
+
 .player-play-btn {
   border: none;
-  background: var(--text-main, #333);
-  color: #fff;
+  background: var(--text-dark-btn);
+  color: var(--text-light);
   cursor: pointer;
   font-size: 0.85rem;
+  font-weight: 600;
   padding: 0.4rem 0.9rem;
   border-radius: 999px;
   transition: opacity 0.15s ease;
 }
+
 .player-play-btn:hover {
   opacity: 0.9;
 }
+
 .player-progress {
   display: flex;
   align-items: center;
@@ -248,21 +289,42 @@ const progressPercent = computed(() => {
   flex: 1;
   max-width: 320px;
 }
+
 .player-time {
   font-size: 0.7rem;
-  color: var(--text-muted, #666);
+  color: var(--text-dark-btn);
+  opacity: 0.8;
   min-width: 32px;
 }
+
 .player-progress-track {
   flex: 1;
   height: 4px;
   border-radius: 2px;
-  background: var(--border-subtle, #ddd);
+  background: rgba(255, 255, 255, 0.4);
   overflow: hidden;
 }
+
 .player-progress-fill {
   height: 100%;
-  background: var(--primary-wisteria, #999);
+  background: #ffffff;
+}
+
+.close-bottom-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text-dark-btn);
+  opacity: 0.75;
+  padding: 0.5rem 0.75rem;
+  margin-left: 0.5rem;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.close-bottom-btn:hover {
+  opacity: 1;
 }
 
 /* Right-Side Slide-out Panel Styles */
@@ -272,9 +334,10 @@ const progressPercent = computed(() => {
   right: 0;
   bottom: 0;
   width: 380px;
-  background: var(--bg-surface, #ffffff);
-  border-left: 1px solid var(--border-subtle, #e0e0e0);
-  box-shadow: -5px 0 25px rgba(0, 0, 0, 0.08);
+  background-color: var(--primary-wisteria);
+  color: var(--text-dark-btn);
+  border-left: 1px solid rgba(29, 30, 24, 0.15);
+  box-shadow: -5px 0 25px rgba(0, 0, 0, 0.12);
   z-index: 2000;
   display: flex;
   flex-direction: column;
@@ -304,18 +367,20 @@ const progressPercent = computed(() => {
 
 .close-expanded-btn {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 1.5rem;
+  right: 1.5rem;
   background: transparent;
   border: none;
   font-size: 1.25rem;
   cursor: pointer;
-  color: var(--text-muted, #666);
+  color: var(--text-dark-btn);
+  opacity: 0.75;
   padding: 0.5rem;
+  z-index: 10;
 }
 
 .close-expanded-btn:hover {
-  color: var(--text-main, #111);
+  opacity: 1;
 }
 
 .expanded-artwork-container {
@@ -324,7 +389,7 @@ const progressPercent = computed(() => {
   min-width: 240px;
   min-height: 240px;
   margin-bottom: 1.5rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
@@ -347,16 +412,18 @@ const progressPercent = computed(() => {
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0 0 0.25rem 0;
-  color: var(--text-main, #111);
+  color: var(--text-dark-btn);
 }
 
 .expanded-track-details p {
   font-size: 0.9rem;
-  color: var(--text-muted, #666);
+  color: var(--text-dark-btn);
+  opacity: 0.75;
   margin: 0;
 }
 
 .expanded-progress-section {
+  background: transparent;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -372,17 +439,18 @@ const progressPercent = computed(() => {
 
 .expanded-play-btn {
   border: none;
-  background: var(--text-main, #111);
-  color: #fff;
+  background: var(--text-dark-btn);
+  color: var(--text-light);
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 600;
   padding: 0.6rem 2rem;
   border-radius: 999px;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
 .expanded-play-btn:hover {
+  opacity: 0.9;
   transform: scale(1.03);
 }
 </style>
