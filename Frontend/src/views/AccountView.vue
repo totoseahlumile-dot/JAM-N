@@ -3,7 +3,23 @@
     <!-- Profile header -->
     <header class="page-header">
       <div class="header-inner">
-        <div class="profile-header">
+        <!-- GUEST STATE: When no user is logged in -->
+        <div v-if="!user" class="profile-header guest-header">
+          <div class="profile-avatar-large">
+            <span class="avatar-fallback">👤</span>
+          </div>
+          <div class="profile-details">
+            <p class="profile-name">Guest Account</p>
+            <p class="profile-bio">Sign in to view your profile, manage your uploads, and connect with other artists.</p>
+            <div class="auth-action-buttons">
+              <RouterLink to="/login" class="btn-primary">Sign In</RouterLink>
+              <RouterLink to="/register" class="btn-outline">Create Account</RouterLink>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOGGED-IN STATE: Dynamic user profile -->
+        <div v-else class="profile-header">
           <div class="profile-avatar-large">
             <img
               v-if="user?.image"
@@ -15,7 +31,7 @@
           </div>
 
           <div class="profile-details">
-            <p class="profile-name">{{ user?.name ?? "Guest" }}</p>
+            <p class="profile-name">{{ user?.name }}</p>
 
             <div class="profile-stats">
               <div class="stat">
@@ -104,7 +120,9 @@
             @click="openItem(post)"
           >
             <div class="post-header">
-              <div class="user-avatar-small"></div>
+              <div class="user-avatar-small">
+                <img v-if="user?.image" :src="user.image" class="avatar-img" />
+              </div>
               <span class="post-author">{{ user?.name }}</span>
             </div>
             <p class="post-text">{{ post.caption || post.title }}</p>
@@ -163,9 +181,10 @@
         </p>
       </section>
 
-      <!-- Floating upload button -->
+      <!-- Floating upload button (Only for logged-in artists/producers) -->
       <button
         v-if="
+          user &&
           isArtistOrProducer &&
           (activeTab === 'uploads' || activeTab === 'posts')
         "
@@ -174,7 +193,7 @@
         aria-label="Upload"
       ></button>
 
-      <!-- Detail Modal (Connected to player.js) -->
+      <!-- Detail Modal -->
       <div
         v-if="showDetailModal"
         class="modal-overlay"
@@ -322,7 +341,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useStore } from "vuex";
-import { useRouter } from "vue-router";
+import { useRouter, RouterLink } from "vue-router";
 import EditProfileModal from "@/components/common/EditProfileModal.vue";
 import CreatePostModal from "@/components/common/CreatePostModal.vue";
 
@@ -367,10 +386,8 @@ const textPosts = computed(() =>
 );
 const reposts = ref([]);
 
-// Pulling directly from the registered beats module with debug logs
 const liked = computed(() => {
-  const result = store.getters["beats/likedBeats"] || [];
-  return result;
+  return store.getters["beats/likedBeats"] || [];
 });
 
 const activeItems = computed(() => {
@@ -420,7 +437,7 @@ function unfollowArtist(artist) {
   store.commit("auth/TOGGLE_FOLLOW", artist);
 }
 
-// --- Detail Card & Playback Handler (Connected to player.js) ---
+// --- Detail Card & Playback Handler ---
 const showDetailModal = ref(false);
 const selectedItem = ref(null);
 const newCommentText = ref("");
@@ -464,7 +481,6 @@ function isItemLiked(itemId) {
 
 function toggleLike(item) {
   if (!item) return;
-  // Pass the full object so the store caches custom profile uploads
   store.dispatch("beats/toggleLikeBeat", item);
 }
 
@@ -499,7 +515,6 @@ function handlePostCreated(postData) {
   min-height: 100vh;
 }
 
-/* Full width white header spanning edge-to-edge, matching Discover/Library/Beat Store */
 .page-header {
   background-color: var(--bg-surface, #ffffff);
   border-bottom: 1px solid var(--border-subtle, #e2e2e8);
@@ -520,7 +535,6 @@ function handlePostCreated(postData) {
   width: 100%;
 }
 
-/* Container for content below header, widened to match the other pages */
 .profile-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -532,6 +546,33 @@ function handlePostCreated(postData) {
   display: flex;
   gap: 2rem;
   align-items: flex-start;
+}
+
+.guest-header {
+  align-items: center;
+}
+
+.auth-action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.auth-action-buttons .btn-outline {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle, #e2e2e8);
+  background: transparent;
+  color: var(--text-main, #1d1e18);
+  text-decoration: none;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.auth-action-buttons .btn-outline:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .profile-avatar-large {
@@ -611,6 +652,7 @@ function handlePostCreated(postData) {
   padding: 0.5rem 1.25rem;
   font-size: 0.8rem;
   border-radius: 12px;
+  text-decoration: none;
 }
 
 .content-tabs {
@@ -683,7 +725,6 @@ function handlePostCreated(postData) {
   margin: 0.2rem 0 0;
 }
 
-/* Following Section Styles */
 .following-section {
   margin-top: 1.5rem;
 }
@@ -763,7 +804,6 @@ function handlePostCreated(postData) {
   color: #dc2626;
 }
 
-/* Posts Feed Styles */
 .posts-feed {
   display: flex;
   flex-direction: column;
@@ -795,6 +835,7 @@ function handlePostCreated(postData) {
   height: 24px;
   border-radius: 50%;
   background: var(--border-subtle, #e2e2e8);
+  overflow: hidden;
 }
 
 .post-author {
@@ -818,14 +859,6 @@ function handlePostCreated(postData) {
   color: var(--text-muted, #66666e);
 }
 
-.post-modal-text {
-  font-size: 0.95rem;
-  font-style: italic;
-  color: var(--text-light, #fafafd);
-  margin: 0 0 1rem;
-  line-height: 1.4;
-}
-
 .empty-state {
   color: var(--text-muted, #66666e);
   font-size: 0.85rem;
@@ -833,7 +866,6 @@ function handlePostCreated(postData) {
   padding: 2rem 0;
 }
 
-/* Floating Action Button */
 .upload-fab {
   position: absolute;
   bottom: 2rem;
@@ -874,7 +906,6 @@ function handlePostCreated(postData) {
   transform: translateY(-2px);
 }
 
-/* Modal Overlay Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -914,11 +945,6 @@ function handlePostCreated(postData) {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.modal-cover-placeholder {
-  font-size: 2rem;
-  color: var(--text-muted, #66666e);
 }
 
 .modal-card h3 {

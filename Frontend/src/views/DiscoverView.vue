@@ -306,6 +306,8 @@ const recommendedScrollRef = ref(null);
 const isPurchaseModalOpen = ref(false);
 const selectedBeatForPurchase = ref(null);
 
+const isLoggedIn = computed(() => store?.getters?.["auth/isLoggedIn"] ?? false);
+
 const allArtists = computed(() => store?.getters?.["artists/allArtists"] ?? []);
 const popularTracks = computed(
   () => store?.getters?.["tracks/popularTracks"] ?? [],
@@ -393,6 +395,10 @@ function isFollowing(artistId) {
 }
 
 function toggleFollow(artist) {
+  if (!isLoggedIn.value) {
+    router.push("/signup");
+    return;
+  }
   store?.commit("auth/TOGGLE_FOLLOW", {
     id: artist.id,
     name: artist.name,
@@ -408,6 +414,10 @@ function isTrackLiked(trackId) {
 }
 
 function toggleTrackLike(trackId) {
+  if (!isLoggedIn.value) {
+    router.push("/signup");
+    return;
+  }
   store?.commit("auth/TOGGLE_LIKE", trackId);
 }
 
@@ -440,6 +450,10 @@ function playBeat(beat) {
 }
 
 function openPurchaseModal(beat) {
+  if (!isLoggedIn.value) {
+    router.push("/signup");
+    return;
+  }
   activeDropdownId.value = null;
   selectedBeatForPurchase.value = beat;
   isPurchaseModalOpen.value = true;
@@ -470,6 +484,10 @@ onMounted(() => window.addEventListener("click", handleClickOutside));
 onUnmounted(() => window.removeEventListener("click", handleClickOutside));
 
 function addToPlaylist(track) {
+  if (!isLoggedIn.value) {
+    router.push("/signup");
+    return;
+  }
   activeDropdownId.value = null;
   console.log("Add to playlist:", track.title);
 }

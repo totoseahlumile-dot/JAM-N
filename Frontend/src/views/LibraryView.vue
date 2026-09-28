@@ -52,10 +52,7 @@
               <h2>{{ selectedPlaylist.title }}</h2>
               <button
                 class="text-action-btn"
-                @click="
-                  isEditingName = true;
-                  editedPlaylistName = selectedPlaylist.title;
-                "
+                @click="startEditingFromDetail(selectedPlaylist)"
               >
                 Edit
               </button>
@@ -729,6 +726,17 @@ const activeLikedSongMenuId = ref(null);
 const isEditingName = ref(false);
 const editedPlaylistName = ref("");
 
+// Auth check helper
+const isAuthenticated = computed(() => store.getters["auth/isAuthenticated"] || false);
+
+function requireAuth() {
+  if (!isAuthenticated.value) {
+    store.commit("auth/SET_SHOW_LOGIN_MODAL", true);
+    return false;
+  }
+  return true;
+}
+
 // Top-level library search (favourites: liked songs, liked beats, playlists, followed artists)
 const librarySearchQuery = ref("");
 const isSearching = computed(() => librarySearchQuery.value.trim().length > 0);
@@ -741,6 +749,7 @@ function isPinned(id) {
 }
 
 function togglePin(item) {
+  if (!requireAuth()) return;
   if (isPinned(item.id)) {
     pinnedIds.value = pinnedIds.value.filter((i) => i !== item.id);
   } else {
@@ -853,6 +862,7 @@ const filteredFollowedArtists = computed(() => {
 });
 
 function toggleBeatLike(beatId) {
+  if (!requireAuth()) return;
   store?.commit("auth/TOGGLE_LIKE", beatId);
 }
 
@@ -944,6 +954,7 @@ function getFilterStyle(index, isActive) {
 }
 
 function openCreateModal() {
+  if (!requireAuth()) return;
   newPlaylistName.value = "";
   songSearchQuery.value = "";
   selectedSongIds.value = [];
@@ -951,6 +962,7 @@ function openCreateModal() {
 }
 
 async function submitCreatePlaylist() {
+  if (!requireAuth()) return;
   if (!newPlaylistName.value.trim()) return;
 
   const createdPlaylist = await store.dispatch(
@@ -1006,17 +1018,20 @@ function toggleLikedSongMenu(trackId, event) {
 }
 
 function toggleLikeFromLibrary(song) {
+  if (!requireAuth()) return;
   store.dispatch("auth/toggleLike", song.id);
   activeLikedSongMenuId.value = null;
 }
 
 function openSongModal(song) {
+  if (!requireAuth()) return;
   selectedSong.value = song;
   targetPlaylistId.value = "";
   showSongModal.value = true;
 }
 
 function addSongToPlaylist() {
+  if (!requireAuth()) return;
   if (!targetPlaylistId.value || !selectedSong.value) return;
   store.dispatch("auth/addTrackToPlaylist", {
     playlistId: targetPlaylistId.value,
@@ -1037,19 +1052,28 @@ function toggleMenu(playlistId, event) {
 }
 
 function startEditing(playlist) {
+  if (!requireAuth()) return;
   selectedPlaylist.value = playlist;
   editedPlaylistName.value = playlist.title;
   isEditingName.value = true;
   activeMenuId.value = null;
 }
 
+function startEditingFromDetail(playlist) {
+  if (!requireAuth()) return;
+  editedPlaylistName.value = playlist.title;
+  isEditingName.value = true;
+}
+
 function openAddSongsToPlaylistModal(playlist) {
+  if (!requireAuth()) return;
   selectedPlaylist.value = playlist;
   activeMenuId.value = null;
   openCreateModal();
 }
 
 function savePlaylistName() {
+  if (!requireAuth()) return;
   if (!editedPlaylistName.value.trim()) return;
   store.dispatch("auth/updatePlaylistName", {
     playlistId: selectedPlaylist.value.id,
@@ -1060,6 +1084,7 @@ function savePlaylistName() {
 }
 
 function removeTrackFromPlaylist(trackId) {
+  if (!requireAuth()) return;
   store.dispatch("auth/removeTrackFromPlaylist", {
     playlistId: selectedPlaylist.value.id,
     trackId,
@@ -1071,6 +1096,7 @@ function removeTrackFromPlaylist(trackId) {
 }
 
 function deletePlaylist(playlist) {
+  if (!requireAuth()) return;
   if (confirm(`Are you sure you want to delete "${playlist.title}"?`)) {
     store.dispatch("auth/deletePlaylist", playlist.id);
     if (selectedPlaylist.value?.id === playlist.id) {
@@ -1109,11 +1135,13 @@ function toggleSongMenu(songId, event) {
 }
 
 function toggleLikeFromMenu(song) {
+  if (!requireAuth()) return;
   store.dispatch("auth/toggleLike", song.id);
   activeSongMenuId.value = null;
 }
 
 function openAddToPlaylistModal(song) {
+  if (!requireAuth()) return;
   activeLikedSongMenuId.value = null;
   activeSongMenuId.value = null;
   openSongModal(song);

@@ -127,6 +127,8 @@
 <script setup>
 import { computed, ref } from "vue";
 import { useStore } from "vuex";
+import { useRouter } from "vue-router";
+import { useAuth } from "@/composables/useAuth";
 import CheckoutModal from "@/components/common/CheckoutModal.vue";
 import {
   PLANS,
@@ -138,9 +140,20 @@ import {
 } from "@/stores/config/plans";
 
 const store = useStore();
+const router = useRouter();
+const { isAuthenticated } = useAuth();
 
 const currentPlan = computed(() => store.getters["subscription/plan"]);
 const checkout = ref(null); // { plan, mode } while the modal is open
+
+// Helper to enforce sign-in via composable
+function ensureAuth() {
+  if (!isAuthenticated.value) {
+    router.push("/login");
+    return false;
+  }
+  return true;
+}
 
 // "current" | "upgrade" | "downgrade" relative to the user's plan
 function planState(plan) {
@@ -150,6 +163,7 @@ function planState(plan) {
 }
 
 function openCheckout(plan) {
+  if (!ensureAuth()) return;
   checkout.value = { plan, mode: planState(plan) };
 }
 

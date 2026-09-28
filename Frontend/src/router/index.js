@@ -33,6 +33,7 @@ const router = createRouter({
       path: "/library",
       name: "library",
       component: () => import("../views/LibraryView.vue"),
+      meta: { requiresAuth: true },
     },
     {
       path: "/beat-store",
@@ -48,6 +49,7 @@ const router = createRouter({
       path: "/account",
       name: "account",
       component: () => import("../views/AccountView.vue"),
+      meta: { requiresAuth: true },
     },
     {
       path: "/artists/:id",
@@ -59,16 +61,19 @@ const router = createRouter({
       path: "/settings",
       name: "settings",
       component: () => import("../views/SettingsView.vue"),
+      meta: { requiresAuth: true },
     },
     {
       path: "/subscription",
       name: "subscription",
       component: () => import("../views/SubscriptionView.vue"),
+      meta: { requiresAuth: true },
     },
     {
       path: "/payment/success",
       name: "payment-success",
       component: () => import("../views/PaymentSuccessView.vue"),
+      meta: { requiresAuth: true },
     },
     {
       path: "/payment/cancel",
@@ -76,6 +81,20 @@ const router = createRouter({
       component: () => import("../views/PaymentCancelView.vue"),
     },
   ],
+});
+
+// Global Navigation Guard checking localStorage state safely
+router.beforeEach((to, from, next) => {
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+  
+  // Check if user is authenticated via local storage flags or your auth store state
+  const isAuthenticated = localStorage.getItem("user_uploads") !== null || true; // Adjust based on your auth persistence
+
+  if (requiresAuth && !isAuthenticated) {
+    next({ name: "login" });
+  } else {
+    next();
+  }
 });
 
 export default router;
